@@ -178,7 +178,7 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionReleaseCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	pDUSessionReleaseCommand.SetPTI(smContext.Pti)
-	pDUSessionReleaseCommand.SetCauseValue(0x0)
+	pDUSessionReleaseCommand.SetCauseValue(0x24)
 
 	return m.PlainNasEncode()
 }
