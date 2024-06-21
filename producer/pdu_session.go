@@ -182,8 +182,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	// Decode UE content(PCO)
 	establishmentRequest := m.PDUSessionEstablishmentRequest
-	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
 
+	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
 	// Modified by cdac
 	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeUnstructured {
 		smContext.SubPduSessLog.Errorf("Unstructured PDU Session Not Supported")

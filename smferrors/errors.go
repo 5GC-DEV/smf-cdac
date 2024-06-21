@@ -103,7 +103,7 @@ var (
 		InvalidParams: nil,
 	}
 	PduSessionTypeNotSupported = models.ProblemDetails{
-		Title:         "PduSession Type Not  Supported",
+		Title:         "PduSession Type Not Supported",
 		Status:        http.StatusForbidden,
 		Detail:        "Unstructured PDU Type is not Supported.",
 		Cause:         "REQUEST_REJECTED",
