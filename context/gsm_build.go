@@ -178,7 +178,9 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionReleaseCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	pDUSessionReleaseCommand.SetPTI(smContext.Pti)
-	pDUSessionReleaseCommand.SetCauseValue(0x0)
+	// Modified by CDAC TVM
+	pDUSessionReleaseCommand.SetCauseValue(0x24)
+	// End of Modification
 
 	return m.PlainNasEncode()
 }
