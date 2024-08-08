@@ -288,6 +288,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *pfcpUdp.Message) {
 
 	//UE IP-Addr(only v4 supported)
 	if rsp.CreatedPDR != nil && rsp.CreatedPDR.UEIPAddress != nil {
+		smContext.SubPfcpLog.Infof("*** upf provided ue ip address ***")
 		smContext.SubPfcpLog.Infof("upf provided ue ip address [%v]", rsp.CreatedPDR.UEIPAddress.Ipv4Address)
 
 		// Release previous locally allocated UE IP-Addr
