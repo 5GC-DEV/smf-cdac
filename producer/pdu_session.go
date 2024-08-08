@@ -133,6 +133,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("IpAllocError")
 		return fmt.Errorf("IpAllocError")
 	} else {
+		smContext.SubPduSessLog.Infof("*** PDUSessionSMContextCreate,IP[%s]",
+			ip)
 		smContext.PDUAddress = &smf_context.UeIpAddr{Ip: ip, UpfProvided: false}
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, IP alloc success IP[%s]",
 			smContext.PDUAddress.Ip.String())
@@ -235,7 +237,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			Sd:  createData.SNssai.Sd,
 		},
 	}
-
+	smContext.SubPduSessLog.Infof(" *** Tunnel DataPathPool: %v, PathIDGenerator: %v ***", smContext.Tunnel.DataPathPool, smContext.Tunnel.PathIDGenerator)
+	smContext.SubPduSessLog.Infof("*** value of DNN[%s], value of Sst[%d], value of Sd[%s] ***", upfSelectionParams.Dnn, upfSelectionParams.SNssai.Sst, upfSelectionParams.SNssai.Sd)
 	if smf_context.SMF_Self().ULCLSupport && smf_context.CheckUEHasPreConfig(createData.Supi) {
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, SUPI[%s] has pre-config route", createData.Supi)
 		uePreConfigPaths := smf_context.GetUEPreConfigPaths(createData.Supi)

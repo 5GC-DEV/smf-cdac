@@ -109,6 +109,7 @@ func (upi *UserPlaneInformation) ResetDefaultUserPlanePath() {
 
 func (upi *UserPlaneInformation) GetDefaultUserPlanePathByDNN(selection *UPFSelectionParams) (path UPPath) {
 	path, pathExist := upi.DefaultUserPlanePath[selection.String()]
+	logger.CtxLog.Infof("In GetDefaultUserPlanePathByDNN")
 	logger.CtxLog.Traceln("In GetDefaultUserPlanePathByDNN")
 	logger.CtxLog.Traceln("selection: ", selection.String())
 	if pathExist {
@@ -175,7 +176,7 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 		logger.CtxLog.Errorf("There is no AN Node in config file!")
 		return false
 	}
-
+	logger.CtxLog.Infof("*** Generating Default data path ***")
 	destinations = upi.selectMatchUPF(selection)
 
 	if len(destinations) == 0 {
@@ -230,6 +231,23 @@ func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) [
 						upList = append(upList, upNode)
 						break
 					}
+				}
+			}
+		}
+	}
+	// Logging the values in the upList
+	if len(upList) == 0 {
+		logger.CtxLog.Infof("*** No matching UPF nodes found")
+	} else {
+		for i, upNode := range upList {
+			// Assuming UPNode has fields ID, Name, or any relevant details you want to log
+			logger.CtxLog.Infof("*** UPList[%d] - uuid: %s, ANIP: %s", i, upNode.UPF.uuid, upNode.ANIP)
+
+			// You can log more details depending on your UPNode structure
+			for _, snssaiInfo := range upNode.UPF.SNssaiInfos {
+				logger.CtxLog.Infof("*** UPList[%d] - SNssai: %s", i, snssaiInfo.SNssai)
+				for _, dnnInfo := range snssaiInfo.DnnList {
+					logger.CtxLog.Infof("*** UPList[%d] - DNN: %s, DNAI: %v", i, dnnInfo.Dnn, dnnInfo.DnaiList)
 				}
 			}
 		}
