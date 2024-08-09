@@ -194,7 +194,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	}
 	// End of CDAC edit
 	if err := smContext.PCFSelection(); err != nil {
-		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving PCF Error[%v]", err)
+		smContext.SubPduSessLog.Errorf(" *** PDUSessionSMContextCreate, send NF Discovery Serving PCF Error[%v] ***", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFDiscoveryFailure")
 		return fmt.Errorf("PcfError")
 	}
