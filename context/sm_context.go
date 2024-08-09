@@ -371,6 +371,7 @@ func (smContext *SMContext) SetCreateData(createData *models.SmContextCreateData
 func (smContext *SMContext) BuildCreatedData() (createdData *models.SmContextCreatedData) {
 	createdData = new(models.SmContextCreatedData)
 	createdData.SNssai = smContext.Snssai
+	logger.PduSessLog.Errorf(" *** Created Data SNssai %+v *** ", createdData.SNssai)
 	return
 }
 
