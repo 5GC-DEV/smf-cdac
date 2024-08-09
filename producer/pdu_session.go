@@ -222,7 +222,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, received SM policy data: %v",
 			qos.SmPolicyDecisionString(smPolicyDecision))
 		policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, smPolicyDecision)
-		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, generated SM policy update: %v",
+		smContext.SubQosLog.Infof("--PDUSessionSMContextCreate, generated SM policy update: %v",
 			policyUpdates)
 		smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 	}
