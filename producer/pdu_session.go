@@ -97,6 +97,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	//Create SM context
 	//smContext := smf_context.NewSMContext(createData.Supi, createData.PduSessionId)
 	smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, SM context created")
+	smContext.SubPduSessLog.Infof("---PDUSessionSMContextCreate, SM context created")
 	//smContext.ChangeState(smf_context.SmStateActivePending)
 	smContext.SubCtxLog.Traceln("PDUSessionSMContextCreate, SMContextState change state: ", smContext.SMContextState.String())
 	smContext.SetCreateData(createData)
