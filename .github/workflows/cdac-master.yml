@@ -10,7 +10,8 @@ on:
       - cdacmaster
   push:
     branches:
-      - cdacmaster
+      - "*"
+  workflow_dispatch:
 
 jobs:
 
