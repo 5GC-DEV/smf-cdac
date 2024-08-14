@@ -16,6 +16,7 @@ jobs:
 
   build-upfadapter:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'ios-mcn-core'
     defaults:
       run:
         working-directory: ./upfadapter
@@ -32,6 +33,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'ios-mcn-core'
     steps:
       - uses: actions/checkout@v4
 
@@ -48,7 +50,7 @@ jobs:
   hadolint:
     name: hadolint
     runs-on: ubuntu-latest
-
+    if: github.repository_owner == 'ios-mcn-core'
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +65,7 @@ jobs:
 
   license-check:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'ios-mcn-core'
     steps:
       - uses: actions/checkout@v4
 
@@ -71,6 +74,7 @@ jobs:
 
   fossa-check:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'ios-mcn-core'
     steps:
       - uses: actions/checkout@v4
 
@@ -81,6 +85,7 @@ jobs:
 
   unit-tests:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'ios-mcn-core'
     steps:
       - uses: actions/checkout@v4
 
@@ -93,6 +98,7 @@ jobs:
 
   docker-build-push-images:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'ios-mcn-core'
     needs: unit-tests
    
     env:
