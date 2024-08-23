@@ -9,25 +9,15 @@ package context
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
-
-	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
-	"github.com/omec-project/smf/metrics"
-	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
-	"github.com/omec-project/smf/qos"
-	errors "github.com/omec-project/smf/smferrors"
-	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
-	"github.com/sirupsen/logrus"
-
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/google/uuid"
-
+	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
 	"github.com/omec-project/nas/nasConvert"
 	"github.com/omec-project/nas/nasMessage"
 	nrf_cache "github.com/omec-project/nrf/nrfcache"
@@ -35,12 +25,21 @@ import (
 	"github.com/omec-project/openapi/Nnrf_NFDiscovery"
 	"github.com/omec-project/openapi/Npcf_SMPolicyControl"
 	"github.com/omec-project/openapi/models"
-	"github.com/omec-project/pfcp/pfcpType"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
+	"github.com/omec-project/smf/metrics"
+	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
+	"github.com/omec-project/smf/qos"
+	errors "github.com/omec-project/smf/smferrors"
+	"github.com/omec-project/smf/transaction"
+	"github.com/omec-project/util/httpwrapper"
+	"github.com/sirupsen/logrus"
 )
 
 const (
+	CONNECTED               = "Connected"
+	DISCONNECTED            = "Disconnected"
+	IDLE                    = "Idle"
 	PDU_SESS_REL_CMD string = "PDUSessionReleaseCommand"
 )
 
@@ -152,7 +151,7 @@ type SMContext struct {
 	// SM Policy related
 	// Updates in policy from PCF
 	SmPolicyUpdates []*qos.PolicyUpdate `json:"smPolicyUpdates" yaml:"smPolicyUpdates" bson:"smPolicyUpdates"` // ignore
-	//Holds Session/PCC Rules and Qos/Cond/Charging Data
+	// Holds Session/PCC Rules and Qos/Cond/Charging Data
 	SmPolicyData qos.SmCtxtPolicyData `json:"smPolicyData" yaml:"smPolicyData" bson:"smPolicyData"`
 	// unsupported structure - madatory!
 	SBIPFCPCommunicationChan chan PFCPSessionResponseStatus `json:"-" yaml:"sbiPFCPCommunicationChan" bson:"-"` // ignore
@@ -160,7 +159,7 @@ type SMContext struct {
 	PendingUPF PendingUPF `json:"pendingUPF,omitempty" yaml:"pendingUPF" bson:"pendingUPF,omitempty"` // ignore
 	// NodeID(string form) to PFCP Session Context
 	PFCPContext map[string]*PFCPSessionContext `json:"-" yaml:"pfcpContext" bson:"-"`
-	//TxnBus per subscriber
+	// TxnBus per subscriber
 	TxnBus transaction.TxnBus `json:"-" yaml:"txnBus" bson:"-"` // ignore
 	// SMTxnBusLock sync.Mutex         `json:"smTxnBusLock,omitempty" yaml:"smTxnBusLock" bson:"smTxnBusLock,omitempty"` // ignore
 	SMTxnBusLock sync.Mutex `json:"-" yaml:"smTxnBusLock" bson:"-"` // ignore
@@ -218,19 +217,21 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 		DNSIPv6Request: false,
 	}
 
-	//Sess Stats
+	// Sess Stats
 	smContextActive := incSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 
-	//initialise log tags
+	// initialise log tags
 	smContext.initLogTags()
 
 	return smContext
 }
 
 func (smContext *SMContext) initLogTags() {
-	subField := logrus.Fields{"uuid": smContext.Ref,
-		"id": smContext.Identifier, "pduid": smContext.PDUSessionID}
+	subField := logrus.Fields{
+		"uuid": smContext.Ref,
+		"id":   smContext.Identifier, "pduid": smContext.PDUSessionID,
+	}
 
 	smContext.SubPfcpLog = logger.PfcpLog.WithFields(subField)
 	smContext.SubCtxLog = logger.CtxLog.WithFields(subField)
@@ -242,12 +243,12 @@ func (smContext *SMContext) initLogTags() {
 }
 
 func (smContext *SMContext) ChangeState(nextState SMContextState) {
-	//Update Subscriber profile Metrics
+	// Update Subscriber profile Metrics
 	if nextState == SmStateActive || smContext.SMContextState == SmStateActive {
 		var upf string
 		if smContext.Tunnel != nil {
-			//Set UPF FQDN name if provided else IP-address
-			if smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdType == pfcpType.NodeIdTypeFqdn {
+			// Set UPF FQDN name if provided else IP-address
+			if smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdType == NodeIdTypeFqdn {
 				upf = string(smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdValue)
 				upf = strings.Split(upf, ".")[0]
 			} else {
@@ -255,7 +256,7 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 			}
 		}
 
-		//enterprise name
+		// enterprise name
 		ent := "na"
 		if smfContext.EnterpriseList != nil {
 			entMap := *smfContext.EnterpriseList
@@ -315,13 +316,16 @@ func RemoveSMContext(ref string) {
 		}
 	}
 
-	//Release UE IP-Address
-	smContext.ReleaseUeIpAddr()
+	// Release UE IP-Address
+	err := smContext.ReleaseUeIpAddr()
+	if err != nil {
+		smContext.SubCtxLog.Errorf("release UE IP-Address failed, %v", err)
+	}
 
 	smContextPool.Delete(ref)
 
 	canonicalRef.Delete(canonicalName(smContext.Supi, smContext.PDUSessionID))
-	//Sess Stats
+	// Sess Stats
 	smContextActive := decSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	if factory.SmfConfig.Configuration.EnableDbStore {
@@ -397,6 +401,9 @@ func (smContext *SMContext) PCFSelection() error {
 
 	if SMF_Self().EnableNrfCaching {
 		rep, err = nrf_cache.SearchNFInstances(SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
+		if err != nil {
+			return err
+		}
 	} else {
 		rep, res, err = SMF_Self().
 			NFDiscoveryClient.
@@ -437,7 +444,7 @@ func (smContext *SMContext) PCFSelection() error {
 	return nil
 }
 
-func (smContext *SMContext) GetNodeIDByLocalSEID(seid uint64) (nodeID pfcpType.NodeID) {
+func (smContext *SMContext) GetNodeIDByLocalSEID(seid uint64) (nodeID NodeID) {
 	for _, pfcpCtx := range smContext.PFCPContext {
 		if pfcpCtx.LocalSEID == seid {
 			nodeID = pfcpCtx.NodeID
@@ -447,35 +454,16 @@ func (smContext *SMContext) GetNodeIDByLocalSEID(seid uint64) (nodeID pfcpType.N
 	return
 }
 
-func (smContext *SMContext) AllocateLocalSEIDForUPPath(path UPPath) {
-	for _, upNode := range path {
-		NodeIDtoIP := upNode.NodeID.ResolveNodeIdToIp().String()
-		if _, exist := smContext.PFCPContext[NodeIDtoIP]; !exist {
-			allocatedSEID, _ := AllocateLocalSEID()
-
-			smContext.PFCPContext[NodeIDtoIP] = &PFCPSessionContext{
-				PDRs:      make(map[uint16]*PDR),
-				NodeID:    upNode.NodeID,
-				LocalSEID: allocatedSEID,
-			}
-
-			seidSMContextMap.Store(allocatedSEID, smContext)
-
-			if factory.SmfConfig.Configuration.EnableDbStore {
-				StoreSeidContextInDB(allocatedSEID, smContext)
-				StoreRefToSeidInDB(allocatedSEID, smContext)
-			}
-		}
-	}
-}
-
 func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 	logger.PduSessLog.Traceln("In AllocateLocalSEIDForDataPath")
 	for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
 		NodeIDtoIP := curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String()
 		logger.PduSessLog.Traceln("NodeIDtoIP: ", NodeIDtoIP)
 		if _, exist := smContext.PFCPContext[NodeIDtoIP]; !exist {
-			allocatedSEID, _ := AllocateLocalSEID()
+			allocatedSEID, err := AllocateLocalSEID()
+			if err != nil {
+				logger.PduSessLog.Errorf("allocateLocalSEID failed, %v", err)
+			}
 			smContext.PFCPContext[NodeIDtoIP] = &PFCPSessionContext{
 				PDRs:      make(map[uint16]*PDR),
 				NodeID:    curDataPathNode.UPF.NodeID,
@@ -492,8 +480,8 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 	}
 }
 
-func (smContext *SMContext) PutPDRtoPFCPSession(nodeID pfcpType.NodeID, pdrList map[string]*PDR) error {
-	//TODO: Iterate over PDRS
+func (smContext *SMContext) PutPDRtoPFCPSession(nodeID NodeID, pdrList map[string]*PDR) error {
+	// TODO: Iterate over PDRS
 	NodeIDtoIP := nodeID.ResolveNodeIdToIp().String()
 	if pfcpSessCtx, exist := smContext.PFCPContext[NodeIDtoIP]; exist {
 		for name, pdr := range pdrList {
@@ -505,7 +493,7 @@ func (smContext *SMContext) PutPDRtoPFCPSession(nodeID pfcpType.NodeID, pdrList 
 	return nil
 }
 
-func (smContext *SMContext) RemovePDRfromPFCPSession(nodeID pfcpType.NodeID, pdr *PDR) {
+func (smContext *SMContext) RemovePDRfromPFCPSession(nodeID NodeID, pdr *PDR) {
 	NodeIDtoIP := nodeID.ResolveNodeIdToIp().String()
 	pfcpSessCtx := smContext.PFCPContext[NodeIDtoIP]
 	delete(pfcpSessCtx.PDRs, pdr.PDRID)
@@ -539,19 +527,19 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 	switch supportedPDUSessionType {
 	case "IPv4":
 		if !allowIPv4 {
-			return fmt.Errorf("No SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
 		}
 	case "IPv6":
 		if !allowIPv6 {
-			return fmt.Errorf("No SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
 		}
 	case "IPv4v6":
 		if !allowIPv4 && !allowIPv6 {
-			return fmt.Errorf("No SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
 		}
 	case "Ethernet":
 		if !allowEthernet {
-			return fmt.Errorf("No SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
 		}
 	}
 
@@ -593,7 +581,7 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 		return fmt.Errorf("Unstructured PDU Session type")
 	// End of Modification
 	default:
-		return fmt.Errorf("Requested PDU Sesstion type[%d] is not supported", requestedPDUSessionType)
+		return fmt.Errorf("requested PDU Sesstion type[%d] is not supported", requestedPDUSessionType)
 	}
 	return nil
 }
@@ -602,7 +590,7 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 
 // SelectedSessionRule - return the SMF selected session rule for this SM Context
 func (smContext *SMContext) SelectedSessionRule() *models.SessionRule {
-	//Policy update in progress
+	// Policy update in progress
 	if len(smContext.SmPolicyUpdates) > 0 {
 		return smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule
 	} else {
@@ -670,21 +658,24 @@ func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) 
 }
 
 func (smContext *SMContext) CommitSmPolicyDecision(status bool) error {
-	//Lock SM context
+	// Lock SM context
 	smContext.SMLock.Lock()
 	defer smContext.SMLock.Unlock()
 
 	if status {
-		qos.CommitSmPolicyDecision(&smContext.SmPolicyData, smContext.SmPolicyUpdates[0])
+		err := qos.CommitSmPolicyDecision(&smContext.SmPolicyData, smContext.SmPolicyUpdates[0])
+		if err != nil {
+			logger.CtxLog.Errorf("failed to commit SM Policy Decision, %v", err)
+		}
 	}
 
-	//Release 0th index update
+	// Release 0th index update
 	if len(smContext.SmPolicyUpdates) >= 1 {
 		smContext.SmPolicyUpdates = smContext.SmPolicyUpdates[1:]
 	}
 
-	//Notify PCF of failure ?
-	//TODO
+	// Notify PCF of failure ?
+	// TODO
 	return nil
 }
 
@@ -692,8 +683,8 @@ func (smContext *SMContext) getSmCtxtUpf() (name, ip string) {
 	var upfName, upfIP string
 	if smContext.SMContextState == SmStateActive {
 		if smContext.Tunnel != nil {
-			//Set UPF FQDN name if provided else IP-address
-			if smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdType == pfcpType.NodeIdTypeFqdn {
+			// Set UPF FQDN name if provided else IP-address
+			if smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdType == NodeIdTypeFqdn {
 				upfName = string(smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdValue)
 				upfName = strings.Split(upfName, ".")[0]
 				upfIP = smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.ResolveNodeIdToIp().String()
@@ -708,10 +699,13 @@ func (smContext *SMContext) getSmCtxtUpf() (name, ip string) {
 
 // Collect Ctxt info and publish on Kafka stream
 func (smContext *SMContext) PublishSmCtxtInfo() {
+	if !*factory.SmfConfig.Configuration.KafkaInfo.EnableKafka {
+		return
+	}
 	var op mi.SubscriberOp
 	kafkaSmCtxt := mi.CoreSubscriber{}
 
-	//Populate kafka sm ctxt struct
+	// Populate kafka sm ctxt struct
 	kafkaSmCtxt.Imsi = smContext.Supi
 	if smContext.PDUAddress != nil && smContext.PDUAddress.Ip != nil {
 		kafkaSmCtxt.IPAddress = smContext.PDUAddress.Ip.String()
@@ -723,32 +717,35 @@ func (smContext *SMContext) PublishSmCtxtInfo() {
 	kafkaSmCtxt.UpfName, kafkaSmCtxt.UpfAddr = smContext.getSmCtxtUpf()
 	kafkaSmCtxt.SmfIp = SMF_Self().PodIp
 
-	//Send to stream
-	metrics.GetWriter().PublishPduSessEvent(kafkaSmCtxt, op)
+	// Send to stream
+	err := metrics.GetWriter().PublishPduSessEvent(kafkaSmCtxt, op)
+	if err != nil {
+		smContext.SubCtxLog.Errorf("failed to publish sm ctxt info on kafka stream: %v", err)
+	}
 }
 
 func mapPduSessStateToMetricStateAndOp(state SMContextState) (string, mi.SubscriberOp) {
 	switch state {
 	case SmStateInit:
-		return "Idle", mi.SubsOpAdd
+		return IDLE, mi.SubsOpAdd
 	case SmStateActivePending:
-		return "Idle", mi.SubsOpMod
+		return IDLE, mi.SubsOpMod
 	case SmStateActive:
-		return "Connected", mi.SubsOpMod
+		return CONNECTED, mi.SubsOpMod
 	case SmStateInActivePending:
-		return "Idle", mi.SubsOpMod
+		return IDLE, mi.SubsOpMod
 	case SmStateModify:
-		return "Connected", mi.SubsOpMod
+		return CONNECTED, mi.SubsOpMod
 	case SmStatePfcpCreatePending:
-		return "Idle", mi.SubsOpMod
+		return IDLE, mi.SubsOpMod
 	case SmStatePfcpModify:
-		return "Connected", mi.SubsOpMod
+		return CONNECTED, mi.SubsOpMod
 	case SmStatePfcpRelease:
-		return "Disconnected", mi.SubsOpDel
+		return DISCONNECTED, mi.SubsOpDel
 	case SmStateRelease:
-		return "Disconnected", mi.SubsOpDel
+		return DISCONNECTED, mi.SubsOpDel
 	case SmStateN1N2TransferPending:
-		return "Idle", mi.SubsOpMod
+		return IDLE, mi.SubsOpMod
 	default:
 		return "unknown", mi.SubsOpDel
 	}
