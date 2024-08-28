@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/omec-project/openapi/models"
+	"github.com/omec-project/smf/logger"
 )
 
 const (
@@ -83,13 +84,13 @@ type PacketFilterComponent struct {
 type PacketFilter struct {
 	Content       []PacketFilterComponent
 	Direction     uint8
-	Identifier    uint8 //only 0-15
+	Identifier    uint8 // only 0-15
 	ContentLength uint8
 }
 
 type QosRule struct {
 	PacketFilterList []PacketFilter
-	Identifier       uint8 //0 0 0 0 0 0 0 1	QRI 1 to 1 1 1 1 1 1 1 1	QRI 255
+	Identifier       uint8 // 0 0 0 0 0 0 0 1	QRI 1 to 1 1 1 1 1 1 1 1	QRI 255
 	OperationCode    uint8
 	DQR              uint8
 	Segregation      uint8
@@ -115,7 +116,7 @@ func BuildAddDefaultQosRule(defQFI uint8) *QosRule {
 
 	defPfc := PacketFilterComponent{
 		ComponentType: PFComponentTypeMatchAll,
-		//ComponentValue: NA for Match All
+		// ComponentValue: NA for Match All
 	}
 	defQosRule.PacketFilterList[0].Content = []PacketFilterComponent{defPfc}
 	defQosRule.PacketFilterList[0].ContentLength = 0x01
@@ -129,7 +130,7 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	smPolicyDecision := smPolicyUpdates.SmPolicyDecision
 	pccRulesUpdate := smPolicyUpdates.PccRuleUpdate
 
-	//New Rules to be added
+	// New Rules to be added
 	if pccRulesUpdate != nil {
 		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
 			log.Printf("Building QoS Rule from PCC rule [%s]", pccRuleName)
@@ -147,11 +148,11 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 		}
 	*/
 
-	//Rules to be modified
-	//TODO
+	// Rules to be modified
+	// TODO
 
-	//Rules to be deleted
-	//TODO
+	// Rules to be deleted
+	// TODO
 	return qosRules
 }
 
@@ -186,7 +187,7 @@ func btou(b bool) uint8 {
 
 func GetQosRuleIdFromPccRuleId(pccRuleId string) uint8 {
 	if id, err := strconv.Atoi(pccRuleId); err != nil {
-		//TODO: Error Log
+		// TODO: Error Log
 		return 0
 	} else {
 		return uint8(id)
@@ -196,7 +197,7 @@ func GetQosRuleIdFromPccRuleId(pccRuleId string) uint8 {
 func (q *QosRule) BuildPacketFilterListFromPccRule(pccRule *models.PccRule) {
 	pfList := []PacketFilter{}
 
-	//Iterate through
+	// Iterate through
 	for _, flow := range pccRule.FlowInfos {
 		pf := GetPacketFilterFromFlowInfo(&flow)
 		pfList = append(pfList, pf)
@@ -210,7 +211,7 @@ func GetPacketFilterFromFlowInfo(flowInfo *models.FlowInformation) PacketFilter 
 		Direction:  GetPfDirectionFromPccFlowInfo(flowInfo.FlowDirection),
 	}
 
-	//Fill PF component contents
+	// Fill PF component contents
 	pf.GetPfContent(flowInfo.FlowDescription)
 
 	return *pf
@@ -218,7 +219,7 @@ func GetPacketFilterFromFlowInfo(flowInfo *models.FlowInformation) PacketFilter 
 
 func GetPfId(ids string) uint8 {
 	if id, err := strconv.Atoi(ids); err != nil {
-		//TODO: Error Log
+		// TODO: Error Log
 		return 0
 	} else {
 		return (uint8(id) & PacketFilterIdBitmask)
@@ -235,7 +236,7 @@ func GetPfDirectionFromPccFlowInfo(flowDir models.FlowDirectionRm) uint8 {
 	case models.FlowDirectionRm_BIDIRECTIONAL:
 		return PacketFilterDirectionBidirectional
 	default:
-		//TODO: Error Log
+		// TODO: Error Log
 		return PacketFilterDirectionBidirectional
 	}
 }
@@ -246,35 +247,35 @@ func GetPfDirectionFromPccFlowInfo(flowDir models.FlowDirectionRm) uint8 {
 //
 // See spec 29212-5.4.2 / 29512-5.6.3.2
 func DecodeFlowDescToIPFilters(flowDesc string) *IPFilterRule {
-	//Tokenize flow desc and make PF components
+	// Tokenize flow desc and make PF components
 	pfcTags := strings.Fields(flowDesc)
 
-	//get PF tags into IP filter components
+	// get PF tags into IP filter components
 	ipfRule := &IPFilterRule{}
 
-	//Protocol Id/Next Header
+	// Protocol Id/Next Header
 	ipfRule.protoId = pfcTags[2]
 
-	//decode source IP/mask
+	// decode source IP/mask
 	ipfRule.decodeIpFilterAddrv4(true, pfcTags[4])
 
-	//decode source port/port-range (optional)
+	// decode source port/port-range (optional)
 	if pfcTags[6] == "to" {
-		//decode source port/port-range
+		// decode source port/port-range
 		ipfRule.decodeIpFilterPortInfo(true, pfcTags[5])
 
-		//decode destination IP/mask
+		// decode destination IP/mask
 		ipfRule.decodeIpFilterAddrv4(false, pfcTags[7])
 
-		//decode destination port/port-range(optional), if any
+		// decode destination port/port-range(optional), if any
 		if len(pfcTags) == 9 {
 			ipfRule.decodeIpFilterPortInfo(false, pfcTags[8])
 		}
 	} else {
-		//decode destination IP/mask
+		// decode destination IP/mask
 		ipfRule.decodeIpFilterAddrv4(false, pfcTags[6])
 
-		//decode destination port/port-range(optional), if any
+		// decode destination port/port-range(optional), if any
 		if len(pfcTags) == 8 {
 			ipfRule.decodeIpFilterPortInfo(false, pfcTags[7])
 		}
@@ -290,11 +291,11 @@ func (ipf *IPFilterRule) IsMatchAllIPFilter() bool {
 	return false
 }
 
-func (ipfRule *IPFilterRule) decodeIpFilterPortInfo(source bool, tag string) error {
-	//check if it is single port or range
+func (ipfRule *IPFilterRule) decodeIpFilterPortInfo(source bool, tag string) {
+	// check if it is single port or range
 	ports := strings.Split(tag, "-")
 
-	if len(ports) > 1 { //port range
+	if len(ports) > 1 { // port range
 		if source {
 			ipfRule.sPortRange.lowLimit = ports[0]
 			ipfRule.sPortRange.highLimit = ports[1]
@@ -309,10 +310,9 @@ func (ipfRule *IPFilterRule) decodeIpFilterPortInfo(source bool, tag string) err
 			ipfRule.dPort = ports[0]
 		}
 	}
-	return nil
 }
 
-func (ipfRule *IPFilterRule) decodeIpFilterAddrv4(source bool, tag string) error {
+func (ipfRule *IPFilterRule) decodeIpFilterAddrv4(source bool, tag string) {
 	ipAndMask := strings.Split(tag, "/")
 	if source {
 		ipfRule.sAddrv4.addr = ipAndMask[0] // can be x.x.x.x or "any"
@@ -320,7 +320,7 @@ func (ipfRule *IPFilterRule) decodeIpFilterAddrv4(source bool, tag string) error
 		ipfRule.dAddrv4.addr = ipAndMask[0] // can be x.x.x.x or "assigned"
 	}
 
-	//mask can be nil
+	// mask can be nil
 	if len(ipAndMask) > 1 {
 		if source {
 			ipfRule.sAddrv4.mask = ipAndMask[1]
@@ -328,7 +328,6 @@ func (ipfRule *IPFilterRule) decodeIpFilterAddrv4(source bool, tag string) error
 			ipfRule.dAddrv4.mask = ipAndMask[1]
 		}
 	}
-	return nil
 }
 
 func (pf *PacketFilter) GetPfContent(flowDesc string) {
@@ -336,9 +335,9 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 
 	ipf := DecodeFlowDescToIPFilters(flowDesc)
 
-	//Make Packet Filter Component from decoded IPFilters
+	// Make Packet Filter Component from decoded IPFilters
 
-	//MatchAll Packet Filter
+	// MatchAll Packet Filter
 	if ipf.IsMatchAllIPFilter() {
 		pfc := &PacketFilterComponent{
 			ComponentType: PFComponentTypeMatchAll,
@@ -350,43 +349,43 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 		return
 	}
 
-	//Protocol identifier/Next header type
+	// Protocol identifier/Next header type
 	if pfc, len := BuildPFCompProtocolId(ipf.protoId); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
-	//Remote Addr
+	// Remote Addr
 	if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
-	//Remote Port
+	// Remote Port
 	if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
-	//Remote Port range
+	// Remote Port range
 	if pfc, len := buildPFCompPortRange(false, ipf.sPortRange); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
-	//Local Addr
+	// Local Addr
 	if pfc, len := buildPFCompAddr(true, ipf.dAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
-	//Local Port
+	// Local Port
 	if pfc, len := buildPFCompPort(true, ipf.dPort); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
-	//Local Port range
+	// Local Port range
 	if pfc, len := buildPFCompPortRange(true, ipf.dPortRange); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
@@ -400,12 +399,12 @@ func buildPFCompAddr(local bool, val IPFilterRuleIpAddrV4) (*PacketFilterCompone
 
 	if local {
 		component = PFComponentTypeIPv4LocalAddress
-		//if local address value- "assigned" then don't need to set it
+		// if local address value- "assigned" then don't need to set it
 		if val.addr == "assigned" {
 			return nil, 0
 		}
 	} else {
-		//if remote address value- "any" then don't need to set it
+		// if remote address value- "any" then don't need to set it
 		if val.addr == "any" {
 			return nil, 0
 		}
@@ -421,7 +420,7 @@ func buildPFCompAddr(local bool, val IPFilterRuleIpAddrV4) (*PacketFilterCompone
 	if ipAddr := net.ParseIP(val.addr); ipAddr == nil {
 		return nil, 0
 	} else {
-		//check if it is valid v4 addr
+		// check if it is valid v4 addr
 		if v4addr := ipAddr.To4(); v4addr == nil {
 			return nil, 0
 		} else {
@@ -431,7 +430,10 @@ func buildPFCompAddr(local bool, val IPFilterRuleIpAddrV4) (*PacketFilterCompone
 	}
 
 	if val.mask != "" {
-		maskInt, _ := strconv.Atoi(val.mask)
+		maskInt, err := strconv.Atoi(val.mask)
+		if err != nil {
+			logger.QosLog.Errorf("error converting mask to int: %s", err)
+		}
 		mask = net.CIDRMask(maskInt, 32)
 		pfc.ComponentValue = append(pfc.ComponentValue, mask...)
 	} else {
@@ -479,13 +481,13 @@ func buildPFCompPortRange(local bool, val IPFilterRulePortRange) (*PacketFilterC
 		ComponentValue: make([]byte, 4),
 	}
 
-	//low port value
+	// low port value
 	if port, err := strconv.Atoi(val.lowLimit); err == nil {
 		port16 := uint16(port)
 		pfc.ComponentValue = []byte{byte(port16 >> 8), byte(port16 & 0xff)}
 	}
 
-	//high port value
+	// high port value
 	if port, err := strconv.Atoi(val.highLimit); err == nil {
 		port16 := uint16(port)
 		pfc.ComponentValue = append(pfc.ComponentValue, byte(port16>>8), byte(port16&0xff))
@@ -508,7 +510,7 @@ func BuildPFCompProtocolId(val string) (*PacketFilterComponent, uint8) {
 		binary.BigEndian.PutUint32(bs, uint32(pfcVal))
 		pfc.ComponentValue = []byte{bs[3]}
 	} else {
-		//log TODO
+		// log TODO
 		return nil, 0
 	}
 
@@ -524,7 +526,7 @@ func (pf *PacketFilter) MarshalBinary() (data []byte, err error) {
 		return nil, err
 	}
 	// write length of packet filter
-	err = packetFilterBuffer.WriteByte(pf.ContentLength) //uint8(len(pf.Content)))
+	err = packetFilterBuffer.WriteByte(pf.ContentLength) // uint8(len(pf.Content)))
 	if err != nil {
 		return nil, err
 	}

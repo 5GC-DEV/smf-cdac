@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2022-present Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
-//
 package config
 
 import (
@@ -10,15 +9,17 @@ import (
 	"os"
 	"sync"
 	"time"
-	"upf-adapter/logger"
 
-	"github.com/omec-project/pfcp"
-	"github.com/omec-project/pfcp/pfcpType"
+	"upf-adapter/logger"
+	"upf-adapter/types"
+
+	"github.com/wmnsk/go-pfcp/ie"
+	"github.com/wmnsk/go-pfcp/message"
 )
 
 type UPFStatus int
 
-const MaxUpfProbeRetryInterval time.Duration = 5 //Seconds
+const MaxUpfProbeRetryInterval time.Duration = 5 // Seconds
 
 var UpfCfg Config
 
@@ -28,18 +29,18 @@ const (
 	AssociatedSetUpSuccess UPFStatus = 2
 )
 
-//UPF structure
+// UPF structure
 type UPNode struct {
 	UpfName     string
-	NodeID      pfcpType.NodeID
+	NodeID      types.NodeID
 	ANIP        net.IP
 	State       UPFStatus
-	LastAssoRsp interface{}
-	LastHBRsp   interface{}
+	LastAssoRsp message.AssociationSetupResponse
+	LastHBRsp   message.HeartbeatResponse
 	UpfLock     sync.RWMutex
 }
 
-//All UPF nodes
+// All UPF nodes
 type Config struct {
 	UpfListLock sync.RWMutex
 	UPFs        map[string]*UPNode
@@ -47,12 +48,16 @@ type Config struct {
 
 type UdpPodMsgType int
 
+type adapterMessage struct {
+	Body []byte `json:"body"`
+}
+
 type UdpPodPfcpMsg struct {
-	SmfIp    string          `json:"smfIp"`
-	UpNodeID pfcpType.NodeID `json:"upNodeID"`
+	SmfIp    string       `json:"smfIp"`
+	UpNodeID types.NodeID `json:"upNodeID"`
 	// message type contains in Msg.Header
-	Msg  pfcp.Message `json:"pfcpMsg"`
-	Addr *net.UDPAddr `json:"addr"`
+	Msg  adapterMessage `json:"pfcpMsg"`
+	Addr *net.UDPAddr   `json:"addr"`
 }
 
 type PfcpHttpRsp struct {
@@ -62,14 +67,17 @@ type PfcpHttpRsp struct {
 
 type PfcpTxnChan chan PfcpHttpRsp
 
-var UpfTxns map[uint32]PfcpTxnChan
-var UpfTxnsMutex = sync.RWMutex{}
+var (
+	UpfTxns      map[uint32]PfcpTxnChan
+	UpfTxnsMutex = sync.RWMutex{}
+)
 
-var UpfAdapterIp net.IP
-var UpfServerStartTime time.Time
+var (
+	UpfAdapterIp       net.IP
+	UpfServerStartTime time.Time
+)
 
 func init() {
-
 	podIpStr := os.Getenv("POD_IP")
 	podIp := net.ParseIP(podIpStr)
 	UpfAdapterIp = podIp.To4()
@@ -79,21 +87,19 @@ func init() {
 	}
 
 	UpfTxns = make(map[uint32]PfcpTxnChan)
-
 }
 
-//BuildPfcpHeartbeatRequest shall trigger hearbeat request to all Attached UPFs
-func BuildPfcpHeartbeatRequest() (pfcp.HeartbeatRequest, error) {
-	msg := pfcp.HeartbeatRequest{}
-
-	msg.RecoveryTimeStamp = &pfcpType.RecoveryTimeStamp{
-		RecoveryTimeStamp: UpfServerStartTime,
-	}
-
+// BuildPfcpHeartbeatRequest shall trigger hearbeat request to all Attached UPFs
+func BuildPfcpHeartbeatRequest() (*message.HeartbeatRequest, error) {
+	msg := message.NewHeartbeatRequest(
+		0,
+		ie.NewRecoveryTimeStamp(UpfServerStartTime),
+		nil,
+	)
 	return msg, nil
 }
 
-func IsUpfAssociated(nodeId pfcpType.NodeID) bool {
+func IsUpfAssociated(nodeId types.NodeID) bool {
 	UpfCfg.UpfListLock.RLock()
 	defer UpfCfg.UpfListLock.RUnlock()
 
@@ -112,7 +118,7 @@ func IsUpfAssociated(nodeId pfcpType.NodeID) bool {
 	return false
 }
 
-func GetUpfFromNodeId(nodeId *pfcpType.NodeID) *UPNode {
+func GetUpfFromNodeId(nodeId *types.NodeID) *UPNode {
 	UpfCfg.UpfListLock.RLock()
 	defer UpfCfg.UpfListLock.RUnlock()
 
@@ -120,13 +126,13 @@ func GetUpfFromNodeId(nodeId *pfcpType.NodeID) *UPNode {
 	logger.CfgLog.Debugf("content of upf config [%v] ", UpfCfg.UPFs)
 
 	for _, upf := range UpfCfg.UPFs {
-		if nodeId.NodeIdType == pfcpType.NodeIdTypeIpv4Address {
+		if nodeId.NodeIdType == types.NodeIdTypeIpv4Address {
 			if bytes.Equal(upf.ANIP.To4(), nodeId.NodeIdValue) {
 				logger.CfgLog.Debugf("getting upf from node id, ip-addr [%v, %v] successful", nodeId, upf.ANIP.To4())
 				return upf
 			}
-		} else if nodeId.NodeIdType == pfcpType.NodeIdTypeFqdn &&
-			upf.NodeID.NodeIdType == pfcpType.NodeIdTypeFqdn {
+		} else if nodeId.NodeIdType == types.NodeIdTypeFqdn &&
+			upf.NodeID.NodeIdType == types.NodeIdTypeFqdn {
 			if bytes.Equal(nodeId.NodeIdValue, upf.NodeID.NodeIdValue) {
 				logger.CfgLog.Debugf("getting upf from node id, fqdn [%v, %v] successful", nodeId, nodeId.NodeIdValue)
 				return upf
@@ -137,11 +143,11 @@ func GetUpfFromNodeId(nodeId *pfcpType.NodeID) *UPNode {
 	return nil
 }
 
-func InsertUpfNode(nodeId pfcpType.NodeID) {
+func InsertUpfNode(nodeId types.NodeID) {
 	UpfCfg.UpfListLock.Lock()
 	defer UpfCfg.UpfListLock.Unlock()
 
-	//if UPF is already not added
+	// if UPF is already not added
 	if _, ok := UpfCfg.UPFs[string(nodeId.NodeIdValue)]; !ok {
 
 		upf := UPNode{
@@ -155,8 +161,7 @@ func InsertUpfNode(nodeId pfcpType.NodeID) {
 	}
 }
 
-func ActivateUpfNode(nodeId *pfcpType.NodeID) *UPNode {
-
+func ActivateUpfNode(nodeId *types.NodeID) *UPNode {
 	logger.CfgLog.Infof("activating upf node [%v]", nodeId)
 	if upf := GetUpfFromNodeId(nodeId); upf != nil {
 		UpfCfg.UpfListLock.Lock()
@@ -199,23 +204,18 @@ func GetUpfPfcpTxn(seq uint32) PfcpTxnChan {
 	return nil
 }
 
-func (upf *UPNode) PreservePfcpAssociationRsp(pfcpRspBody pfcp.PFCPAssociationSetupResponse) {
-	//find the UPF
+func (upf *UPNode) PreservePfcpAssociationRsp(pfcpRspBody message.AssociationSetupResponse) {
+	// find the UPF
 	logger.CfgLog.Debugf("storing pfcp association response for upf [%v] ", upf)
 	upf.UpfLock.Lock()
 	defer upf.UpfLock.Unlock()
 	upf.LastAssoRsp = pfcpRspBody
 }
 
-func (upf *UPNode) PreservePfcpHeartBeatRsp(pfcpRspBody pfcp.HeartbeatResponse) {
-	//find the UPF
+func (upf *UPNode) PreservePfcpHeartBeatRsp(pfcpRspBody message.HeartbeatResponse) {
+	// find the UPF
 	logger.CfgLog.Debugf("storing pfcp heartbeat response for upf [%v] ", upf)
 	upf.UpfLock.Lock()
 	defer upf.UpfLock.Unlock()
 	upf.LastHBRsp = pfcpRspBody
-}
-
-type UdpPodPfcpRspMsg struct {
-	// message type contains in Msg.Header
-	Msg pfcp.Message `json:"msg"`
 }

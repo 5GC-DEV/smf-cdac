@@ -1,164 +1,133 @@
 // SPDX-FileCopyrightText: 2022-present Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
-//
 package pfcp
 
 import (
-	"encoding/json"
 	"fmt"
+
 	"upf-adapter/config"
 	"upf-adapter/logger"
 	"upf-adapter/pfcp/handler"
 	"upf-adapter/pfcp/message"
+	"upf-adapter/types"
 
-	"github.com/omec-project/pfcp"
-	"github.com/omec-project/pfcp/pfcpType"
+	"github.com/wmnsk/go-pfcp/ie"
+	pfcp_message "github.com/wmnsk/go-pfcp/message"
 )
 
-func JsonBodyToPfcpAssocReq(body interface{}) pfcp.PFCPAssociationSetupRequest {
-
-	jsonString, _ := json.Marshal(body)
-
-	s := pfcp.PFCPAssociationSetupRequest{}
-	json.Unmarshal(jsonString, &s)
-
-	return s
-}
-
-func JsonBodyToPfcpHeartbeatReq(body interface{}) pfcp.HeartbeatRequest {
-
-	jsonString, _ := json.Marshal(body)
-
-	s := pfcp.HeartbeatRequest{}
-	json.Unmarshal(jsonString, &s)
-
-	return s
-}
-
-func JsonBodyToPfcpSessEstReq(body interface{}) pfcp.PFCPSessionEstablishmentRequest {
-
-	jsonString, _ := json.Marshal(body)
-
-	s := pfcp.PFCPSessionEstablishmentRequest{}
-	json.Unmarshal(jsonString, &s)
-
-	return s
-}
-
-func JsonBodyToPfcpSessModReq(body interface{}) pfcp.PFCPSessionModificationRequest {
-
-	jsonString, _ := json.Marshal(body)
-
-	s := pfcp.PFCPSessionModificationRequest{}
-	json.Unmarshal(jsonString, &s)
-
-	return s
-}
-
-func JsonBodyToPfcpSessDelReq(body interface{}) pfcp.PFCPSessionDeletionRequest {
-
-	jsonString, _ := json.Marshal(body)
-
-	s := pfcp.PFCPSessionDeletionRequest{}
-	json.Unmarshal(jsonString, &s)
-
-	return s
-}
-
-func ForwardPfcpMsgToUpf(udpPodMsg config.UdpPodPfcpMsg) ([]byte, error) {
-
-	pMsg := udpPodMsg.Msg
-	nodeId := udpPodMsg.UpNodeID
+func ForwardPfcpMsgToUpf(pfcpMessage pfcp_message.Message, upNodeID types.NodeID) ([]byte, error) {
 	pfcpTxnChan := make(config.PfcpTxnChan)
 	var err error
 
-	//identify msg type
-	switch pMsg.Header.MessageType {
-	case pfcp.PFCP_ASSOCIATION_SETUP_REQUEST:
-		//if UPF is already associated then send Asso rsp
+	// identify msg type
+	msgType := pfcpMessage.MessageType()
+	switch msgType {
+	case pfcp_message.MsgTypeAssociationSetupRequest:
+		// if UPF is already associated then send Asso rsp
+		if config.IsUpfAssociated(upNodeID) {
 
-		if config.IsUpfAssociated(udpPodMsg.UpNodeID) {
-			logger.AppLog.Debug("upf[%v] already associated", udpPodMsg.UpNodeID)
-			//form and send Assoc rsp
-			pfcpRsp, _ := handler.BuildPfcpAssociationResponse(&udpPodMsg.UpNodeID, pMsg.Header.SequenceNumber)
-			pRspJson, _ := json.Marshal(pfcpRsp)
-
-			return pRspJson, nil
+			logger.AppLog.Debugf("upf[%v] already associated", upNodeID)
+			// form and send Assoc rsp
+			pfcpAssociationRsp, err := handler.BuildPfcpAssociationResponse(&upNodeID, pfcpMessage.Sequence())
+			if err != nil {
+				return nil, fmt.Errorf("error building association response: %v", err)
+			}
+			buf := make([]byte, pfcpAssociationRsp.MarshalLen())
+			err = pfcpAssociationRsp.MarshalTo(buf)
+			if err != nil {
+				return nil, err
+			}
+			return buf, nil
 		}
 
-		config.InsertUpfNode(udpPodMsg.UpNodeID)
+		config.InsertUpfNode(upNodeID)
 
-		//store txn in seq:chan map
-		s := JsonBodyToPfcpAssocReq(pMsg.Body)
+		associationReq, ok := pfcpMessage.(*pfcp_message.AssociationSetupRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid association setup request")
+		}
 
-		//replace smf time-stamp with UPF-Adapters timestamp
-		s.RecoveryTimeStamp.RecoveryTimeStamp = config.UpfServerStartTime
+		// replace smf time-stamp with UPF-Adapters timestamp
+		associationReq.RecoveryTimeStamp = ie.NewRecoveryTimeStamp(config.UpfServerStartTime)
 
-		logger.AppLog.Debugf("association request, existing node id[%v], replaced by [%v]", s.NodeID, config.UpfAdapterIp)
+		// replace SMF NodeId with of upf-adapter's one
+		associationReq.NodeID = ie.NewNodeID(config.UpfAdapterIp.String(), "", "")
+		logger.AppLog.Debugf("association request, existing node id replaced by [%v]", config.UpfAdapterIp)
 
-		//replace SMF NodeId with of upf-adapter's one
-		s.NodeID = &pfcpType.NodeID{NodeIdType: pfcpType.NodeIdTypeIpv4Address, NodeIdValue: config.UpfAdapterIp}
+		// store txn in seq:chan map
+		config.InsertUpfPfcpTxn(associationReq.Sequence(), pfcpTxnChan)
+		err = message.SendPfcpAssociationSetupRequest(upNodeID, associationReq)
+		if err != nil {
+			return nil, err
+		}
+	case pfcp_message.MsgTypeHeartbeatRequest:
 
-		pMsg.Body = s
-		config.InsertUpfPfcpTxn(pMsg.Header.SequenceNumber, pfcpTxnChan)
-		err = message.SendPfcpAssociationSetupRequest(nodeId, pMsg)
+		heartbeatReq, ok := pfcpMessage.(*pfcp_message.HeartbeatRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid heartbeat request")
+		}
 
-	case pfcp.PFCP_HEARTBEAT_REQUEST:
-		/*
-			if config.IsUpfAssociated(udpPodMsg.UpNodeID) {
-				logger.AppLog.Debug("upf[%v] already associated", udpPodMsg.UpNodeID)
+		// replace smf time-stamp with UPF-Adapters timestamp
+		heartbeatReq.RecoveryTimeStamp = ie.NewRecoveryTimeStamp(config.UpfServerStartTime)
 
-				//form and send Heartbeat rsp
-				pfcpRsp, _ := handler.BuildPfcpHeartBeatResponse(&udpPodMsg.UpNodeID, pMsg.Header.SequenceNumber)
-				pRspJson, _ := json.Marshal(pfcpRsp)
+		// store txn in seq:chan map
+		config.InsertUpfPfcpTxn(heartbeatReq.Sequence(), pfcpTxnChan)
+		err = message.SendHeartbeatRequest(upNodeID, heartbeatReq)
+		if err != nil {
+			return nil, err
+		}
+	case pfcp_message.MsgTypeSessionEstablishmentRequest:
+		sessionEstablishmentReq, ok := pfcpMessage.(*pfcp_message.SessionEstablishmentRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid session establishment request")
+		}
+		// replace SMF NodeId with of upf-adapter's one
+		sessionEstablishmentReq.NodeID = ie.NewNodeID(config.UpfAdapterIp.String(), "", "")
 
-				return pRspJson, nil
-			}
-		*/
-		s := JsonBodyToPfcpHeartbeatReq(pMsg.Body)
+		// Replace SMF FSEID v4 Addr with UPF Adapter's IP
+		existingCPFSEID, err := sessionEstablishmentReq.CPFSEID.FSEID()
+		if err != nil {
+			return nil, fmt.Errorf("error getting FSEID from session establishment request")
+		}
+		sessionEstablishmentReq.CPFSEID = ie.NewFSEID(
+			existingCPFSEID.SEID,
+			config.UpfAdapterIp,
+			nil,
+		)
+		// store txn in seq:chan map
+		config.InsertUpfPfcpTxn(sessionEstablishmentReq.Sequence(), pfcpTxnChan)
 
-		//replace smf time-stamp with UPF-Adapters timestamp
-		s.RecoveryTimeStamp.RecoveryTimeStamp = config.UpfServerStartTime
+		err = message.SendPfcpSessionEstablishmentRequest(upNodeID, sessionEstablishmentReq)
+		if err != nil {
+			return nil, err
+		}
+	case pfcp_message.MsgTypeSessionModificationRequest:
+		sessionModificationReq, ok := pfcpMessage.(*pfcp_message.SessionModificationRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid session modification request")
+		}
 
-		//store txn in seq:chan map
-		config.InsertUpfPfcpTxn(pMsg.Header.SequenceNumber, pfcpTxnChan)
-		pMsg.Body = s
-		err = message.SendHeartbeatRequest(nodeId, pMsg)
-	case pfcp.PFCP_SESSION_ESTABLISHMENT_REQUEST:
-		s := JsonBodyToPfcpSessEstReq(pMsg.Body)
-		//replace SMF NodeId with of upf-adapter's one
-		s.NodeID = &pfcpType.NodeID{NodeIdType: pfcpType.NodeIdTypeIpv4Address, NodeIdValue: config.UpfAdapterIp}
-		//Replace SMF FSEID v4 Addr with UPF Adapter's IP
-		s.CPFSEID.Ipv4Address = config.UpfAdapterIp
-		pMsg.Body = s
-		//store txn in seq:chan map
-		config.InsertUpfPfcpTxn(pMsg.Header.SequenceNumber, pfcpTxnChan)
+		// store txn in seq:chan map
+		config.InsertUpfPfcpTxn(sessionModificationReq.Sequence(), pfcpTxnChan)
+		err = message.SendPfcpSessionModificationRequest(upNodeID, sessionModificationReq)
+		if err != nil {
+			return nil, err
+		}
+	case pfcp_message.MsgTypeSessionDeletionRequest:
+		sessionDeletionReq, ok := pfcpMessage.(*pfcp_message.SessionDeletionRequest)
+		if !ok {
+			return nil, fmt.Errorf("invalid session deletion request")
+		}
 
-		err = message.SendPfcpSessionEstablishmentRequest(nodeId, pMsg)
-	case pfcp.PFCP_SESSION_MODIFICATION_REQUEST:
-		s := JsonBodyToPfcpSessModReq(pMsg.Body)
-
-		//store txn in seq:chan map
-		config.InsertUpfPfcpTxn(pMsg.Header.SequenceNumber, pfcpTxnChan)
-		pMsg.Body = s
-		err = message.SendPfcpSessionModificationRequest(nodeId, pMsg)
-	case pfcp.PFCP_SESSION_DELETION_REQUEST:
-		s := JsonBodyToPfcpSessDelReq(pMsg.Body)
-
-		//store txn in seq:chan map
-		config.InsertUpfPfcpTxn(pMsg.Header.SequenceNumber, pfcpTxnChan)
-		pMsg.Body = s
-		message.SendPfcpSessionDeletionRequest(nodeId, pMsg)
+		// store txn in seq:chan map
+		config.InsertUpfPfcpTxn(sessionDeletionReq.Sequence(), pfcpTxnChan)
+		message.SendPfcpSessionDeletionRequest(upNodeID, sessionDeletionReq)
 	default:
-		return nil, fmt.Errorf("invalid msg type [%v] from smf", pMsg.Header.MessageType)
+		return nil, fmt.Errorf("invalid msg type [%v] from smf", msgType)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	//wait for response from UPF
+	// wait for response from UPF
 	pfcpRsp := <-pfcpTxnChan
 
 	return pfcpRsp.Rsp, pfcpRsp.Err
