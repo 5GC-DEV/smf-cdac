@@ -159,7 +159,6 @@ func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent,
 	}
 
 	eventData := SmEventData{Txn: txn}
-	//eventData := SmEventData{Txn: txn}
 	if eventData.Txn == nil {
 		smContext.SubFsmLog.Errorf("### event[%v], next-event[%v], eventData.Txn is nil", event, transaction.TxnEventFailure.String())
 		return transaction.TxnEventFailure, fmt.Errorf("TxnProcess, eventData.Txn is nil")
