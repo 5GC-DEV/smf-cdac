@@ -186,6 +186,11 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeUnstructured {
 		smContext.SubPduSessLog.Errorf("Unstructured PDU Session Not Supported")
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UnknownPDUSessionType")
+		if txn.Rsp == nil {
+			smContext.SubPduSessLog.Errorf("txn.Rsp is empty after generating PDU Session Establishment Reject")
+		} else {
+			smContext.SubPduSessLog.Infof("PDU Session Rejection Response generated successfully: %+v", txn.Rsp)
+		}
 		return fmt.Errorf("Unstructured PDU Session not supported error")
 	}
 	// End of CDAC edit
