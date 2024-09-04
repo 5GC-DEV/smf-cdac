@@ -159,6 +159,14 @@ func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent,
 	}
 
 	eventData := SmEventData{Txn: txn}
+	//eventData := SmEventData{Txn: txn}
+	if eventData.Txn == nil {
+		smContext.SubFsmLog.Errorf("### event[%v], next-event[%v], eventData.Txn is nil", event, transaction.TxnEventFailure.String())
+		return transaction.TxnEventFailure, fmt.Errorf("TxnProcess, eventData.Txn is nil")
+	}
+
+	// Log the event and eventData for debugging
+	smContext.SubFsmLog.Infof("### Processing event[%v] with eventData[%+v]", event, eventData)
 
 	if err := HandleEvent(smContext, event, eventData); err != nil {
 		smContext.SubFsmLog.Errorf("handle event[%v], err [%s]", transaction.TxnEventProcess.String(), err.Error())
