@@ -626,10 +626,13 @@ func (smContextState SMContextState) String() string {
 
 func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) *httpwrapper.Response {
 	var httpResponse *httpwrapper.Response
-
+	logger.CtxLog.Infof("### PDU Session Rejection Initiated ###")
+	logger.CtxLog.Infof("SMContext: %+v", smContext)
+	logger.CtxLog.Infof("Rejection Cause: %s", cause)
 	if buf, err := BuildGSMPDUSessionEstablishmentReject(
 		smContext,
 		errors.ErrorCause[cause]); err != nil {
+		logger.CtxLog.Errorf("Failed to build GSM PDU Session Establishment Reject message: %v", err)
 		httpResponse = &httpwrapper.Response{
 			Header: nil,
 			Status: int(errors.ErrorType[cause].Status),
@@ -641,6 +644,7 @@ func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) 
 			},
 		}
 	} else {
+		logger.CtxLog.Infof("GSM PDU Session Establishment Reject message built successfully")
 		httpResponse = &httpwrapper.Response{
 			Header: nil,
 			Status: int(errors.ErrorType[cause].Status),
@@ -653,7 +657,7 @@ func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) 
 			},
 		}
 	}
-
+	logger.CtxLog.Infof("PDU Session Rejection Response Generated: %+v", httpResponse)
 	return httpResponse
 }
 

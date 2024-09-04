@@ -92,10 +92,6 @@ func EmptyEventHandler(event SmEvent, eventData *SmEventData) (smf_context.SMCon
 }
 
 func HandleStateInitEventPduSessCreate(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
-	if eventData.Txn == nil {
-		logger.FsmLog.Errorln("eventData.Txn is nil")
-		return smf_context.SmStateInit, fmt.Errorf("eventData.Txn is nil")
-	}
 	if err := producer.HandlePDUSessionSMContextCreate(eventData.Txn); err != nil {
 		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
 		if err != nil {
