@@ -95,7 +95,7 @@ func HandleStateInitEventPduSessCreate(event SmEvent, eventData *SmEventData) (s
 	if err := producer.HandlePDUSessionSMContextCreate(eventData.Txn); err != nil {
 		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
 		if err != nil {
-			logger.FsmLog.Error("error while publishing pdu session create response failure, %v ", err.Error())
+			logger.FsmLog.Errorln("error while publishing pdu session create response failure, %v ", err.Error())
 		}
 		txn := eventData.Txn.(*transaction.Transaction)
 		txn.Err = err
@@ -104,7 +104,7 @@ func HandleStateInitEventPduSessCreate(event SmEvent, eventData *SmEventData) (s
 
 	err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_success)
 	if err != nil {
-		logger.FsmLog.Error("error while publishing pdu session create response success, %v ", err.Error())
+		logger.FsmLog.Errorln("error while publishing pdu session create response success, %v ", err.Error())
 	}
 	return smf_context.SmStatePfcpCreatePending, nil
 }
