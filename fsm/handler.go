@@ -9,6 +9,7 @@ import (
 
 	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
 	smf_context "github.com/omec-project/smf/context"
+	"github.com/omec-project/smf/logger"
 	stats "github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/producer"
 	"github.com/omec-project/smf/transaction"
@@ -92,13 +93,19 @@ func EmptyEventHandler(event SmEvent, eventData *SmEventData) (smf_context.SMCon
 
 func HandleStateInitEventPduSessCreate(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
 	if err := producer.HandlePDUSessionSMContextCreate(eventData.Txn); err != nil {
-		stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
+		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
+		if err != nil {
+			logger.FsmLog.Error("error while publishing pdu session create response failure, %v ", err.Error())
+		}
 		txn := eventData.Txn.(*transaction.Transaction)
 		txn.Err = err
 		return smf_context.SmStateInit, fmt.Errorf("pdu session create error, %v ", err.Error())
 	}
 
-	stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_success)
+	err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_success)
+	if err != nil {
+		logger.FsmLog.Error("error while publishing pdu session create response success, %v ", err.Error())
+	}
 	return smf_context.SmStatePfcpCreatePending, nil
 }
 
