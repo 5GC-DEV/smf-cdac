@@ -100,6 +100,7 @@ func SetNfInstanceId(s string) {
 }
 
 func PublishMsgEvent(msgType mi.SmfMsgType) error {
+	logger.KafkaLog.Logf("### Enter to PublishMsgEvent function###")
 	if !*factory.SmfConfig.Configuration.KafkaInfo.EnableKafka {
 		return nil
 	}
