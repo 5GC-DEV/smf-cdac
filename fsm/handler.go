@@ -93,14 +93,15 @@ func EmptyEventHandler(event SmEvent, eventData *SmEventData) (smf_context.SMCon
 
 func HandleStateInitEventPduSessCreate(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
 	if err := producer.HandlePDUSessionSMContextCreate(eventData.Txn); err != nil {
-		var errorMessage string = err.Error()
+		//var errorMessage string = err.Error()
 		logger.FsmLog.Infof("### Error Message: %v", err)
 		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
 		logger.FsmLog.Infof("### Error Message publishMsgEvent: %v", err)
-		//var errorMessage string = err.Error()
+		var errorMessage string = ""
 		if err != nil {
 			logger.FsmLog.Errorf("error while publishing pdu session create response failure, %v ", err.Error())
 			logger.FsmLog.Infof("Error Message: %v", err.Error()) // This will print the error message
+			errorMessage = err.Error()
 		}
 		txn := eventData.Txn.(*transaction.Transaction)
 		txn.Err = err
