@@ -92,31 +92,23 @@ func EmptyEventHandler(event SmEvent, eventData *SmEventData) (smf_context.SMCon
 }
 
 func HandleStateInitEventPduSessCreate(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
-	// Handle the PDU session SM context creation
 	if err := producer.HandlePDUSessionSMContextCreate(eventData.Txn); err != nil {
-		// Publish failure message event
-		if publishErr := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure); publishErr != nil {
-			if logger.FsmLog != nil {
-				logger.FsmLog.Errorf("error while publishing PDU session create response failure: %v", publishErr)
-			} else {
-				// Fallback logging if logger.FsmLog is nil
-				fmt.Printf("error while publishing PDU session create response failure: %v\n", publishErr)
-			}
+		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
+		var errorMessage string = err.Error()
+		if err != nil {
+			logger.FsmLog.Errorf("error while publishing pdu session create response failure, %v ", errorMessage)
+			logger.FsmLog.Infof("Error Message: %v", errorMessage) // This will print the error message
 		}
-		// Set transaction error
 		txn := eventData.Txn.(*transaction.Transaction)
 		txn.Err = err
-		return smf_context.SmStateInit, fmt.Errorf("PDU session create error: %v", err)
+		return smf_context.SmStateInit, fmt.Errorf("pdu session create error, %v ", errorMessage)
 	}
 
-	// Publish success message event
-	if err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_success); err != nil {
-		if logger.FsmLog != nil {
-			logger.FsmLog.Errorf("error while publishing PDU session create response success: %v", err)
-		} else {
-			// Fallback logging if logger.FsmLog is nil
-			fmt.Printf("error while publishing PDU session create response success: %v\n", err)
-		}
+	err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_success)
+	var errorMessage string = err.Error()
+	if err != nil {
+		logger.FsmLog.Errorf("error while publishing pdu session create response success, %v ", errorMessage)
+		logger.FsmLog.Infof("Error Message: %v", errorMessage) // This will print the error message
 	}
 	return smf_context.SmStatePfcpCreatePending, nil
 }
