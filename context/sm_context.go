@@ -626,9 +626,6 @@ func (smContextState SMContextState) String() string {
 
 func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) *httpwrapper.Response {
 	var httpResponse *httpwrapper.Response
-	logger.CtxLog.Infof("### PDU Session Rejection Initiated ###")
-	logger.CtxLog.Infof("SMContext: %+v", smContext)
-	logger.CtxLog.Infof("Rejection Cause: %s", cause)
 	if buf, err := BuildGSMPDUSessionEstablishmentReject(
 		smContext,
 		errors.ErrorCause[cause]); err != nil {
