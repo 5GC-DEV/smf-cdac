@@ -653,9 +653,9 @@ func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER,
 		DLFAR := DLPDR.FAR
 
 		logger.PduSessLog.Traceln("Current DP Node IP: ", dpNode.UPF.NodeID.ResolveNodeIdToIp().String())
-		logger.PduSessLog.Infof(" ######### Current DP Node IP: ", dpNode.UPF.NodeID.ResolveNodeIdToIp().String())
+		logger.CtxLog.Infof("######### Current DP Node IP: ", dpNode.UPF.NodeID.ResolveNodeIdToIp().String())
 		logger.PduSessLog.Traceln("Before DLPDR OuterHeaderCreation")
-		logger.PduSessLog.Infof(" #########  Before DLPDR OuterHeaderCreation")
+		logger.CtxLog.Infof("#########  Before DLPDR OuterHeaderCreation")
 		if nextDLDest := dpNode.Prev(); nextDLDest != nil {
 			logger.PduSessLog.Traceln("In DLPDR OuterHeaderCreation")
 			nextDLTunnel := nextDLDest.DownLinkTunnel
