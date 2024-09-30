@@ -103,13 +103,40 @@ func (node *DataPathNode) Next() *DataPathNode {
 	return next
 }
 
+/*
 func (node *DataPathNode) Prev() *DataPathNode {
 	if node.UpLinkTunnel == nil {
 		return nil
 	}
 	prev := node.UpLinkTunnel.SrcEndPoint
 	return prev
+} */
+
+// C-DAC Added
+
+func (node *DataPathNode) Prev() *DataPathNode {
+	logger.CtxLog.Infof("Entering Prev() for DataPathNode: %v", node)
+
+	// Check if the UpLinkTunnel is nil
+	if node.UpLinkTunnel == nil {
+		logger.CtxLog.Warnf("UpLinkTunnel is nil for DataPathNode: %v", node)
+		return nil
+	}
+
+	// Get the previous node in the path
+	prev := node.UpLinkTunnel.SrcEndPoint
+	if prev == nil {
+		logger.CtxLog.Warnf("Previous DataPathNode is nil for DataPathNode: %v", node)
+	} else {
+		logger.CtxLog.Infof("Previous DataPathNode found: %v", prev)
+	}
+
+	// Return the previous node
+	logger.CtxLog.Infof("Exiting Prev() for DataPathNode: %v", node)
+	return prev
 }
+
+// C-DAC End
 
 func (node *DataPathNode) ActivateUpLinkTunnel(smContext *SMContext) error {
 	var err error
@@ -626,7 +653,9 @@ func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER,
 		DLFAR := DLPDR.FAR
 
 		logger.PduSessLog.Traceln("Current DP Node IP: ", dpNode.UPF.NodeID.ResolveNodeIdToIp().String())
+		logger.PduSessLog.Infof(" ######### Current DP Node IP: ", dpNode.UPF.NodeID.ResolveNodeIdToIp().String())
 		logger.PduSessLog.Traceln("Before DLPDR OuterHeaderCreation")
+		logger.PduSessLog.Infof(" #########  Before DLPDR OuterHeaderCreation")
 		if nextDLDest := dpNode.Prev(); nextDLDest != nil {
 			logger.PduSessLog.Traceln("In DLPDR OuterHeaderCreation")
 			nextDLTunnel := nextDLDest.DownLinkTunnel
