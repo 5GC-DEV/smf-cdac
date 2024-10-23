@@ -206,6 +206,7 @@ func (upf *UPF) UUID() string {
 }
 
 func NewUPTunnel() (tunnel *UPTunnel) {
+	logger.CtxLog.Info("*** New UP tunnel")
 	tunnel = &UPTunnel{
 		DataPathPool:    make(DataPathPool),
 		PathIDGenerator: idgenerator.NewGenerator(1, 2147483647),
@@ -216,6 +217,7 @@ func NewUPTunnel() (tunnel *UPTunnel) {
 
 // *** add unit test ***//
 func (upTunnel *UPTunnel) AddDataPath(dataPath *DataPath) {
+	logger.CtxLog.Info("*** Add Path")
 	pathID, err := upTunnel.PathIDGenerator.Allocate()
 	if err != nil {
 		logger.CtxLog.Warnf("Allocate pathID error: %+v", err)
@@ -228,6 +230,7 @@ func (upTunnel *UPTunnel) AddDataPath(dataPath *DataPath) {
 // *** add unit test ***//
 // NewUPF returns a new UPF context in SMF
 func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
+	logger.CtxLog.Info("*** New UPF")
 	upf = new(UPF)
 	upf.uuid = uuid.New()
 

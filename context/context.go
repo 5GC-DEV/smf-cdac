@@ -90,11 +90,18 @@ type SMFContext struct {
 
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
 func RetrieveDnnInformation(Snssai models.Snssai, dnn string) *SnssaiSmfDnnInfo {
+	// Log the requested slice information
+	logger.CtxLog.Infof("*** RetrieveDnnInformation: Requested SNSSAI - SST: %d, SD: %s, DNN: %s", Snssai.Sst, Snssai.Sd, dnn)
 	for _, snssaiInfo := range SMF_Self().SnssaiInfos {
+		// Log the current slice information being checked
+		logger.CtxLog.Debugf("*** Checking SNSSAI - SST: %d, SD: %s", snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd)
 		if snssaiInfo.Snssai.Sst == Snssai.Sst && snssaiInfo.Snssai.Sd == Snssai.Sd {
+			logger.CtxLog.Infof("*** Match found for SNSSAI - SST: %d, SD: %s. Retrieving DNN info for DNN: %s", Snssai.Sst, Snssai.Sd, dnn)
+
 			return snssaiInfo.DnnInfos[dnn]
 		}
 	}
+	logger.CtxLog.Warnf("*** No matching SNSSAI found for requested SNSSAI - SST: %d, SD: %s, DNN: %s", Snssai.Sst, Snssai.Sd, dnn)
 	return nil
 }
 

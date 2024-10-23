@@ -223,16 +223,20 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 
 func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) []*UPNode {
 	upList := make([]*UPNode, 0)
+	logger.CtxLog.Infof("Selecting matching UPFs for DNN[%s] and S-NSSAI[sst: %d, sd: %s]", selection.Dnn, selection.SNssai.Sst, selection.SNssai.Sd)
 
 	for _, upNode := range upi.UPFs {
+		logger.CtxLog.Debugf("Checking UPF: %v", upNode)
 		for _, snssaiInfo := range upNode.UPF.SNssaiInfos {
 			currentSnssai := &snssaiInfo.SNssai
 			targetSnssai := selection.SNssai
 
 			if currentSnssai.Equal(targetSnssai) {
+				logger.CtxLog.Infof("Found matching S-NSSAI: [%v] for UPF: %v", currentSnssai, upNode)
 				for _, dnnInfo := range snssaiInfo.DnnList {
 					if dnnInfo.Dnn == selection.Dnn && dnnInfo.ContainsDNAI(selection.Dnai) {
 						upList = append(upList, upNode)
+						logger.CtxLog.Infof("Matching UPF found: %v for DNN[%s] and DNAI[%s]", upNode, selection.Dnn, selection.Dnai)
 						break
 					}
 				}

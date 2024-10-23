@@ -91,6 +91,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	}
 
 	createData := request.JsonData
+	smContext.SubPduSessLog.Infof("*** create Data : %v", createData)
 
 	// Create SM context
 	// smContext := smf_context.NewSMContext(createData.Supi, createData.PduSessionId)
@@ -249,11 +250,16 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		// UE has no pre-config path.
 		// Use default route
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, no pre-config route")
+		// Log the UPF selection parameters for debugging
+		smContext.SubPduSessLog.Infof("*** UPF Selection Parameters: %+v", upfSelectionParams)
+
 		defaultUPPath := smf_context.GetUserPlaneInformation().GetDefaultUserPlanePathByDNN(upfSelectionParams)
 		defaultPath = smf_context.GenerateDataPath(defaultUPPath, smContext)
 		if defaultPath != nil {
 			defaultPath.IsDefaultPath = true
 			smContext.Tunnel.AddDataPath(defaultPath)
+			// Log the activation of the tunnel and PDR
+			smContext.SubPduSessLog.Infof("Activating tunnel and PDR for default path: %+v", defaultPath)
 			if err := defaultPath.ActivateTunnelAndPDR(smContext, 255); err != nil {
 				smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, data path error: %v", err.Error())
 				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UPFDataPathError")
