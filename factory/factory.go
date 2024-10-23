@@ -29,6 +29,7 @@ var (
 // TODO: Support configuration update from REST api
 func InitConfigFactory(f string) error {
 	if content, err := os.ReadFile(f); err != nil {
+		logger.CfgLog.Info("*** read file")
 		return err
 	} else {
 		SmfConfig = Config{}

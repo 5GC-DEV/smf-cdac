@@ -97,6 +97,7 @@ func (*SMF) GetCliCmd() (flags []cli.Flag) {
 }
 
 func (smf *SMF) Initialize(c *cli.Context) error {
+	initLog.Info(" *** SMF Initialize")
 	config = Config{
 		smfcfg:    c.String("smfcfg"),
 		uerouting: c.String("uerouting"),
