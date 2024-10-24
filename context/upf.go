@@ -106,10 +106,15 @@ type UPF struct {
 }
 
 // UPFSelectionParams ... parameters for upf selection
-type UPFSelectionParams struct {
+/*type UPFSelectionParams struct {
 	Dnn    string
 	SNssai *SNssai
 	Dnai   string
+}*/
+type UPFSelectionParams struct {
+	DnnList []string // Changed to a slice of DNNs
+	SNssai  *SNssai
+	Dnai    string
 }
 
 // UPFInterfaceInfo store the UPF interface information
@@ -178,7 +183,7 @@ func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 	return nil, errors.New("not matched ip address")
 }
 
-func (upfSelectionParams *UPFSelectionParams) String() string {
+/*func (upfSelectionParams *UPFSelectionParams) String() string {
 	str := ""
 	Dnn := upfSelectionParams.Dnn
 	if Dnn != "" {
@@ -190,6 +195,39 @@ func (upfSelectionParams *UPFSelectionParams) String() string {
 		str += fmt.Sprintf("Sst: %d, Sd: %s\n", int(SNssai.Sst), SNssai.Sd)
 	}
 
+	Dnai := upfSelectionParams.Dnai
+	if Dnai != "" {
+		str += fmt.Sprintf("DNAI: %s\n", Dnai)
+	}
+
+	return str
+}*/
+
+func (upfSelectionParams *UPFSelectionParams) String() string {
+	if upfSelectionParams == nil {
+		return "UPFSelectionParams is nil"
+	}
+
+	str := ""
+
+	// Handle the DnnList
+	if len(upfSelectionParams.DnnList) > 0 {
+		str += "Dnn List: "
+		for _, dnn := range upfSelectionParams.DnnList {
+			str += fmt.Sprintf("%s ", dnn)
+		}
+		str += "\n"
+	} else {
+		str += "Dnn List is empty\n"
+	}
+
+	// Handle SNssai
+	SNssai := upfSelectionParams.SNssai
+	if SNssai != nil {
+		str += fmt.Sprintf("Sst: %d, Sd: %s\n", SNssai.Sst, SNssai.Sd)
+	}
+
+	// Handle DNAI
 	Dnai := upfSelectionParams.Dnai
 	if Dnai != "" {
 		str += fmt.Sprintf("DNAI: %s\n", Dnai)

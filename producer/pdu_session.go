@@ -225,10 +225,23 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	}
 
 	// dataPath selection
-	smContext.Tunnel = smf_context.NewUPTunnel()
+	/*smContext.Tunnel = smf_context.NewUPTunnel()
 	var defaultPath *smf_context.DataPath
 	upfSelectionParams := &smf_context.UPFSelectionParams{
 		Dnn: createData.Dnn,
+		SNssai: &smf_context.SNssai{
+			Sst: createData.SNssai.Sst,
+			Sd:  createData.SNssai.Sd,
+		},
+	}*/
+
+	// dataPath selection
+	smContext.Tunnel = smf_context.NewUPTunnel()
+	var defaultPath *smf_context.DataPath
+
+	// Change here to use DnnList
+	upfSelectionParams := &smf_context.UPFSelectionParams{
+		DnnList: []string{createData.Dnn}, // Wrap the single DNN in a slice
 		SNssai: &smf_context.SNssai{
 			Sst: createData.SNssai.Sst,
 			Sd:  createData.SNssai.Sd,

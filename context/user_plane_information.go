@@ -184,12 +184,20 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 	destinations = upi.selectMatchUPF(selection)
 
 	if len(destinations) == 0 {
-		logger.CtxLog.Errorf("Can't find UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", selection.Dnn,
-			selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)
+		for _, dnn := range selection.DnnList {
+			logger.CtxLog.Errorf("Can't find UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", dnn,
+				selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)
+		}
+		/*logger.CtxLog.Errorf("Can't find UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", selection.Dnn,
+		selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)*/
 		return false
 	} else {
-		logger.CtxLog.Debugf("Found UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", selection.Dnn,
-			selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)
+		for _, dnn := range selection.DnnList {
+			logger.CtxLog.Errorf("Can't find UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", dnn,
+				selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)
+		}
+		/*logger.CtxLog.Debugf("Found UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", selection.Dnn,
+		selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)*/
 	}
 
 	// Run DFS
@@ -221,7 +229,7 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 	return pathExist
 }
 
-func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) []*UPNode {
+/*func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) []*UPNode {
 	upList := make([]*UPNode, 0)
 	logger.CtxLog.Infof("Selecting matching UPFs for DNN[%s] and S-NSSAI[sst: %d, sd: %s]", selection.Dnn, selection.SNssai.Sst, selection.SNssai.Sd)
 
@@ -238,6 +246,34 @@ func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) [
 						upList = append(upList, upNode)
 						logger.CtxLog.Infof("Matching UPF found: %v for DNN[%s] and DNAI[%s]", upNode, selection.Dnn, selection.Dnai)
 						break
+					}
+				}
+			}
+		}
+	}
+	return upList
+}*/
+
+func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) []*UPNode {
+	upList := make([]*UPNode, 0)
+	logger.CtxLog.Infof("Selecting matching UPFs for DNNs[%v] and S-NSSAI[sst: %d, sd: %s]", selection.DnnList, selection.SNssai.Sst, selection.SNssai.Sd)
+
+	for _, upNode := range upi.UPFs {
+		logger.CtxLog.Debugf("Checking UPF: %v", upNode)
+		for _, snssaiInfo := range upNode.UPF.SNssaiInfos {
+			currentSnssai := &snssaiInfo.SNssai
+			targetSnssai := selection.SNssai
+
+			if currentSnssai.Equal(targetSnssai) {
+				logger.CtxLog.Infof("Found matching S-NSSAI: [%v] for UPF: %v", currentSnssai, upNode)
+				for _, dnnInfo := range snssaiInfo.DnnList {
+					// Check against each DNN in the selection
+					for _, dnn := range selection.DnnList {
+						if dnnInfo.Dnn == dnn && dnnInfo.ContainsDNAI(selection.Dnai) {
+							upList = append(upList, upNode)
+							logger.CtxLog.Infof("Matching UPF found: %v for DNN[%s] and DNAI[%s]", upNode, dnn, selection.Dnai)
+							break
+						}
 					}
 				}
 			}

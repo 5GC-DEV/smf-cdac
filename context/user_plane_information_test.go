@@ -128,7 +128,7 @@ func TestNewUserPlaneInformation(t *testing.T) {
 	require.Contains(t, userplaneInformation.UPFs["UPF3"].Links, userplaneInformation.UPFs["UPF4"])
 }
 
-func TestGenerateDefaultPath(t *testing.T) {
+/*func TestGenerateDefaultPath(t *testing.T) {
 	configuration.Links = []factory.UPLink{
 		{
 			A: "GNodeB",
@@ -205,6 +205,97 @@ func TestGenerateDefaultPath(t *testing.T) {
 					Sd:  "010203",
 				},
 				Dnn: "internet",
+			},
+			expected: false,
+		},
+	}
+
+	userplaneInformation := context.NewUserPlaneInformation(configuration)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pathExist := userplaneInformation.GenerateDefaultPath(tc.param)
+			require.Equal(t, tc.expected, pathExist)
+		})
+	}
+}*/
+
+func TestGenerateDefaultPath(t *testing.T) {
+	configuration.Links = []factory.UPLink{
+		{
+			A: "GNodeB",
+			B: "UPF1",
+		},
+		{
+			A: "GNodeB",
+			B: "UPF2",
+		},
+		{
+			A: "GNodeB",
+			B: "UPF3",
+		},
+		{
+			A: "UPF1",
+			B: "UPF4",
+		},
+	}
+
+	testCases := []struct {
+		param    *context.UPFSelectionParams
+		name     string
+		expected bool
+	}{
+		{
+			name: "S-NSSAI 01112232 and DNN internet ok",
+			param: &context.UPFSelectionParams{
+				SNssai: &context.SNssai{
+					Sst: 1,
+					Sd:  "112232",
+				},
+				DnnList: []string{"internet"}, // Updated to use DnnList
+			},
+			expected: true,
+		},
+		{
+			name: "S-NSSAI 02112233 and DNN internet ok",
+			param: &context.UPFSelectionParams{
+				SNssai: &context.SNssai{
+					Sst: 2,
+					Sd:  "112233",
+				},
+				DnnList: []string{"internet"}, // Updated to use DnnList
+			},
+			expected: true,
+		},
+		{
+			name: "S-NSSAI 03112234 and DNN internet ok",
+			param: &context.UPFSelectionParams{
+				SNssai: &context.SNssai{
+					Sst: 3,
+					Sd:  "112234",
+				},
+				DnnList: []string{"internet"}, // Updated to use DnnList
+			},
+			expected: true,
+		},
+		{
+			name: "S-NSSAI 01112235 and DNN internet ok",
+			param: &context.UPFSelectionParams{
+				SNssai: &context.SNssai{
+					Sst: 1,
+					Sd:  "112235",
+				},
+				DnnList: []string{"internet"}, // Updated to use DnnList
+			},
+			expected: true,
+		},
+		{
+			name: "S-NSSAI 01010203 and DNN internet fail",
+			param: &context.UPFSelectionParams{
+				SNssai: &context.SNssai{
+					Sst: 1,
+					Sd:  "010203",
+				},
+				DnnList: []string{"internet"}, // Updated to use DnnList
 			},
 			expected: false,
 		},
