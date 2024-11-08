@@ -48,10 +48,12 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 		Mnc: smContext.ServingNetwork.Mnc,
 	}
 	smPolicyData.SuppFeat = "F"
-
+	smContext.SubPduSessLog.Infof("*****   sm plicy dnn: %v", smPolicyData.Dnn)
+	smContext.SubPduSessLog.Infof("*****   Prepared SmPolicyContextData for request: %+v", smPolicyData)
 	var smPolicyDecision *models.SmPolicyDecision
 	if smPolicyDecisionFromPCF, httpRsp, err := smContext.SMPolicyClient.
 		DefaultApi.SmPoliciesPost(context.Background(), smPolicyData); err != nil {
+		smContext.SubPduSessLog.Errorf("***** Failed SmPolicyAssociationCreate for SMContext ID: %s, Error: %s", smContext.Ref, err.Error())
 		if httpRsp != nil {
 			httpRspStatusCode = httpRsp.StatusCode
 		}
@@ -59,9 +61,12 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 	} else {
 		httpRspStatusCode = http.StatusCreated
 		smPolicyDecision = &smPolicyDecisionFromPCF
+		smContext.SubPduSessLog.Infof("***** Received successful SmPolicyAssociationCreate response for SMContext ID: %s, HTTP Status: %d", smContext.Ref, httpRspStatusCode)
+		smContext.SubPduSessLog.Infof("**** SmPolicyDecision response: %+v", smPolicyDecision)
 	}
 
 	if err := validateSmPolicyDecision(smPolicyDecision); err != nil {
+		smContext.SubPduSessLog.Errorf("***** Validation failed for SmPolicyDecision in SMContext ID: %s, Error: %s", smContext.Ref, err.Error())
 		return nil, httpRspStatusCode, fmt.Errorf("setup sm policy association failed: %s", err.Error())
 	}
 

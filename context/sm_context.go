@@ -500,8 +500,11 @@ func (smContext *SMContext) RemovePDRfromPFCPSession(nodeID NodeID, pdr *PDR) {
 }
 
 func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint8) error {
+	// Log the entire SMContext to check its structure
+	fmt.Printf("SMContext: %+v\n", smContext)
 	dnnPDUSessionType := smContext.DnnConfiguration.PduSessionTypes
 	if dnnPDUSessionType == nil {
+		fmt.Printf("PduSessionTypes is nil for SMContext[%s]\n", smContext.Ref)
 		return fmt.Errorf("this SMContext[%s] has no subscription pdu session type info", smContext.Ref)
 	}
 
