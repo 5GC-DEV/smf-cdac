@@ -36,8 +36,21 @@ func SendNFRegistration() (*models.NfProfile, error) {
 		return &rep, fmt.Errorf("slice info nil")
 	}
 
+	logger.ConsumerLog.Infof("*** SNssaiSmfInfoList length: %d", len(*smf_context.SmfInfo.SNssaiSmfInfoList))
 	for _, snssaiSmfInfo := range *smf_context.SmfInfo.SNssaiSmfInfoList {
 		sNssais = append(sNssais, *snssaiSmfInfo.SNssai)
+	}
+	// Iterate through each SNssaiSmfInfoItem to log DNNs
+	for _, snssaiSmfInfo := range *smf_context.SmfInfo.SNssaiSmfInfoList {
+		logger.ConsumerLog.Infof("*** SNSSAI: %v", *snssaiSmfInfo.SNssai)
+
+		if snssaiSmfInfo.DnnSmfInfoList != nil {
+			for _, dnnSmfInfo := range *snssaiSmfInfo.DnnSmfInfoList {
+				logger.ConsumerLog.Infof("*** DNN for SNSSAI %v: %v", *snssaiSmfInfo.SNssai, dnnSmfInfo.Dnn)
+			}
+		} else {
+			logger.ConsumerLog.Infof("*** No DNNs configured for SNSSAI %v", *snssaiSmfInfo.SNssai)
+		}
 	}
 
 	// set nfProfile

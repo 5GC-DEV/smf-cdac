@@ -467,15 +467,18 @@ func UpdateNF() {
 func (smf *SMF) SendNrfRegistration() {
 	// If NRF registration is ongoing then don't start another in parallel
 	// Just mark it so that once ongoing finishes then resend another
+	logger.InitLog.Infof("**** Checking if NRF registration is already in progress...")
 	if nrfRegInProgress.intanceRun(consumer.ReSendNFRegistration) {
 		logger.InitLog.Infof("NRF Registration already in progress...")
 		refreshNrfRegistration = true
+		logger.InitLog.Infof("**** Marked to refresh NRF Registration after current process completes.")
 		return
 	}
-
+	logger.InitLog.Infof("*** No ongoing NRF registration detected, proceeding with check for fresh registration.")
 	// Once the first goroutine which was sending NRF registration returns,
 	// Check if another fresh NRF registration is required
 	if refreshNrfRegistration {
+		logger.InitLog.Infof("*** Fresh NRF registration required, resetting refresh flag.")
 		refreshNrfRegistration = false
 		if prof, err := consumer.SendNFRegistration(); err != nil {
 			logger.InitLog.Infof("NRF Registration failure, %v", err.Error())

@@ -44,34 +44,43 @@ func (c *SMFContext) insertSmfNssaiInfo(snssaiInfoConfig *factory.SnssaiInfoItem
 
 	// DNN Info
 	snssaiInfo.DnnInfos = make(map[string]*SnssaiSmfDnnInfo)
+	logger.InitLog.Infof("**** Initializing S-NSSAI [sst:%v, sd:%v]", snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd)
 
 	for _, dnnInfoConfig := range snssaiInfoConfig.DnnInfos {
+		logger.InitLog.Infof("Processing DNN [%s] for S-NSSAI [sst:%v, sd:%v]", dnnInfoConfig.Dnn, snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd)
 		dnnInfo := SnssaiSmfDnnInfo{}
 		dnnInfo.DNS.IPv4Addr = net.ParseIP(dnnInfoConfig.DNS.IPv4Addr).To4()
 		dnnInfo.DNS.IPv6Addr = net.ParseIP(dnnInfoConfig.DNS.IPv6Addr).To4()
+		logger.InitLog.Infof("*** Configured DNS for DNN [%s]: IPv4 [%v], IPv6 [%v]", dnnInfoConfig.Dnn, dnnInfo.DNS.IPv4Addr, dnnInfo.DNS.IPv6Addr)
 		if allocator, err := NewIPAllocator(dnnInfoConfig.UESubnet); err != nil {
 			logger.InitLog.Errorf("create ip allocator[%s] failed: %s", dnnInfoConfig.UESubnet, err)
 			continue
 		} else {
 			dnnInfo.UeIPAllocator = allocator
+			logger.InitLog.Infof("*** IP allocator created for DNN [%s], subnet [%s]", dnnInfoConfig.Dnn, dnnInfoConfig.UESubnet)
 		}
 
 		if dnnInfoConfig.MTU != 0 {
 			dnnInfo.MTU = dnnInfoConfig.MTU
+			logger.InitLog.Infof("*** Configured MTU for DNN [%s]: %d", dnnInfoConfig.Dnn, dnnInfo.MTU)
+
 		} else {
 			// Adding default MTU value, if nothing is set in config file.
 			dnnInfo.MTU = 1400
+			logger.InitLog.Infof("*** Default MTU set for DNN [%s]: %d", dnnInfoConfig.Dnn, dnnInfo.MTU)
 		}
 
 		// block static IPs for this DNN if any
 		if staticIpsCfg := c.GetDnnStaticIpInfo(dnnInfoConfig.Dnn); staticIpsCfg != nil {
-			logger.InitLog.Infof("initialising slice [sst:%v, sd:%v], dnn [%s] with static IP info [%v]", snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd, dnnInfoConfig.Dnn, staticIpsCfg)
+			logger.InitLog.Infof("*** initialising slice [sst:%v, sd:%v], dnn [%s] with static IP info [%v]", snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd, dnnInfoConfig.Dnn, staticIpsCfg)
 			dnnInfo.UeIPAllocator.ReserveStaticIps(&staticIpsCfg.ImsiIpInfo)
 		}
 
 		snssaiInfo.DnnInfos[dnnInfoConfig.Dnn] = &dnnInfo
+		logger.InitLog.Infof("*** DNN [%s] added to S-NSSAI [sst:%v, sd:%v]", dnnInfoConfig.Dnn, snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd)
 	}
 	c.SnssaiInfos = append(c.SnssaiInfos, snssaiInfo)
+	logger.InitLog.Infof("*** Completed adding S-NSSAI [sst:%v, sd:%v] with DNNs: %v", snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd, snssaiInfo.DnnInfos)
 
 	return nil
 }
