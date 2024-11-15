@@ -63,7 +63,6 @@ func (c *SMFContext) insertSmfNssaiInfo(snssaiInfoConfig *factory.SnssaiInfoItem
 		if dnnInfoConfig.MTU != 0 {
 			dnnInfo.MTU = dnnInfoConfig.MTU
 			logger.InitLog.Infof("*** Configured MTU for DNN [%s]: %d", dnnInfoConfig.Dnn, dnnInfo.MTU)
-
 		} else {
 			// Adding default MTU value, if nothing is set in config file.
 			dnnInfo.MTU = 1400
