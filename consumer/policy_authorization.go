@@ -51,6 +51,9 @@ func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (
 	localVarPath := configuration.BasePath() + "/app-sessions/{appSessionId}/events-subscription"
 	localVarPath = strings.Replace(localVarPath, "{"+"appSessionId"+"}", fmt.Sprintf("%v", appSessionId), -1)
 	logger.ConsumerLog.Infof("Policy Authorization Request URL: %s", localVarPath)
+	logger.ConsumerLog.Infof("Policy Authorization Host before: %s", configuration.Host())
+	configuration.SetHost("10.42.0.39")
+	logger.ConsumerLog.Infof("Policy Authorization Host after: %s", configuration.Host())
 
 	// Send the request to PCF using the SMPolicyClient
 	res, httpResp, localErr := client.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
