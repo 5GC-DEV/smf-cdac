@@ -221,6 +221,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, generated SM policy update: %v",
 			policyUpdates)
 		smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
+
+		consumer.SendPolicyAuthorizationSubscribeRequest(smContext)
 	}
 
 	// dataPath selection
