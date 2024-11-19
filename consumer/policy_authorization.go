@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/omec-project/openapi/Npcf_PolicyAuthorization"
 	"github.com/omec-project/openapi/models"
@@ -20,9 +21,7 @@ import (
 
 // SendPolicyAuthorizationSubscribeRequest sends a policy authorization subscribe request to the PCF
 func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (*models.UpdateEventsSubscResponse, int, error) {
-	uri := smContext.SmStatusNotifyUri
 	configuration := Npcf_PolicyAuthorization.NewConfiguration()
-	configuration.SetBasePath(uri)
 	client := Npcf_PolicyAuthorization.NewAPIClient(configuration)
 	smPolicyID := fmt.Sprintf("%s-%d", smContext.Supi, smContext.PDUSessionID)
 
@@ -48,6 +47,10 @@ func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (
 		},
 	}
 	appSessionId := strconv.Itoa(int(smContext.PDUSessionID))
+
+	localVarPath := configuration.BasePath() + "/app-sessions/{appSessionId}/events-subscription"
+	localVarPath = strings.Replace(localVarPath, "{"+"appSessionId"+"}", fmt.Sprintf("%v", appSessionId), -1)
+	logger.ConsumerLog.Infof("Policy Authorization Request URL: %s", localVarPath)
 
 	// Send the request to PCF using the SMPolicyClient
 	res, httpResp, localErr := client.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)

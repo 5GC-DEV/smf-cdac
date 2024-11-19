@@ -222,6 +222,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			policyUpdates)
 		smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 
+		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, sending policy authorization event subscription request")
 		var updateEventResp *models.UpdateEventsSubscResponse
 		updateEventResp, _, err = consumer.SendPolicyAuthorizationSubscribeRequest(smContext)
 
