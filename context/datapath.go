@@ -394,7 +394,15 @@ func (dataPath *DataPath) String() string {
 
 func (dataPath *DataPath) validateDataPathUpfStatus() error {
 	firstDPNode := dataPath.FirstDPNode
+	nodeIndex := 0 // Keep track of the node index for better debugging
+	logger.PduSessLog.Infof("****   Listing all nodes in the Data Path")
 	for curDataPathNode := firstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
+		nodeIP := curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String()
+		nodeStatus := curDataPathNode.UPF.UPFStatus.String()
+		// Log details for each node
+		logger.PduSessLog.Infof("**** Node #%d - IP: [%v], Status: [%v]", nodeIndex, nodeIP, nodeStatus)
+		// Optionally, log full node details for debugging
+		logger.PduSessLog.Infof("**** Node #%d Full Details: %+v", nodeIndex, curDataPathNode)
 		logger.PduSessLog.Infof("Nodes in Data Path [%v] and status [%v]",
 			curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String(), curDataPathNode.UPF.UPFStatus.String())
 		if curDataPathNode.UPF.UPFStatus != AssociatedSetUpSuccess {
@@ -402,7 +410,9 @@ func (dataPath *DataPath) validateDataPathUpfStatus() error {
 				curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String())
 			return errors.New("UPF not associated in DataPath")
 		}
+		nodeIndex++
 	}
+	logger.PduSessLog.Infof("**** Completed listing all nodes in the Data Path. Total nodes: %d", nodeIndex)
 	return nil
 }
 
