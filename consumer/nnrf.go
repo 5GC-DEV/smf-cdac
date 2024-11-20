@@ -247,6 +247,7 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 			smfSelf.NfStatusSubscriptions.Store(nfProfile.NfInstanceId, nrfSubData.SubscriptionId)
 		}
 	}
+	logger.ConsumerLog.Infof("SendNrfForNfInstance result: %+v", result)
 	return result, localErr
 }
 
@@ -289,6 +290,7 @@ func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
 }
 
 func SendNFDiscoveryPCF() (problemDetails *models.ProblemDetails, err error) {
+	logger.ConsumerLog.Infoln("NF discovery of PCF")
 	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
 
 	var result models.SearchResult
@@ -302,6 +304,7 @@ func SendNFDiscoveryPCF() (problemDetails *models.ProblemDetails, err error) {
 
 	if localErr == nil {
 		logger.ConsumerLog.Debugln(result.NfInstances)
+		logger.ConsumerLog.Infoln(result.NfInstances)
 	} else {
 		apiError, ok := localErr.(openapi.GenericOpenAPIError)
 		if ok {
