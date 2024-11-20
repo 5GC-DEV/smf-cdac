@@ -13,11 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/5GC-DEV/openapi-cdac/Npcf_PolicyAuthorization"
-	"github.com/5GC-DEV/openapi-cdac/models"
-
-	// "github.com/omec-project/openapi/Npcf_PolicyAuthorization"
-	// "github.com/omec-project/openapi/models"
+	"github.com/omec-project/openapi/Npcf_PolicyAuthorization"
+	"github.com/omec-project/openapi/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 )
@@ -56,6 +53,8 @@ func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (
 		logger.ConsumerLog.Warnf("Policy Authorization Subscribe Request - Error discovering PCF")
 	}
 
+	logger.ConsumerLog.Infof("Policy Authorization Subscribe Request Body - ", policyAuthorizationData)
+
 	localVarPath := configuration.BasePath() + "/app-sessions/{appSessionId}/events-subscription"
 	localVarPath = strings.Replace(localVarPath, "{"+"appSessionId"+"}", fmt.Sprintf("%v", appSessionId), -1)
 	logger.ConsumerLog.Infof("Policy Authorization Request URL: %s", localVarPath)
@@ -65,6 +64,26 @@ func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (
 
 	// Send the request to PCF using the SMPolicyClient
 	res, httpResp, localErr := client.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
+
+	if localErr != nil {
+		if httpResp != nil {
+			logger.ConsumerLog.Errorf("Policy Authorization Subscribe Request failed with status %d: %s", httpResp.StatusCode, localErr.Error())
+			return nil, httpResp.StatusCode, fmt.Errorf("setup policy authorization failed: %s", localErr.Error())
+		}
+		logger.ConsumerLog.Errorf("Policy Authorization Request Subscribe failed with no response: %s", localErr.Error())
+		return nil, http.StatusInternalServerError, fmt.Errorf("server no response")
+	}
+
+	localVarPath = configuration.BasePath() + "/app-sessions/{appSessionId}/events-subscription"
+	localVarPath = strings.Replace(localVarPath, "{"+"appSessionId"+"}", fmt.Sprintf("%v", appSessionId), -1)
+	logger.ConsumerLog.Infof("Policy Authorization Request URL After: %s", localVarPath)
+
+	localVarPath = strings.Replace(localVarPath, "example.com", "10.42.0.39:29507", 1)
+
+	logger.ConsumerLog.Infof("Policy Authorization Request URL After replace: %s", localVarPath)
+
+	// Send the request to PCF using the SMPolicyClient
+	res, httpResp, localErr = client.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
 
 	if localErr != nil {
 		if httpResp != nil {
