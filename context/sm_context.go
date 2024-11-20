@@ -428,6 +428,8 @@ func (smContext *SMContext) PCFSelection() error {
 	}
 
 	smContext.SelectedPCFProfile = rep.NfInstances[0]
+	logger.CtxLog.Infof("PCF IP Addressess: %v", smContext.SelectedPCFProfile.Ipv4Addresses)
+	logger.CtxLog.Infof("PCF PCF Info: %v", smContext.SelectedPCFProfile.PcfInfo)
 
 	// Create SMPolicyControl Client for this SM Context
 	for _, service := range *smContext.SelectedPCFProfile.NfServices {
@@ -435,10 +437,16 @@ func (smContext *SMContext) PCFSelection() error {
 			SmPolicyControlConf := Npcf_SMPolicyControl.NewConfiguration()
 			SmPolicyControlConf.SetBasePath(service.ApiPrefix)
 			smContext.SMPolicyClient = Npcf_SMPolicyControl.NewAPIClient(SmPolicyControlConf)
+
+			logger.CtxLog.Infof("SMPolicyControl Client base path: %v", service.ApiPrefix)
+			logger.CtxLog.Infof("SMPolicyControl Client IP end points: %v", service.IpEndPoints)
 		} else if service.ServiceName == models.ServiceName_NPCF_POLICYAUTHORIZATION {
 			PolicyAuthorizationConf := Npcf_PolicyAuthorization.NewConfiguration()
 			PolicyAuthorizationConf.SetBasePath(service.ApiPrefix)
 			smContext.PolicyAuthorizationClient = Npcf_PolicyAuthorization.NewAPIClient(PolicyAuthorizationConf)
+
+			logger.CtxLog.Infof("PCF Policy Authorization base path: %v", service.ApiPrefix)
+			logger.CtxLog.Infof("PCF Policy Authorization IP end points: %v", service.IpEndPoints)
 		}
 	}
 
