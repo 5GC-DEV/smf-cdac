@@ -21,6 +21,7 @@ import (
 	"github.com/omec-project/nas/nasMessage"
 	"github.com/omec-project/openapi/Namf_Communication"
 	"github.com/omec-project/openapi/Nnrf_NFDiscovery"
+	"github.com/omec-project/openapi/Npcf_PolicyAuthorization"
 	"github.com/omec-project/openapi/Npcf_SMPolicyControl"
 	"github.com/omec-project/openapi/models"
 	nrfCache "github.com/omec-project/openapi/nrfcache"
@@ -125,8 +126,9 @@ type SMContext struct {
 	PDUAddress *UeIpAddr `json:"pduAddress,omitempty" yaml:"pduAddress" bson:"pduAddress,omitempty"`
 
 	// Client
-	SMPolicyClient      *Npcf_SMPolicyControl.APIClient `json:"smPolicyClient,omitempty" yaml:"smPolicyClient" bson:"smPolicyClient,omitempty"`                // ?
-	CommunicationClient *Namf_Communication.APIClient   `json:"communicationClient,omitempty" yaml:"communicationClient" bson:"communicationClient,omitempty"` // ?
+	SMPolicyClient            *Npcf_SMPolicyControl.APIClient     `json:"smPolicyClient,omitempty" yaml:"smPolicyClient" bson:"smPolicyClient,omitempty"`                                  // ?
+	CommunicationClient       *Namf_Communication.APIClient       `json:"communicationClient,omitempty" yaml:"communicationClient" bson:"communicationClient,omitempty"`                   // ?
+	PolicyAuthorizationClient *Npcf_PolicyAuthorization.APIClient `json:"policyAuthorizationClient,omitempty" yaml:"policyAuthorizationClient" bson:"policyAuthorizationClient,omitempty"` // ?
 
 	// encountered a cycle via *context.GTPTunnel
 	Tunnel *UPTunnel `json:"-" yaml:"tunnel" bson:"-"`
@@ -433,6 +435,10 @@ func (smContext *SMContext) PCFSelection() error {
 			SmPolicyControlConf := Npcf_SMPolicyControl.NewConfiguration()
 			SmPolicyControlConf.SetBasePath(service.ApiPrefix)
 			smContext.SMPolicyClient = Npcf_SMPolicyControl.NewAPIClient(SmPolicyControlConf)
+		} else if service.ServiceName == models.ServiceName_NPCF_POLICYAUTHORIZATION {
+			PolicyAuthorizationConf := Npcf_PolicyAuthorization.NewConfiguration()
+			PolicyAuthorizationConf.SetBasePath(service.ApiPrefix)
+			smContext.PolicyAuthorizationClient = Npcf_PolicyAuthorization.NewAPIClient(PolicyAuthorizationConf)
 		}
 	}
 

@@ -22,6 +22,8 @@ import (
 // SendPolicyAuthorizationSubscribeRequest sends a policy authorization subscribe request to the PCF
 func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (*models.UpdateEventsSubscResponse, int, error) {
 	configuration := Npcf_PolicyAuthorization.NewConfiguration()
+	configuration.SetBasePath("10.42.0.39:29507")
+	configuration.SetHost("10.42.0.39")
 	client := Npcf_PolicyAuthorization.NewAPIClient(configuration)
 	smPolicyID := fmt.Sprintf("%s-%d", smContext.Supi, smContext.PDUSessionID)
 
@@ -55,27 +57,40 @@ func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (
 
 	logger.ConsumerLog.Infof("Policy Authorization Subscribe Request Body - %v", policyAuthorizationData)
 
-	configuration.SetBasePath("10.42.0.39:29507")
 	localVarPath := configuration.BasePath() + "/app-sessions/{appSessionId}/events-subscription"
 	localVarPath = strings.Replace(localVarPath, "{"+"appSessionId"+"}", fmt.Sprintf("%v", appSessionId), -1)
-	logger.ConsumerLog.Infof("Policy Authorization Request URL After: %s", localVarPath)
-	localVarPath = strings.Replace(localVarPath, "example.com", "10.42.0.39:29507", 1)
-	logger.ConsumerLog.Infof("Policy Authorization Request URL After replace: %s", localVarPath)
+	logger.ConsumerLog.Infof("Policy Authorization Request URL: %s", localVarPath)
+	logger.ConsumerLog.Infof("Policy Authorization Host: %s", configuration.Host())
 
-	logger.ConsumerLog.Infof("Policy Authorization Host before: %s", configuration.Host())
-	configuration.SetHost("10.42.0.39")
-	logger.ConsumerLog.Infof("Policy Authorization Host after: %s", configuration.Host())
-
-	// Send the request to PCF using the SMPolicyClient
+	// Send the request to PCF
 	res, httpResp, localErr := client.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
 
 	if localErr != nil {
 		if httpResp != nil {
 			logger.ConsumerLog.Errorf("Policy Authorization Subscribe Request failed with status %d: %s", httpResp.StatusCode, localErr.Error())
-			return nil, httpResp.StatusCode, fmt.Errorf("setup policy authorization failed: %s", localErr.Error())
+			// return nil, httpResp.StatusCode, fmt.Errorf("setup policy authorization failed: %s", localErr.Error())
 		}
 		logger.ConsumerLog.Errorf("Policy Authorization Request Subscribe failed with no response: %s", localErr.Error())
-		return nil, http.StatusInternalServerError, fmt.Errorf("server no response")
+		// return nil, http.StatusInternalServerError, fmt.Errorf("server no response")
+	} else {
+		logger.ConsumerLog.Infof("Policy Authorization Request Subscribe success with response: %v", res)
+	}
+
+	if smContext.PolicyAuthorizationClient == nil {
+		logger.ConsumerLog.Errorf("smContext not selected PCF")
+	}
+
+	// Send the request to PCF
+	res, httpResp, localErr = smContext.PolicyAuthorizationClient.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
+	if localErr != nil {
+		if httpResp != nil {
+			logger.ConsumerLog.Errorf("Policy Authorization Subscribe Request failed with status %d: %s", httpResp.StatusCode, localErr.Error())
+			// return nil, httpResp.StatusCode, fmt.Errorf("setup policy authorization failed: %s", localErr.Error())
+		}
+		logger.ConsumerLog.Errorf("Policy Authorization Request Subscribe failed with no response: %s", localErr.Error())
+		// return nil, http.StatusInternalServerError, fmt.Errorf("server no response")
+	} else {
+		logger.ConsumerLog.Infof("Policy Authorization Request Subscribe success with response: %v", res)
 	}
 
 	return &res, httpResp.StatusCode, nil
@@ -90,7 +105,7 @@ func SendPolicyAuthorizationUnSubscribeRequest(smContext *smf_context.SMContext)
 
 	appSessionId := strconv.Itoa(int(smContext.PDUSessionID))
 
-	// Send the request to PCF using the SMPolicyClient
+	// Send the request to PCF
 	httpResp, localErr := client.EventsSubscriptionDocumentApi.DeleteEventsSubsc(context.Background(), appSessionId)
 
 	if localErr != nil {
