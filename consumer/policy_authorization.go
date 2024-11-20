@@ -13,8 +13,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/omec-project/openapi/Npcf_PolicyAuthorization"
-	"github.com/omec-project/openapi/models"
+	"github.com/5GC-DEV/openapi-cdac/Npcf_PolicyAuthorization"
+	"github.com/5GC-DEV/openapi-cdac/models"
+
+	// "github.com/omec-project/openapi/Npcf_PolicyAuthorization"
+	// "github.com/omec-project/openapi/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 )
@@ -47,6 +50,11 @@ func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (
 		},
 	}
 	appSessionId := strconv.Itoa(int(smContext.PDUSessionID))
+
+	_, err := SendNFDiscoveryPCF()
+	if err != nil {
+		logger.ConsumerLog.Warnf("Policy Authorization Subscribe Request - Error discovering PCF")
+	}
 
 	localVarPath := configuration.BasePath() + "/app-sessions/{appSessionId}/events-subscription"
 	localVarPath = strings.Replace(localVarPath, "{"+"appSessionId"+"}", fmt.Sprintf("%v", appSessionId), -1)
