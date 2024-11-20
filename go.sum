@@ -233,7 +233,7 @@ github.com/omec-project/ngap v1.3.0 h1:NuAc6GZRup6E3jg+fGTy8aR4VkOlB1mnkaaYr6OGm
 github.com/omec-project/ngap v1.3.0/go.mod h1:XBHem/s2xtRNCLPgH7Ubs7i72BTAvK1EILTWf7iQ0ao=
 github.com/omec-project/openapi v1.3.1 h1:NCteMRdMtWnMhf1CXYduuLgeu8fEhc/7XO1CiE7fN3Y=
 github.com/omec-project/openapi v1.3.1/go.mod h1:cR6Iharp2TLOzEmskQ/EdCVFZnpKh0zTvUSSuyXAYLE=
-github.com/5GC-DEV/openapi-cdac v1.0.0 h1:NCteMRdMtWnMhf1CXYduuLgeu8fEhc/7XO1CiE7fN3Y=
+github.com/5GC-DEV/openapi-cdac v1.0.0 h1:q84K/1ZSMrHsFmeZhelakKRb3lzUZSUoEVOdSTpMTRI=
 github.com/5GC-DEV/openapi-cdac v1.0.0/go.mod h1:cR6Iharp2TLOzEmskQ/EdCVFZnpKh0zTvUSSuyXAYLE=
 github.com/omec-project/util v1.2.1 h1:+o5kbnZzKBmbqT4oprVGPgL0jH5b8BvRMfLye5srGQ4=
 github.com/omec-project/util v1.2.1/go.mod h1:kUF2LXhmtw+m7Bk5IGOMFLj7CA8VKtilLI/9QBJcfxE=
