@@ -11,9 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
-	"github.com/omec-project/openapi/Npcf_PolicyAuthorization"
 	"github.com/omec-project/openapi/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
@@ -21,10 +19,15 @@ import (
 
 // SendPolicyAuthorizationSubscribeRequest sends a policy authorization subscribe request to the PCF
 func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (*models.UpdateEventsSubscResponse, int, error) {
-	configuration := Npcf_PolicyAuthorization.NewConfiguration()
-	configuration.SetBasePath("http://10.42.0.39:29507")
-	configuration.SetHost("10.42.0.39")
-	client := Npcf_PolicyAuthorization.NewAPIClient(configuration)
+	if smContext.PolicyAuthorizationClient == nil {
+		logger.ConsumerLog.Errorf("smContext not selected PCF")
+	}
+
+	if err := smContext.PCFSelection(); err != nil {
+		logger.ConsumerLog.Errorf("PolicyAuthorizationSubscribe, send NF Discovery Serving PCF Error[%v]", err)
+		return nil, 500, fmt.Errorf("PcfError")
+	}
+
 	smPolicyID := fmt.Sprintf("%s-%d", smContext.Supi, smContext.PDUSessionID)
 
 	// Construct the policy authorization request body
@@ -50,33 +53,8 @@ func SendPolicyAuthorizationSubscribeRequest(smContext *smf_context.SMContext) (
 	}
 	appSessionId := strconv.Itoa(int(smContext.PDUSessionID))
 
-	logger.ConsumerLog.Infof("Policy Authorization Subscribe Request Body - %v", policyAuthorizationData)
-
-	localVarPath := configuration.BasePath() + "/app-sessions/{appSessionId}/events-subscription"
-	localVarPath = strings.Replace(localVarPath, "{"+"appSessionId"+"}", fmt.Sprintf("%v", appSessionId), -1)
-	logger.ConsumerLog.Infof("Policy Authorization Request URL: %s", localVarPath)
-	logger.ConsumerLog.Infof("Policy Authorization Host: %s", configuration.Host())
-
 	// Send the request to PCF
-	res, httpResp, localErr := client.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
-
-	if localErr != nil {
-		if httpResp != nil {
-			logger.ConsumerLog.Errorf("Policy Authorization Subscribe Request failed with status %d: %s", httpResp.StatusCode, localErr.Error())
-			// return nil, httpResp.StatusCode, fmt.Errorf("setup policy authorization failed: %s", localErr.Error())
-		}
-		logger.ConsumerLog.Errorf("Policy Authorization Request Subscribe failed with no response: %s", localErr.Error())
-		// return nil, http.StatusInternalServerError, fmt.Errorf("server no response")
-	} else {
-		logger.ConsumerLog.Infof("Policy Authorization Request Subscribe success with response: %v", res)
-	}
-
-	if smContext.PolicyAuthorizationClient == nil {
-		logger.ConsumerLog.Errorf("smContext not selected PCF")
-	}
-
-	// Send the request to PCF
-	res, httpResp, localErr = smContext.PolicyAuthorizationClient.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
+	res, httpResp, localErr := smContext.PolicyAuthorizationClient.EventsSubscriptionDocumentApi.UpdateEventsSubsc(context.Background(), appSessionId, policyAuthorizationData)
 	if localErr != nil {
 		if httpResp != nil {
 			logger.ConsumerLog.Errorf("Policy Authorization Subscribe Request failed with status %d: %s", httpResp.StatusCode, localErr.Error())

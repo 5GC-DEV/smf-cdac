@@ -130,6 +130,8 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 				smContext.SubGsmLog.Infoln("Didn't Implement container type ChallengeHandshakeAuthenticationProtocolUL")
 			case nasMessage.InternetProtocolControlProtocolUL:
 				smContext.SubGsmLog.Infoln("Didn't Implement container type InternetProtocolControlProtocolUL")
+			case nasMessage.IPv4LinkMTURequestUL:
+				smContext.SubGsmLog.Infoln("Container type IPv4LinkMTURequestUL set to true")
 			default:
 				smContext.SubGsmLog.Infof("Unknown Container ID [%d]", container.ProtocolOrContainerID)
 			}
