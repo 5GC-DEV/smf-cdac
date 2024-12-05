@@ -14,7 +14,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/omec-project/config5g/proto/client"
+	"github.com/anaswarac-dac/config5g-cdac/proto/client"
 	"github.com/omec-project/smf/logger"
 	"gopkg.in/yaml.v2"
 )

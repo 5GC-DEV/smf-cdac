@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	protos "github.com/omec-project/config5g/proto/sdcoreConfig"
+	protos "github.com/anaswarac-dac/config5g-cdac/proto/sdcoreConfig"
 	"github.com/omec-project/openapi/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,7 +34,7 @@ func TestUpdateSliceInfo(t *testing.T) {
 	compareAndProcessConfigs(&cfg1, &cfg2)
 }
 
-func makeDummyConfig(sst, sd string) *protos.NetworkSliceResponse {
+/*func makeDummyConfig(sst, sd string) *protos.NetworkSliceResponse {
 	var rsp protos.NetworkSliceResponse
 
 	rsp.NetworkSlice = make([]*protos.NetworkSlice, 0)
@@ -56,7 +56,33 @@ func makeDummyConfig(sst, sd string) *protos.NetworkSliceResponse {
 
 	rsp.NetworkSlice = append(rsp.NetworkSlice, &ns)
 	return &rsp
+}*/
+// C-DAC START
+func makeDummyConfig(sst, sd string) *protos.NetworkSliceResponse {
+	var rsp protos.NetworkSliceResponse
+
+	rsp.NetworkSlice = make([]*protos.NetworkSlice, 0)
+
+	ns := protos.NetworkSlice{Name: "Enterprise-1"}
+	slice := protos.NSSAI{Sst: sst, Sd: sd}
+	ns.Nssai = &slice
+
+	upf := protos.UpfInfo{UpfName: "upf", UpfPort: 8805}
+	site := protos.SiteInfo{SiteName: "siteOne", Upf: &upf, Gnb: make([]*protos.GNodeB, 0)}
+	gNb := protos.GNodeB{Name: "gnb"}
+	site.Gnb = append(site.Gnb, &gNb)
+	ns.Site = &site
+
+	ns.DeviceGroup = make([]*protos.DeviceGroup, 0)
+	ipDomain := protos.IpDomain{DnnName: "internet", UePool: "60.60.0.0/16", DnsPrimary: "8.8.8.8", Mtu: 1400}
+	devGrp := protos.DeviceGroup{IpDomainDetails: []*protos.IpDomain{&ipDomain}} // Wrap in a slice
+	ns.DeviceGroup = append(ns.DeviceGroup, &devGrp)
+
+	rsp.NetworkSlice = append(rsp.NetworkSlice, &ns)
+	return &rsp
 }
+
+// C-DAC END
 
 func TestCompareSliceConfigIdentical(t *testing.T) {
 	sNssai1 := models.Snssai{Sst: 1, Sd: "010203"}
