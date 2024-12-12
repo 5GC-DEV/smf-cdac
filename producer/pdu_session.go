@@ -221,16 +221,6 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, generated SM policy update: %v",
 			policyUpdates)
 		smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
-
-		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, sending policy authorization event subscription request")
-		var updateEventResp *models.UpdateEventsSubscResponse
-		updateEventResp, _, err = consumer.SendPolicyAuthorizationSubscribeRequest(smContext)
-
-		if err != nil {
-			smContext.SubQosLog.Warnf("PDUSessionSMContextCreate: error sending Policy Authorization event subscription: %v", err)
-		} else {
-			smContext.SubQosLog.Infof("PDUSessionSMContextCreate: received SM policy Authorization event data: %v", updateEventResp)
-		}
 	}
 
 	// dataPath selection
