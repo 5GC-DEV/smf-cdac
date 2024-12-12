@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"net"
 
-	"github.com/omec-project/metricfunc/config"
 	"github.com/omec-project/nas"
 	"github.com/omec-project/nas/nasConvert"
 	"github.com/omec-project/nas/nasMessage"
@@ -19,7 +18,6 @@ import (
 )
 
 func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error) {
-	configuration := config.Configuration
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
 	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionEstablishmentAccept)
@@ -123,7 +121,7 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 
 		// IPv4 P-CSCF
 		if smContext.ProtocolConfigurationOptions.PCSCFIPv4Request {
-			pcsfIpStr := smContext.pcs
+			pcsfIpStr := "192.168.45.47"
 			pcscfIP := net.ParseIP(pcsfIpStr)
 			if pcscfIP == nil {
 				smContext.SubGsmLog.Warnln("Invalid P-CSCF IP address")
