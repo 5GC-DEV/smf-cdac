@@ -738,11 +738,22 @@ func HandlePfcpSessionReportRequest(msg *udp.Message) {
 				},
 			}
 
+			smContext.SubPfcpLog.Infof("Send N1N2Transfer JSON: %v", n1n2Request.JsonData)
+			smContext.SubPfcpLog.Infof("Send N1N2Transfer Full: %v", n1n2Request)
+
 			rspData, _, err := smContext.CommunicationClient.
 				N1N2MessageCollectionDocumentApi.
 				N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
 			if err != nil {
 				smContext.SubPfcpLog.Warnf("Send N1N2Transfer failed")
+
+				if rspData.Cause != "" || rspData.SupportedFeatures != "" {
+					smContext.SubPfcpLog.Infof("Send N1N2Transfer failed - Response data: %v", rspData)
+					smContext.SubPfcpLog.Infof("Send N1N2Transfer failed - Cause: %v", rspData.Cause)
+					smContext.SubPfcpLog.Infof("Send N1N2Transfer failed - Supported Features: %v", rspData.SupportedFeatures)
+				} else {
+					smContext.SubPfcpLog.Infof("Send N1N2Transfer failed - No additional response data")
+				}
 			}
 			if rspData.Cause == models.N1N2MessageTransferCause_ATTEMPTING_TO_REACH_UE {
 				smContext.SubPfcpLog.Infof("Receive %v, AMF is able to page the UE", rspData.Cause)
