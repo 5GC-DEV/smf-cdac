@@ -8,6 +8,7 @@ package consumer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -48,7 +49,9 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 		Mnc: smContext.ServingNetwork.Mnc,
 	}
 	smPolicyData.SuppFeat = "F"
-
+	logger.ConsumerLog.Infof("******* smpolicy Data DNN %v", smPolicyData.Dnn)
+	smPolicyDataJson, _ := json.MarshalIndent(smPolicyData, "", "  ")
+	logger.ConsumerLog.Infof("*****  Complete smPolicyData JSON: %s", string(smPolicyDataJson))
 	var smPolicyDecision *models.SmPolicyDecision
 	if smPolicyDecisionFromPCF, httpRsp, err := smContext.SMPolicyClient.
 		DefaultApi.SmPoliciesPost(context.Background(), smPolicyData); err != nil {
@@ -123,6 +126,7 @@ func SendSMPolicyAssociationDelete(smContext *smf_context.SMContext, smDelReq *m
 func validateSmPolicyDecision(smPolicy *models.SmPolicyDecision) error {
 	// Validate just presence of important IEs as of now
 	// Sess Rules
+	logger.ConsumerLog.Infof("******** Policy validation")
 	for name, rule := range smPolicy.SessRules {
 		if rule.AuthSessAmbr == nil {
 			logger.ConsumerLog.Errorf("SM policy decision rule [%s] validation failure, authorised session ambr missing", name)
