@@ -50,8 +50,12 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 	}
 	smPolicyData.SuppFeat = "F"
 	logger.ConsumerLog.Infof("******* smpolicy Data DNN %v", smPolicyData.Dnn)
-	smPolicyDataJson, _ := json.MarshalIndent(smPolicyData, "", "  ")
-	logger.ConsumerLog.Infof("*****  Complete smPolicyData JSON: %s", string(smPolicyDataJson))
+	smPolicyDataJson, err := json.MarshalIndent(smPolicyData, "", "  ")
+	if err != nil {
+		logger.ConsumerLog.Errorf("Failed to marshal smPolicyData to JSON: %v", err)
+	} else {
+		logger.ConsumerLog.Infof("Complete smPolicyData JSON: %s", string(smPolicyDataJson))
+	}
 	var smPolicyDecision *models.SmPolicyDecision
 	if smPolicyDecisionFromPCF, httpRsp, err := smContext.SMPolicyClient.
 		DefaultApi.SmPoliciesPost(context.Background(), smPolicyData); err != nil {
