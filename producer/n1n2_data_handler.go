@@ -6,6 +6,7 @@
 package producer
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/omec-project/nas"
@@ -57,7 +58,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				// TODO: implement sleep wait in concurrent architecture
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SM Context State[%v] should be SmStateActive", smContext.SMContextState.String())
 			}
-			// printing pdusession ID value
+			// printing pdusession ID value - by cdac
 			pduSessIDrelreq := m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID()
 			smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDrelreq)
 			smContext.SubPduSessLog.Info("---int32 of pdusessionID: ", int32(pduSessIDrelreq))
@@ -66,33 +67,40 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			pduSessIDSmf := smContext.PDUSessionID
 			smContext.SubPduSessLog.Info("---PDU Session ID in SM Context: ", pduSessIDSmf)
 			//
-			smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
-			if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
-				smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
+			// pdusession check- by cdac tvm
+			if pduSessIDint32 == pduSessIDSmf {
+				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
+				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
+					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
+				} else {
+					response.BinaryDataN1SmMessage = buf
+				}
+
+				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseCommand"}
+
+				response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUResourceReleaseCommand"}
+				response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_REL_CMD
+
+				if buf, err := context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
+					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
+				} else {
+					response.BinaryDataN2SmInformation = buf
+				}
+
+				if smContext.Tunnel != nil {
+					smContext.ChangeState(context.SmStatePfcpModify)
+					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+					// Send release to UPF
+					// releaseTunnel(smContext)
+					pfcpAction.sendPfcpDelete = true
+				} else {
+					smContext.ChangeState(context.SmStateModify)
+					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				}
 			} else {
-				response.BinaryDataN1SmMessage = buf
-			}
-
-			response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseCommand"}
-
-			response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUResourceReleaseCommand"}
-			response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_REL_CMD
-
-			if buf, err := context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
-				smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
-			} else {
-				response.BinaryDataN2SmInformation = buf
-			}
-
-			if smContext.Tunnel != nil {
-				smContext.ChangeState(context.SmStatePfcpModify)
-				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-				// Send release to UPF
-				// releaseTunnel(smContext)
-				pfcpAction.sendPfcpDelete = true
-			} else {
-				smContext.ChangeState(context.SmStateModify)
-				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubPduSessLog.Errorf("Invalid PDU Session ID")
+				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("InvalidPDUSessionIdentity")
+				return fmt.Errorf("Invalid PDU Session ID error ")
 			}
 
 		case nas.MsgTypePDUSessionReleaseComplete:

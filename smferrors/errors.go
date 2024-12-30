@@ -109,6 +109,13 @@ var (
 		Cause:         "REQUEST_REJECTED",
 		InvalidParams: nil,
 	}
+	InvalidPDUSessionIdentity = models.ProblemDetails{
+		Title:         "Invalid PDUSession Identity",
+		Status:        http.StatusForbidden,
+		Detail:        "Invalid PDUSession Identity not Supported.",
+		Cause:         "REQUEST_REJECTED",
+		InvalidParams: nil,
+	}
 )
 
 var ErrorType = map[string]*models.ProblemDetails{
@@ -125,6 +132,7 @@ var ErrorType = map[string]*models.ProblemDetails{
 	"ApplySMPolicyFailure":          &ApplySMPolicyFailure,
 	"AMFDiscoveryFailure":           &AMFDiscoveryFailure,
 	"PDUSessionTypeIPv4OnlyAllowed": &PduSessionTypeNotSupported,
+	"InvalidPDUSessionIdentity":     &InvalidPDUSessionIdentity,
 }
 
 var ErrorCause = map[string]uint8{
@@ -141,4 +149,5 @@ var ErrorCause = map[string]uint8{
 	"ApplySMPolicyFailure":          nasMessage.Cause5GSMRequestRejectedUnspecified,
 	"AMFDiscoveryFailure":           nasMessage.Cause5GSMRequestRejectedUnspecified,
 	"PDUSessionTypeIPv4OnlyAllowed": nasMessage.Cause5GSMPDUSessionTypeIPv4OnlyAllowed,
+	"InvalidPDUSessionIdentity":     nasMessage.Cause5GSMInvalidPDUSessionIdentity,
 }
