@@ -6,7 +6,6 @@
 package producer
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/omec-project/nas"
@@ -99,8 +98,12 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				}
 			} else {
 				smContext.SubPduSessLog.Errorf("Invalid PDU Session ID")
-				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("InvalidPDUSessionIdentity")
-				return fmt.Errorf("Invalid PDU Session ID error ")
+				if buf, err := context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
+					smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
+				} else {
+					response.BinaryDataN2SmInformation = buf
+					// response.BinaryDataN1SmMessage = buf
+				}
 			}
 
 		case nas.MsgTypePDUSessionReleaseComplete:
