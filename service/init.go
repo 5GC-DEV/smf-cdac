@@ -226,7 +226,7 @@ func (smf *SMF) setLogLevel() {
 			openapiLogger.SetLogLevel(zap.InfoLevel)
 		}
 	}
-
+	utilLogger.SetLogLevel(zap.WarnLevel)
 	// Initialise Statistics
 	go metrics.InitMetrics()
 }
