@@ -105,15 +105,17 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					response.BinaryDataN1SmMessage = buf
 				}
 				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
-				response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUResourceReleaseCommand"}
-				response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_REL_CMD
+				// N2info
+				// response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUResourceReleaseCommand"}
+				// response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_REL_CMD
 
-				if buf, err := context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
-					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
-				} else {
-					response.BinaryDataN2SmInformation = buf
-					smContext.SubPduSessLog.Infof("---res rel command in else")
-				}
+				// if buf, err := context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
+				// 	smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
+				// } else {
+				// 	response.BinaryDataN2SmInformation = buf
+				// 	smContext.SubPduSessLog.Infof("---res rel command in else")
+				// }
+				//
 
 				smContext.ChangeState(context.SmStateModify)
 				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
