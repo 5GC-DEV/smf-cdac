@@ -61,13 +61,13 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			pduSessIDrelreq := int32(m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
 			smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDrelreq)
 			// smContext.SubPduSessLog.Info("---int32 of pdusessionID: ", int32(pduSessIDrelreq))
-			pduSessIDint32 := int32(pduSessIDrelreq)
-			smContext.SubPduSessLog.Info("---int32 of pdusessionID: ", pduSessIDint32)
-			pduSessIDSmf := smContext.PDUSessionID
-			smContext.SubPduSessLog.Info("---PDU Session ID in SM Context: ", pduSessIDSmf)
+			// pduSessIDint32 := int32(pduSessIDrelreq)
+			// smContext.SubPduSessLog.Info("---int32 of pdusessionID: ", pduSessIDint32)
+			pduSessIDSmCxt := smContext.PDUSessionID
+			smContext.SubPduSessLog.Info("---PDU Session ID in SM Context: ", pduSessIDSmCxt)
 			//
 			// pdusession check- by cdac tvm
-			if pduSessIDint32 == pduSessIDSmf {
+			if pduSessIDrelreq == pduSessIDSmCxt {
 				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
 				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
 					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
