@@ -420,6 +420,7 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 		smContext.SubCtxLog.Infoln("---PDUSessionSMContextUpdate, ctxt in Modification Pending")
 		smContext.ChangeState(smf_context.SmStateActive)
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln("---PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 		httpResponse = &httpwrapper.Response{
 			Status: http.StatusOK,
 			Body:   response,
