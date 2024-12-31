@@ -58,9 +58,9 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SM Context State[%v] should be SmStateActive", smContext.SMContextState.String())
 			}
 			// printing pdusession ID value - by cdac
-			pduSessIDrelreq := m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID()
+			pduSessIDrelreq := int32(m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
 			smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDrelreq)
-			smContext.SubPduSessLog.Info("---int32 of pdusessionID: ", int32(pduSessIDrelreq))
+			// smContext.SubPduSessLog.Info("---int32 of pdusessionID: ", int32(pduSessIDrelreq))
 			pduSessIDint32 := int32(pduSessIDrelreq)
 			smContext.SubPduSessLog.Info("---int32 of pdusessionID: ", pduSessIDint32)
 			pduSessIDSmf := smContext.PDUSessionID
@@ -101,9 +101,9 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				if buf, err := context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
 					smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
 				} else {
-					response.BinaryDataN2SmInformation = buf
-					// response.BinaryDataN1SmMessage = buf
+					response.BinaryDataN1SmMessage = buf
 				}
+				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
 			}
 
 		case nas.MsgTypePDUSessionReleaseComplete:
