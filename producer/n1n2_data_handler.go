@@ -64,48 +64,48 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			smContext.SubPduSessLog.Info("---PDU Session ID in SM Context: ", pduSessIDSmCxt)
 			//
 			// pdusession check- by cdac tvm
-			if pduSessIDrelreq == pduSessIDSmCxt {
-				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
-				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
-					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
-				} else {
-					response.BinaryDataN1SmMessage = buf
-					smContext.SubPduSessLog.Infof("---rel command")
-				}
-
-				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseCommand"}
-
-				response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUResourceReleaseCommand"}
-				response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_REL_CMD
-
-				if buf, err := context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
-					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
-				} else {
-					response.BinaryDataN2SmInformation = buf
-					smContext.SubPduSessLog.Infof("---res rel command")
-				}
-
-				if smContext.Tunnel != nil {
-					smContext.SubCtxLog.Infoln("---tunnel not equal to nil")
-					smContext.ChangeState(context.SmStatePfcpModify)
-					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-					// Send release to UPF
-					// releaseTunnel(smContext)
-					pfcpAction.sendPfcpDelete = true
-				} else {
-					smContext.SubCtxLog.Infoln("---tunnel nil")
-					smContext.ChangeState(context.SmStateModify)
-					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-				}
+			// if pduSessIDrelreq == pduSessIDSmCxt {
+			smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
+			if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
+				smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
 			} else {
-				smContext.SubPduSessLog.Errorf("Invalid PDU Session ID")
-				if buf, err := context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
-					smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
-				} else {
-					response.BinaryDataN1SmMessage = buf
-				}
-				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
+				response.BinaryDataN1SmMessage = buf
+				smContext.SubPduSessLog.Infof("---rel command")
 			}
+
+			response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseCommand"}
+
+			response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUResourceReleaseCommand"}
+			response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_REL_CMD
+
+			if buf, err := context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
+				smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
+			} else {
+				response.BinaryDataN2SmInformation = buf
+				smContext.SubPduSessLog.Infof("---res rel command")
+			}
+
+			if smContext.Tunnel != nil {
+				smContext.SubCtxLog.Infoln("---tunnel not equal to nil")
+				smContext.ChangeState(context.SmStatePfcpModify)
+				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				// Send release to UPF
+				// releaseTunnel(smContext)
+				pfcpAction.sendPfcpDelete = true
+			} else {
+				smContext.SubCtxLog.Infoln("---tunnel nil")
+				smContext.ChangeState(context.SmStateModify)
+				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+			}
+			// } else {
+			// smContext.SubPduSessLog.Errorf("Invalid PDU Session ID")
+			// if buf, err := context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
+			// 	smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
+			// } else {
+			// 	response.BinaryDataN1SmMessage = buf
+			// }
+			// response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
+			// }
 
 		case nas.MsgTypePDUSessionReleaseComplete:
 			smContext.SubPduSessLog.Infoln("PDUSessionSMContextUpdate, N1 Msg PDU Session Release Complete received")
