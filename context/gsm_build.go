@@ -206,21 +206,22 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 }
 
 func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
+
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
 	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
 	m.GsmHeader.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	m.PDUSessionReleaseReject = nasMessage.NewPDUSessionReleaseReject(0x0)
 	pDUSessionReleaseReject := m.PDUSessionReleaseReject
-
 	pDUSessionReleaseReject.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
 	pDUSessionReleaseReject.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 
 	// setting pdusessionid from the 5gsm message - by cdac tvm
-	pduSessIDRelReq := int32(m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
-	smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req in buildgsmreject: ", pduSessIDRelReq)
-	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
-	pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDRelReq))
+	pduSessionReleaseRequest := nasMessage.PDUSessionReleaseRequest{}
+	pduSessIDRelReq := pduSessionReleaseRequest.PDUSessionID.Octet
+	smContext.SubGsmLog.Infoln("---PDU Session ID in Rel Req: ", pduSessIDRelReq)
+	//pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
+	pDUSessionReleaseReject.SetPDUSessionID(pduSessIDRelReq)
 	//
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)
@@ -228,4 +229,5 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseReject.SetCauseValue(nasMessage.Cause5GSMInvalidPDUSessionIdentity)
 
 	return m.PlainNasEncode()
+
 }
