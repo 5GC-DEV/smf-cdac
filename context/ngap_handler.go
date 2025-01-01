@@ -166,7 +166,7 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 		return fmt.Errorf("parse TEID error %s", err.Error())
 	}
 
-	/*for _, dataPath := range ctx.Tunnel.DataPathPool {
+	for _, dataPath := range ctx.Tunnel.DataPathPool {
 		if dataPath.Activated {
 			ANUPF := dataPath.FirstDPNode
 			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
@@ -175,20 +175,6 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 				dlOuterHeaderCreation.OuterHeaderCreationDescription = OuterHeaderCreationGtpUUdpIpv4
 				dlOuterHeaderCreation.Teid = uint32(teid)
 				dlOuterHeaderCreation.Ipv4Address = GTPTunnel.TransportLayerAddress.Value.Bytes
-				DLPDR.FAR.State = RULE_UPDATE
-			}
-		}
-	}*/
-
-	for _, dataPath := range ctx.Tunnel.DataPathPool {
-		if dataPath.Activated {
-			ANUPF := dataPath.FirstDPNode
-			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
-				DLPDR.FAR.ForwardingParameters.OuterHeaderCreation = &OuterHeaderCreation{
-					OuterHeaderCreationDescription: OuterHeaderCreationGtpUUdpIpv4,
-					Teid:                           uint32(teid),
-					Ipv4Address:                    GTPTunnel.TransportLayerAddress.Value.Bytes,
-				}
 				DLPDR.FAR.State = RULE_UPDATE
 			}
 		}
