@@ -199,7 +199,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
 	smContextUpdateData := body.JsonData
-	// tunnel := smContext.Tunnel
+	tunnel := smContext.Tunnel
 
 	smContext.SubPduSessLog.Infof("SM Context Update Data: %v", smContextUpdateData)
 
@@ -272,7 +272,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		// smContext.ChangeState(context.SmStateModify)
 		// smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 
-		/*pdrList := []*context.PDR{}
+		pdrList := []*context.PDR{}
 		farList := []*context.FAR{}
 
 		smContext.PendingUPF = make(context.PendingUPF)
@@ -303,7 +303,6 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 
 		pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
 		pfcpParam.farList = append(pfcpParam.farList, farList...)
-		*/
 
 		pfcpAction.sendPfcpModify = true
 		smContext.ChangeState(context.SmStatePfcpModify)
