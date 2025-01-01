@@ -277,9 +277,17 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 
 		smContext.PendingUPF = make(context.PendingUPF)
 		for _, dataPath := range tunnel.DataPathPool {
+			smContext.SubCtxLog.Infof("Datapath: %v", dataPath.Destination)
+			smContext.SubCtxLog.Infof("Datapath activated? %v", dataPath.Activated)
 			if dataPath.Activated {
 				ANUPF := dataPath.FirstDPNode
 				for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+					if DLPDR.FAR != nil && DLPDR.FAR.ForwardingParameters != nil && DLPDR.FAR.ForwardingParameters.OuterHeaderCreation != nil {
+						smContext.SubCtxLog.Infof("DL TEID: %v", DLPDR.FAR.ForwardingParameters.OuterHeaderCreation.Teid)
+						smContext.SubCtxLog.Infof("DL IP: %v", DLPDR.FAR.ForwardingParameters.OuterHeaderCreation.Ipv4Address)
+					} else {
+						smContext.SubCtxLog.Warnf("DLPDR.FAR.ForwardingParameters is nil")
+					}
 					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
 					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
 						DestinationInterface: context.DestinationInterface{
@@ -375,18 +383,9 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 		smContext.PendingUPF = make(context.PendingUPF)
 		for _, dataPath := range tunnel.DataPathPool {
-			smContext.SubCtxLog.Infof("Datapath: %v", dataPath.Destination)
-			smContext.SubCtxLog.Infof("Datapath activated? %v", dataPath.Activated)
 			if dataPath.Activated {
 				ANUPF := dataPath.FirstDPNode
 				for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
-					if DLPDR.FAR != nil && DLPDR.FAR.ForwardingParameters != nil && DLPDR.FAR.ForwardingParameters.OuterHeaderCreation != nil {
-						smContext.SubCtxLog.Infof("DL TEID: %v", DLPDR.FAR.ForwardingParameters.OuterHeaderCreation.Teid)
-						smContext.SubCtxLog.Infof("DL IP: %v", DLPDR.FAR.ForwardingParameters.OuterHeaderCreation.Ipv4Address)
-					} else {
-						smContext.SubCtxLog.Warnf("DLPDR.FAR.ForwardingParameters is nil")
-					}
-
 					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
 					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
 						/*
