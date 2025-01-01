@@ -206,7 +206,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 }
 
 func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
-
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
 	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
@@ -229,5 +228,4 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseReject.SetCauseValue(nasMessage.Cause5GSMInvalidPDUSessionIdentity)
 
 	return m.PlainNasEncode()
-
 }
