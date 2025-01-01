@@ -125,6 +125,8 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 	smContext := txn.Ctxt.(*context.SMContext)
 	smContextUpdateData := body.JsonData
 
+	smContext.SubPduSessLog.Infof("SM Context Update Data: %v", smContextUpdateData)
+
 	switch smContextUpdateData.UpCnxState {
 	case models.UpCnxState_ACTIVATING:
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, UP cnx state %v received", smContextUpdateData.UpCnxState)
@@ -193,10 +195,13 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 	return nil
 }
 
-func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSmContextResponse) error {
+func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction, pfcpParam *pfcpParam) error {
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
 	smContextUpdateData := body.JsonData
+	// tunnel := smContext.Tunnel
+
+	smContext.SubPduSessLog.Infof("SM Context Update Data: %v", smContextUpdateData)
 
 	switch smContextUpdateData.HoState {
 	case models.HoState_PREPARING:
@@ -229,6 +234,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 	case models.HoState_PREPARED:
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, Ho state %v received", smContextUpdateData.HoState)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, in HoState_PREPARED")
+
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes SmStateActive again
 			// TODO: implement sleep wait in concurrent architecture
@@ -263,8 +269,46 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive",
 				smContext.SMContextState.String())
 		}
-		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		// smContext.ChangeState(context.SmStateModify)
+		// smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+
+		/*pdrList := []*context.PDR{}
+		farList := []*context.FAR{}
+
+		smContext.PendingUPF = make(context.PendingUPF)
+		for _, dataPath := range tunnel.DataPathPool {
+			if dataPath.Activated {
+				ANUPF := dataPath.FirstDPNode
+				for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
+					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
+						DestinationInterface: context.DestinationInterface{
+							InterfaceValue: context.DestinationInterfaceAccess,
+						},
+						NetworkInstance: []byte(smContext.Dnn),
+					}
+
+					DLPDR.State = context.RULE_UPDATE
+					DLPDR.FAR.State = context.RULE_UPDATE
+
+					pdrList = append(pdrList, DLPDR)
+					farList = append(farList, DLPDR.FAR)
+
+					if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+					}
+				}
+			}
+		}
+
+		pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
+		pfcpParam.farList = append(pfcpParam.farList, farList...)
+		*/
+
+		pfcpAction.sendPfcpModify = true
+		smContext.ChangeState(context.SmStatePfcpModify)
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+
 		smContext.HoState = models.HoState_COMPLETED
 		response.JsonData.HoState = models.HoState_COMPLETED
 	}
