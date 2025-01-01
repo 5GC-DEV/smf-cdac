@@ -220,7 +220,7 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 	pduSessIDRelReq := pduSessionReleaseRequest.PDUSessionID.Octet
 	smContext.SubGsmLog.Infoln("---PDU Session ID in Rel Req: ", pduSessIDRelReq)
 	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
-	pDUSessionReleaseReject.SetPDUSessionID(pduSessIDRelReq)
+	pDUSessionReleaseReject.SetPDUSessionID(0x02)
 	//
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)
