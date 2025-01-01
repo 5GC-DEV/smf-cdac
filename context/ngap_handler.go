@@ -166,7 +166,7 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 		return fmt.Errorf("parse TEID error %s", err.Error())
 	}
 
-	for _, dataPath := range ctx.Tunnel.DataPathPool {
+	/*for _, dataPath := range ctx.Tunnel.DataPathPool {
 		if dataPath.Activated {
 			ANUPF := dataPath.FirstDPNode
 			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
@@ -178,9 +178,24 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 				DLPDR.FAR.State = RULE_UPDATE
 			}
 		}
+	}*/
+
+	for _, dataPath := range ctx.Tunnel.DataPathPool {
+		if dataPath.Activated {
+			ANUPF := dataPath.FirstDPNode
+			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+				DLPDR.FAR.ForwardingParameters.OuterHeaderCreation = &OuterHeaderCreation{
+					OuterHeaderCreationDescription: OuterHeaderCreationGtpUUdpIpv4,
+					Teid:                           uint32(teid),
+					Ipv4Address:                    GTPTunnel.TransportLayerAddress.Value.Bytes,
+				}
+				DLPDR.FAR.State = RULE_UPDATE
+			}
+		}
 	}
 
-	logger.PduSessLog.Infof("Target RAN DL TEID: %v", uint32(teid))
+	logger.PduSessLog.Infof("Target RAN DL TEID: %v", teid)
+	logger.PduSessLog.Infof("Target RAN DL int32 TEID: %v", uint32(teid))
 	// logger.PduSessLog.Infof("Target RAN DL IP: %v", GTPTunnel.TransportLayerAddress.Value.Bytes)
 
 	return nil

@@ -378,8 +378,23 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			if dataPath.Activated {
 				ANUPF := dataPath.FirstDPNode
 				for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+
+					if DLPDR.FAR != nil && DLPDR.FAR.ForwardingParameters != nil && DLPDR.FAR.ForwardingParameters.OuterHeaderCreation != nil {
+						smContext.SubCtxLog.Infof("DL TEID: %v", DLPDR.FAR.ForwardingParameters.OuterHeaderCreation.Teid)
+						smContext.SubCtxLog.Infof("DL TEID: %v", DLPDR.FAR.ForwardingParameters.OuterHeaderCreation.Teid)
+					} else {
+						smContext.SubCtxLog.Warnf("DLPDR.FAR.ForwardingParameters is nil")
+					}
+
 					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
 					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
+						/*
+							OuterHeaderCreation: &context.OuterHeaderCreation{
+							OuterHeaderCreationDescription: OuterHeaderCreationGtpUUdpIpv4,
+							Teid:                           uint32(teid),
+							Ipv4Address:                    GTPTunnel.TransportLayerAddress.Value.Bytes,
+							},
+						*/
 						DestinationInterface: context.DestinationInterface{
 							InterfaceValue: context.DestinationInterfaceAccess,
 						},
