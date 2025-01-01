@@ -290,6 +290,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 					}
 					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
 					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
+						OuterHeaderCreation: DLPDR.FAR.ForwardingParameters.OuterHeaderCreation,
 						DestinationInterface: context.DestinationInterface{
 							InterfaceValue: context.DestinationInterfaceAccess,
 						},
