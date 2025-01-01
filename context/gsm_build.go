@@ -216,7 +216,12 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseReject.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
 	pDUSessionReleaseReject.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 
-	pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
+	// setting pdusessionid from the 5gsm message - by cdac tvm
+	pduSessIDRelReq := int32(m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
+	smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req in buildgsmreject: ", pduSessIDRelReq)
+	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
+	pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDRelReq))
+	//
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)
 	// TODO: fix to real value
