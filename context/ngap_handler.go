@@ -182,6 +182,8 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 
 	logger.PduSessLog.Infof("Target RAN DL TEID: %v", teid)
 	logger.PduSessLog.Infof("Target RAN DL int32 TEID: %v", uint32(teid))
+	logger.PduSessLog.Infof("Target RAN DL GTPTunnel.GTPTEID.Value TEID: %v", GTPTunnel.GTPTEID.Value)
+	logger.PduSessLog.Infof("Target RAN DL TEIDReader TEID: %v", TEIDReader)
 	// logger.PduSessLog.Infof("Target RAN DL IP: %v", GTPTunnel.TransportLayerAddress.Value.Bytes)
 
 	return nil
