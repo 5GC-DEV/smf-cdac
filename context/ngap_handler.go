@@ -159,16 +159,7 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 	}
 	DLNGUUPTNLInformation := handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation
 	GTPTunnel := DLNGUUPTNLInformation.GTPTunnel
-	TEIDReader := bytes.NewBuffer(GTPTunnel.GTPTEID.Value)
-
-	logger.PduSessLog.Infof("handoverRequestAcknowledgeTransfer: ", handoverRequestAcknowledgeTransfer)
-	logger.PduSessLog.Infof("DLNGUUPTNLInformation: ", handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation)
-	logger.PduSessLog.Infof("DLNGUUPTNLInformation GTP Tunnel: ", handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation.GTPTunnel)
-
-	/*teid, err := binary.ReadUvarint(TEIDReader)
-	if err != nil {
-		return fmt.Errorf("parse TEID error %s", err.Error())
-	}*/
+	TEIDReader := bytes.NewReader(GTPTunnel.GTPTEID.Value)
 
 	var teid uint32
 	if err := binary.Read(TEIDReader, binary.BigEndian, &teid); err != nil {
@@ -189,10 +180,9 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 		}
 	}
 
-	logger.PduSessLog.Infof("Target RAN DL TEID: %v", teid)
-	logger.PduSessLog.Infof("Target RAN DL GTPTunnel.GTPTEID.Value TEID: %v", GTPTunnel.GTPTEID.Value)
-	logger.PduSessLog.Infof("Target RAN DL TEIDReader TEID: %v", TEIDReader)
-	// logger.PduSessLog.Infof("Target RAN DL IP: %v", GTPTunnel.TransportLayerAddress.Value.Bytes)
+	// Improved logging
+	logger.PduSessLog.Infof("Target RAN DL TEID (Parsed): %d (0x%08x)", teid, teid)
+	logger.PduSessLog.Infof("Target RAN DL Raw GTPTEID Value: %v (Hex: %x)", GTPTunnel.GTPTEID.Value, GTPTunnel.GTPTEID.Value)
 
 	return nil
 }
