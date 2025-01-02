@@ -202,6 +202,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 	tunnel := smContext.Tunnel
 
 	smContext.SubPduSessLog.Infof("SM Context Update Data: %v", smContextUpdateData)
+	smContext.SubPduSessLog.Infof("SM Context: %v", smContext)
 
 	switch smContextUpdateData.HoState {
 	case models.HoState_PREPARING:
@@ -232,6 +233,10 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		}
 		response.JsonData.HoState = models.HoState_PREPARING
 	case models.HoState_PREPARED:
+		smContext.SubPduSessLog.Infof("BinaryDataN2SmInformation: %v", body.BinaryDataN1SmMessage)
+		smContext.SubPduSessLog.Infof("BinaryDataN2SmInformation: %v", body.BinaryDataN2SmInformation)
+		smContext.SubPduSessLog.Infof("JSON: %v", body.JsonData)
+
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, Ho state %v received", smContextUpdateData.HoState)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, in HoState_PREPARED")
 
@@ -245,6 +250,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 		smContext.HoState = models.HoState_PREPARED
 		response.JsonData.HoState = models.HoState_PREPARED
+
 		if err := context.HandleHandoverRequestAcknowledgeTransfer(body.BinaryDataN2SmInformation, smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, handle HandoverRequestAcknowledgeTransfer failed: %+v", err)
 		}

@@ -161,9 +161,19 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 	GTPTunnel := DLNGUUPTNLInformation.GTPTunnel
 	TEIDReader := bytes.NewBuffer(GTPTunnel.GTPTEID.Value)
 
-	teid, err := binary.ReadUvarint(TEIDReader)
+	logger.PduSessLog.Infof("handoverRequestAcknowledgeTransfer: ", handoverRequestAcknowledgeTransfer)
+	logger.PduSessLog.Infof("DLNGUUPTNLInformation: ", handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation)
+	logger.PduSessLog.Infof("DLNGUUPTNLInformation GTP Tunnel: ", handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation.GTPTunnel)
+	logger.PduSessLog.Infof("DLForwardingUPTNLInformation GTP Tunnel: ", handoverRequestAcknowledgeTransfer.DLForwardingUPTNLInformation.GTPTunnel)
+
+	/*teid, err := binary.ReadUvarint(TEIDReader)
 	if err != nil {
 		return fmt.Errorf("parse TEID error %s", err.Error())
+	}*/
+
+	var teid uint32
+	if err := binary.Read(TEIDReader, binary.BigEndian, &teid); err != nil {
+		return fmt.Errorf("parse TEID error: %s", err.Error())
 	}
 
 	for _, dataPath := range ctx.Tunnel.DataPathPool {
