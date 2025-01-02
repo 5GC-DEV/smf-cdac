@@ -5,7 +5,6 @@
 package context
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -157,15 +156,19 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 	if err != nil {
 		return err
 	}
+
 	DLNGUUPTNLInformation := handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation
 	GTPTunnel := DLNGUUPTNLInformation.GTPTunnel
-	TEIDReader := bytes.NewReader(GTPTunnel.GTPTEID.Value)
 
-	var teid uint32
-	if err := binary.Read(TEIDReader, binary.BigEndian, &teid); err != nil {
-		return fmt.Errorf("parse TEID error: %s", err.Error())
+	// Ensure TEID has 4 bytes
+	if len(GTPTunnel.GTPTEID.Value) != 4 {
+		return fmt.Errorf("invalid GTP TEID length: %d", len(GTPTunnel.GTPTEID.Value))
 	}
 
+	// Parse TEID in big-endian order
+	teid := binary.BigEndian.Uint32(GTPTunnel.GTPTEID.Value)
+
+	// Update data paths
 	for _, dataPath := range ctx.Tunnel.DataPathPool {
 		if dataPath.Activated {
 			ANUPF := dataPath.FirstDPNode
@@ -180,7 +183,7 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 		}
 	}
 
-	// Improved logging
+	// Log TEID details
 	logger.PduSessLog.Infof("Target RAN DL TEID (Parsed): %d (0x%08x)", teid, teid)
 	logger.PduSessLog.Infof("Target RAN DL Raw GTPTEID Value: %v (Hex: %x)", GTPTunnel.GTPTEID.Value, GTPTunnel.GTPTEID.Value)
 
