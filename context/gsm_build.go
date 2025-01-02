@@ -216,11 +216,11 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseReject.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 
 	// setting pdusessionid from the 5gsm message - by cdac tvm
-	pduSessionReleaseRequest := nasMessage.PDUSessionReleaseRequest{}
-	pduSessIDRelReq := pduSessionReleaseRequest.PDUSessionID.Octet
-	smContext.SubGsmLog.Infoln("---PDU Session ID in Rel Req: ", pduSessIDRelReq)
-	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
-	pDUSessionReleaseReject.SetPDUSessionID(0x02)
+	// pduSessionReleaseRequest := nasMessage.PDUSessionReleaseRequest{}
+	// pduSessIDRelReq := pduSessionReleaseRequest.PDUSessionID.Octet
+	// smContext.SubGsmLog.Infoln("---PDU Session ID in Rel Req: ", pduSessIDRelReq)
+	pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
+	// pDUSessionReleaseReject.SetPDUSessionID(0x02)
 	//
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)
