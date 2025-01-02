@@ -164,7 +164,6 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 	logger.PduSessLog.Infof("handoverRequestAcknowledgeTransfer: ", handoverRequestAcknowledgeTransfer)
 	logger.PduSessLog.Infof("DLNGUUPTNLInformation: ", handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation)
 	logger.PduSessLog.Infof("DLNGUUPTNLInformation GTP Tunnel: ", handoverRequestAcknowledgeTransfer.DLNGUUPTNLInformation.GTPTunnel)
-	logger.PduSessLog.Infof("DLForwardingUPTNLInformation GTP Tunnel: ", handoverRequestAcknowledgeTransfer.DLForwardingUPTNLInformation.GTPTunnel)
 
 	/*teid, err := binary.ReadUvarint(TEIDReader)
 	if err != nil {
@@ -183,7 +182,7 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 				DLPDR.FAR.ForwardingParameters.OuterHeaderCreation = new(OuterHeaderCreation)
 				dlOuterHeaderCreation := DLPDR.FAR.ForwardingParameters.OuterHeaderCreation
 				dlOuterHeaderCreation.OuterHeaderCreationDescription = OuterHeaderCreationGtpUUdpIpv4
-				dlOuterHeaderCreation.Teid = uint32(teid)
+				dlOuterHeaderCreation.Teid = teid
 				dlOuterHeaderCreation.Ipv4Address = GTPTunnel.TransportLayerAddress.Value.Bytes
 				DLPDR.FAR.State = RULE_UPDATE
 			}
@@ -191,7 +190,6 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 	}
 
 	logger.PduSessLog.Infof("Target RAN DL TEID: %v", teid)
-	logger.PduSessLog.Infof("Target RAN DL int32 TEID: %v", uint32(teid))
 	logger.PduSessLog.Infof("Target RAN DL GTPTunnel.GTPTEID.Value TEID: %v", GTPTunnel.GTPTEID.Value)
 	logger.PduSessLog.Infof("Target RAN DL TEIDReader TEID: %v", TEIDReader)
 	// logger.PduSessLog.Infof("Target RAN DL IP: %v", GTPTunnel.TransportLayerAddress.Value.Bytes)
