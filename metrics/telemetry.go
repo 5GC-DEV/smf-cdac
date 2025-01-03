@@ -26,6 +26,7 @@ type SmfStats struct {
 	svcUdmMsg   *prometheus.CounterVec
 	sessions    *prometheus.GaugeVec
 	sessProfile *prometheus.GaugeVec
+	sessStats   *prometheus.CounterVec
 }
 
 var smfStats *SmfStats
@@ -66,6 +67,12 @@ func initSmfStats() *SmfStats {
 			Name: "smf_pdu_session_profile",
 			Help: "SMF PDU session Profile",
 		}, []string{"id", "ip", "state", "upf", "enterprise"}),
+		//	Counter of total session creation - by cdac tvm
+		sessStats: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "smf_pdu_session_stats",
+			Help: "Counter of total session status",
+		}, []string{"smf_id", "ip", "result"}),
+		//
 	}
 }
 
@@ -89,6 +96,9 @@ func (ps *SmfStats) register() error {
 		return err
 	}
 	if err := prometheus.Register(ps.sessProfile); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessStats); err != nil {
 		return err
 	}
 	return nil
@@ -144,4 +154,9 @@ func SetSessStats(nodeId string, count uint64) {
 // SetSessProfileStats maintains Session profile info
 func SetSessProfileStats(id, ip, state, upf, enterprise string, count uint64) {
 	smfStats.sessProfile.WithLabelValues(id, ip, state, upf, enterprise).Set(float64(count))
+}
+
+// IncrementNoOfSessions increments session level stats - by cdac tvm
+func IncrementNoOfSessions(smfID, ip, result string) {
+	smfStats.n11Msg.WithLabelValues(smfID, ip, result).Inc()
 }
