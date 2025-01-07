@@ -584,7 +584,8 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 				Error: &problemDetail,
 			},
 		}
-		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
+		// function parameter changed - by cadc tvm
+		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(txn, smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
 		} else {
 			errResponse.BinaryDataN1SmMessage = buf
@@ -610,7 +611,8 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 				Error: &problemDetail,
 			},
 		}
-		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
+		// function parameter changed - by cadc tvm
+		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(txn, smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
 		} else {
 			errResponse.BinaryDataN1SmMessage = buf

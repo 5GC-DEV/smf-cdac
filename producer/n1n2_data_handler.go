@@ -99,7 +99,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				}
 			} else {
 				smContext.SubPduSessLog.Errorf("---Invalid PDU Session ID")
-				if buf, err := context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
+				if buf, err := context.BuildGSMPDUSessionReleaseReject(txn, smContext); err != nil {
 					smContext.SubPduSessLog.Errorf("---PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
 				} else {
 					response.BinaryDataN1SmMessage = buf
