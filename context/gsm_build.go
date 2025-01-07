@@ -210,11 +210,14 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SMContext) ([]byte, error) {
 	// added for fix invalid pdu sess ID - cdac
 	body := txn.Req.(models.UpdateSmContextRequest)
-	smContext.SubPduSessLog.Info("---body print  :", body.JsonData.Pei)
-	smContext.SubPduSessLog.Info("---PDUSessionSMContextUpdate, Binary Data N1 SmMessage isn't nil")
-	msg := nas.NewMessage()
-	smContext.SubPduSessLog.Info("---msg: ", msg)
-	smContext.SubPduSessLog.Info("---msg.PDUSessionReleaseRequest: ", msg.PDUSessionReleaseRequest)
+	var msg *nas.Message
+	if body.BinaryDataN1SmMessage != nil {
+		smContext.SubPduSessLog.Info("---body.BinaryDataN1SmMessage not nil")
+		msg = nas.NewMessage()
+	}
+	// smContext.SubPduSessLog.Info("---PDUSessionSMContextUpdate, Binary Data N1 SmMessage isn't nil")
+	// smContext.SubPduSessLog.Info("---msg: ", msg)
+	// smContext.SubPduSessLog.Info("---msg.PDUSessionReleaseRequest: ", msg.PDUSessionReleaseRequest)
 	pduSessIDrelreq := int32(msg.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
 	smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDrelreq)
 	//
