@@ -19,12 +19,12 @@ import (
 	"github.com/5GC-DEV/openapi-cdac/Nudm_SubscriberDataManagement"
 	"github.com/5GC-DEV/openapi-cdac/models"
 	nrfCache "github.com/5GC-DEV/openapi-cdac/nrfcache"
+	smf_context "github.com/5GC-DEV/smf-cdac/context"
+	"github.com/5GC-DEV/smf-cdac/logger"
+	"github.com/5GC-DEV/smf-cdac/metrics"
+	"github.com/5GC-DEV/smf-cdac/msgtypes/svcmsgtypes"
 	"github.com/antihax/optional"
 	"github.com/mohae/deepcopy"
-	smf_context "github.com/omec-project/smf/context"
-	"github.com/omec-project/smf/logger"
-	"github.com/omec-project/smf/metrics"
-	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 )
 
 func SendNFRegistration() (*models.NfProfile, error) {
