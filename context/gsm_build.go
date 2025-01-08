@@ -13,7 +13,6 @@ import (
 	"github.com/omec-project/nas/nasConvert"
 	"github.com/omec-project/nas/nasMessage"
 	"github.com/omec-project/nas/nasType"
-	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
 )
@@ -209,17 +208,17 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 
 func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SMContext) ([]byte, error) {
 	// added for fix invalid pdu sess ID - cdac
-	body := txn.Req.(models.UpdateSmContextRequest)
-	var msg *nas.Message
-	if body.BinaryDataN1SmMessage != nil {
-		smContext.SubPduSessLog.Info("---body.BinaryDataN1SmMessage not nil")
-		msg = nas.NewMessage()
-	}
+	// body := txn.Req.(models.UpdateSmContextRequest)
+	// var msg *nas.Message
+	// if body.BinaryDataN1SmMessage != nil {
+	// 	smContext.SubPduSessLog.Info("---body.BinaryDataN1SmMessage not nil")
+	// 	msg = nas.NewMessage()
+	// }
 	// smContext.SubPduSessLog.Info("---PDUSessionSMContextUpdate, Binary Data N1 SmMessage isn't nil")
 	// smContext.SubPduSessLog.Info("---msg: ", msg)
 	// smContext.SubPduSessLog.Info("---msg.PDUSessionReleaseRequest: ", msg.PDUSessionReleaseRequest)
-	pduSessIDrelreq := int32(msg.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
-	smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDrelreq)
+	// pduSessIDrelreq := int32(msg.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
+	// smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDrelreq)
 	//
 
 	m := nas.NewMessage()
@@ -235,9 +234,9 @@ func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SM
 	// pduSessionReleaseRequest := nasMessage.PDUSessionReleaseRequest{}
 	// pduSessIDRelReq := pduSessionReleaseRequest.PDUSessionID.Octet
 	// smContext.SubGsmLog.Infoln("---PDU Session ID in Rel Req: ", pduSessIDRelReq)
-	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
-	pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDrelreq))
-	// pDUSessionReleaseReject.SetPDUSessionID(0x02)
+	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID)) // actual line of code
+	// pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDrelreq))
+	pDUSessionReleaseReject.SetPDUSessionID(0x02)
 	//
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)
