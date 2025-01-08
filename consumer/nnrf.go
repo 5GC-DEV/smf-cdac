@@ -13,13 +13,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/antihax/optional"
 	"github.com/mohae/deepcopy"
 	"github.com/omec-project/openapi"
 	"github.com/omec-project/openapi/Nnrf_NFDiscovery"
 	"github.com/omec-project/openapi/Nnrf_NFManagement"
 	"github.com/omec-project/openapi/Nudm_SubscriberDataManagement"
-	"github.com/omec-project/openapi/models"
 	nrfCache "github.com/omec-project/openapi/nrfcache"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
@@ -345,6 +345,33 @@ func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.Proble
 		return nil, localErr
 	}
 	return nil, nil
+}
+
+func SendNFDiscoveryPCSCF() (problemDetails *models.ProblemDetails, err error) {
+	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
+
+	var result models.SearchResult
+	var localErr error
+
+	if smf_context.SMF_Self().EnableNrfCaching {
+		result, localErr = nrfCache.SearchNFInstances(smf_context.SMF_Self().NrfUri, models.NfType_PCs, models.NfType_SMF, &localVarOptionals)
+	} else {
+		result, localErr = SendNrfForNfInstance(smf_context.SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
+	}
+
+	if localErr == nil {
+		logger.ConsumerLog.Debugln(result.NfInstances)
+	} else {
+		apiError, ok := localErr.(openapi.GenericOpenAPIError)
+		if ok {
+			problem := apiError.Model().(models.ProblemDetails)
+			return &problem, nil
+		}
+
+		return nil, localErr
+	}
+
+	return problemDetails, err
 }
 
 func SendDeregisterNFInstance() (*models.ProblemDetails, error) {

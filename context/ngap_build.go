@@ -234,7 +234,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		return nil, fmt.Errorf("sessRule is nil")
 	}
 
-	if sessRule == nil || sessRule.AuthSessAmbr == nil {
+	if sessRule.AuthSessAmbr == nil {
 		return nil, fmt.Errorf("no PDU Session AMBR")
 	}
 	ie.Value = ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
