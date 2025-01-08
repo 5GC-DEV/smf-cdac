@@ -89,6 +89,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		txn.Rsp = formContextCreateErrRsp(http.StatusForbidden, &Nsmf_PDUSession.N1SmError, nil)
 		return fmt.Errorf("GsmMsgDecodeError")
 	}
+	// increments pdu session requests stats - by cdac tvm
+	metrics.IncrementNoOfSessReq(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "success")
 
 	createData := request.JsonData
 
