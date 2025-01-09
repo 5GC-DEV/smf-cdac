@@ -208,16 +208,14 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 }
 
 func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SMContext) ([]byte, error) {
-	// added for fix invalid pdu sess ID - cdac
+	// added for fix invalid pdu sess ID - by cdac tvm
 	body := txn.Req.(models.UpdateSmContextRequest)
-	// if body.BinaryDataN1SmMessage != nil {
-	smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, Binary Data N1 SmMessage isn't nil")
 	msg := nas.NewMessage()
 	err := msg.GsmMessageDecode(&body.BinaryDataN1SmMessage)
 	if err != nil {
 		smContext.SubPduSessLog.Errorln("---GsmMessageDecode error")
 	}
-	// }
+	//
 
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
@@ -228,16 +226,11 @@ func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SM
 	pDUSessionReleaseReject.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
 	pDUSessionReleaseReject.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 
+	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	// setting pdusessionid from the 5gsm message - by cdac tvm
-	// pduSessionReleaseRequest := nasMessage.PDUSessionReleaseRequest{}
-	// pduSessIDRelReq := pduSessionReleaseRequest.PDUSessionID.Octet
-	// smContext.SubGsmLog.Infoln("---PDU Session ID in Rel Req: ", pduSessIDRelReq)
-	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID)) // actual line of code
-	// pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDrelreq))
-	// pDUSessionReleaseReject.SetPDUSessionID(0x02)
-	pduSessIDrelreq := int32(msg.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
-	smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDrelreq)
-	pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDrelreq))
+	pduSessIDRelReq := int32(msg.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
+	smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req in gsmbuild: ", pduSessIDRelReq)
+	pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDRelReq))
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)
 	// TODO: fix to real value

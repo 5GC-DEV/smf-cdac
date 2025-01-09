@@ -357,7 +357,7 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 	case smf_context.SmStatePfcpModify:
 
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, ctxt in PFCP Modification State")
-		smContext.SubCtxLog.Infoln("---PDUSessionSMContextUpdate, ctxt in PFCP Modification State")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, ctxt in PFCP Modification State")
 		var err error
 
 		// Initiate PFCP Delete
@@ -417,24 +417,24 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 
 	case smf_context.SmStateModify:
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, ctxt in Modification Pending")
-		smContext.SubCtxLog.Infoln("---PDUSessionSMContextUpdate, ctxt in Modification Pending")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, ctxt in Modification Pending")
 		smContext.ChangeState(smf_context.SmStateActive)
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-		smContext.SubCtxLog.Debugln("---PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 		httpResponse = &httpwrapper.Response{
 			Status: http.StatusOK,
 			Body:   response,
 		}
 	case smf_context.SmStateInit, smf_context.SmStateInActivePending:
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, ctxt in SmStateInit, SmStateInActivePending")
-		smContext.SubCtxLog.Infoln("---PDUSessionSMContextUpdate, ctxt in SmStateInit, SmStateInActivePending")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, ctxt in SmStateInit, SmStateInActivePending")
 		httpResponse = &httpwrapper.Response{
 			Status: http.StatusOK,
 			Body:   response,
 		}
 	default:
 		smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SM Context State [%s] shouldn't be here\n", smContext.SMContextState)
-		smContext.SubPduSessLog.Infof("---PDUSessionSMContextUpdate, SM Context State [%s] shouldn't be here\n", smContext.SMContextState)
+		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SM Context State [%s] shouldn't be here\n", smContext.SMContextState)
 		httpResponse = &httpwrapper.Response{
 			Status: http.StatusOK,
 			Body:   response,
