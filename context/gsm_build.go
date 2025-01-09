@@ -122,6 +122,16 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 		// IPv4 P-CSCF
 		if smContext.ProtocolConfigurationOptions.PCSCFIPv4Request {
 			pcsfIpStr := "192.168.45.47"
+
+			smContext.SubGsmLog.Infof("PCSCF Info: ", smfContext.PCSCFInfo)
+
+			if smfContext.PCSCFInfo.IPv4Addr != "" {
+				pcsfIpStr = smfContext.PCSCFInfo.IPv4Addr
+			} else {
+				smContext.SubGsmLog.Warnf("PCSCF config info is nil")
+			}
+
+			smContext.SubGsmLog.Infof("PCSCF Ip: ", pcsfIpStr)
 			pcscfIP := net.ParseIP(pcsfIpStr)
 			if pcscfIP == nil {
 				smContext.SubGsmLog.Warnln("Invalid P-CSCF IP address")
