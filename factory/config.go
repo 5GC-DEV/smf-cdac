@@ -264,8 +264,9 @@ func (c *Config) updateConfig(commChannel chan *protos.NetworkSliceResponse) boo
 		SmfConfigSyncLock.Lock()
 		c.Configuration.SNssaiInfo = cfgNew.SNssaiInfo
 		c.Configuration.UserPlaneInformation = cfgNew.UserPlaneInformation
-		c.Configuration.PCSCFInfo = cfgNew.PCSCFInfo
 		SmfConfigSyncLock.Unlock()
+
+		logger.GrpcLog.Infof("PCSCF Configurations: %v", c.Configuration.PCSCFInfo)
 		// Send trigger to update SMF Context
 		ConfigPodTrigger <- true
 	}

@@ -46,6 +46,8 @@ func InitConfigFactory(f string) error {
 			SmfConfig.Configuration.KafkaInfo.EnableKafka = &enableKafka
 		}
 
+		logger.CfgLog.Infof("PCSCF IPv4: %v", SmfConfig.Configuration.PCSCFInfo.IPv4Addr)
+
 		roc := os.Getenv("MANAGED_BY_CONFIG_POD")
 		if roc == "true" {
 			gClient := client.ConnectToConfigServer(SmfConfig.Configuration.WebuiUri)
