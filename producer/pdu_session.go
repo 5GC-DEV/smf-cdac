@@ -183,6 +183,21 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
 	// Modified by cdac
+	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeIPv6 {
+		smContext.SubPduSessLog.Errorf("IPv6 PDU Session Not Supported")
+		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
+		return fmt.Errorf("IPv6 PDU Session not supported")
+	}
+	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeIPv4IPv6 {
+		smContext.SubPduSessLog.Errorf("IPv4IPv6 PDU Session Not Supported")
+		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
+		return fmt.Errorf("IPv4IPv6 PDU Session not supported")
+	}
+	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeEthernet {
+		smContext.SubPduSessLog.Errorf("Ethernet PDU Session Not Supported")
+		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
+		return fmt.Errorf("ethernet PDU Session not supported")
+	}
 	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeUnstructured {
 		smContext.SubPduSessLog.Errorf("Unstructured PDU Session Not Supported")
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
