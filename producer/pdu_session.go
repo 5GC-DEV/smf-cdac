@@ -183,7 +183,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
 	// Modified by cdac
-	if smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4 {
+	if smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4 && smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4IPv6 {
 		pduTypeStr := pduSessionTypeToString(smContext.SelectedPDUSessionType)
 		smContext.SubPduSessLog.Errorf("%s PDU Session Not Supported", pduTypeStr)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
