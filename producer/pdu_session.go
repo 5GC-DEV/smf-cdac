@@ -183,10 +183,11 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
 	// Modified by cdac
-	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeUnstructured {
-		smContext.SubPduSessLog.Errorf("Unstructured PDU Session Not Supported")
-		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UnknownPDUSessionType")
-		return fmt.Errorf("Unstructured PDU Session not supported error")
+	if smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4 && smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4IPv6 {
+		pduTypeStr := pduSessionTypeToString(smContext.SelectedPDUSessionType)
+		smContext.SubPduSessLog.Errorf("%s PDU Session Not Supported", pduTypeStr)
+		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
+		return fmt.Errorf("%s PDU Session not supported", pduTypeStr)
 	}
 	// End of CDAC edit
 	if err := smContext.PCFSelection(); err != nil {
@@ -305,6 +306,23 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	return nil
 	// TODO: UECM registration
+}
+
+func pduSessionTypeToString(pduType uint8) string {
+	switch pduType {
+	case nasMessage.PDUSessionTypeIPv4:
+		return "IPv4"
+	case nasMessage.PDUSessionTypeIPv6:
+		return "IPv6"
+	case nasMessage.PDUSessionTypeIPv4IPv6:
+		return "IPv4IPv6"
+	case nasMessage.PDUSessionTypeEthernet:
+		return "Ethernet"
+	case nasMessage.PDUSessionTypeUnstructured:
+		return "Unstructured"
+	default:
+		return "IPv4"
+	}
 }
 
 func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
