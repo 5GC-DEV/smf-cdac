@@ -26,8 +26,10 @@ type SmfStats struct {
 	svcUdmMsg   *prometheus.CounterVec
 	sessions    *prometheus.GaugeVec
 	sessProfile *prometheus.GaugeVec
+	// by cdac tvm
 	sessStats   *prometheus.CounterVec
 	sessRequest *prometheus.CounterVec
+	//
 }
 
 var smfStats *SmfStats
@@ -168,10 +170,10 @@ func SetSessProfileStats(id, ip, state, upf, enterprise string, count uint64) {
 
 // IncrementNoOfSessions increments session level stats - by cdac tvm
 func IncrementNoOfSessions(smfID, ip, result string) {
-	smfStats.n11Msg.WithLabelValues(smfID, ip, result).Inc()
+	smfStats.sessStats.WithLabelValues(smfID, ip, result).Inc()
 }
 
 // IncrementNoOfSessReq increments pdu session requests stats - by cdac tvm
 func IncrementNoOfSessReq(smfID, ip, result string) {
-	smfStats.n11Msg.WithLabelValues(smfID, ip, result).Inc()
+	smfStats.sessRequest.WithLabelValues(smfID, ip, result).Inc()
 }
