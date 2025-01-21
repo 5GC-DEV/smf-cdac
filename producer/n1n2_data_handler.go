@@ -57,13 +57,13 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				// TODO: implement sleep wait in concurrent architecture
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SM Context State[%v] should be SmStateActive", smContext.SMContextState.String())
 			}
-			// printing pdusession ID value - by cdac tvm
-			pduSessIDRelReq := int32(m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
-			smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req: ", pduSessIDRelReq)
-			pduSessIDSmCxt := smContext.PDUSessionID
-			smContext.SubPduSessLog.Info("---PDU Session ID in SM Context: ", pduSessIDSmCxt)
 
-			// pdusession check- by cdac tvm
+			pduSessIDRelReq := int32(m.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
+			smContext.SubPduSessLog.Debug("PDU Session ID in Rel Req: ", pduSessIDRelReq)
+			pduSessIDSmCxt := smContext.PDUSessionID
+			smContext.SubPduSessLog.Debug("PDU Session ID in SM Context: ", pduSessIDSmCxt)
+
+			// Modified to compare the PDUSessionID from the Release Request and the SMcontext
 			if pduSessIDRelReq == pduSessIDSmCxt {
 				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
 				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
@@ -94,28 +94,17 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				}
 			} else {
-				smContext.SubPduSessLog.Errorf("---Invalid PDU Session ID")
+				smContext.SubPduSessLog.Errorf("Invalid PDU Session ID")
 				if buf, err := context.BuildGSMPDUSessionReleaseReject(txn, smContext); err != nil {
 					smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
 				} else {
 					response.BinaryDataN1SmMessage = buf
 				}
 				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
-				// N2info
-				// response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUResourceReleaseCommand"}
-				// response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_REL_CMD
-
-				// if buf, err := context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
-				// 	smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
-				// } else {
-				// 	response.BinaryDataN2SmInformation = buf
-				// 	smContext.SubPduSessLog.Infof("---res rel command in else")
-				// }
-				//
 
 				smContext.ChangeState(context.SmStateModify)
-				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-				smContext.SubCtxLog.Infoln("---PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				// smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 			}
 
 		case nas.MsgTypePDUSessionReleaseComplete:

@@ -177,9 +177,8 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionReleaseCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	pDUSessionReleaseCommand.SetPTI(smContext.Pti)
-	// Modified by CDAC TVM
+	// Modification According to the 3GPP TS 24.501, Section 6.3.3 Network-requested PDU session release procedure
 	pDUSessionReleaseCommand.SetCauseValue(0x24)
-	// End of Modification
 
 	return m.PlainNasEncode()
 }
@@ -208,12 +207,12 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 }
 
 func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SMContext) ([]byte, error) {
-	// added for fix invalid pdu sess ID - by cdac tvm
+	// Modified to fix invalid PDU session ID
 	body := txn.Req.(models.UpdateSmContextRequest)
 	msg := nas.NewMessage()
 	err := msg.GsmMessageDecode(&body.BinaryDataN1SmMessage)
 	if err != nil {
-		smContext.SubPduSessLog.Errorln("---GsmMessageDecode error")
+		smContext.SubPduSessLog.Errorln("GsmMessageDecode error")
 	}
 	//
 
@@ -227,9 +226,9 @@ func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SM
 	pDUSessionReleaseReject.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 
 	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
-	// setting pdusessionid from the 5gsm message - by cdac tvm
+	// Setting PDUsessionID from the 5GSM message
 	pduSessIDRelReq := int32(msg.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
-	smContext.SubPduSessLog.Info("---PDU Session ID in Rel Req in gsmbuild: ", pduSessIDRelReq)
+	smContext.SubPduSessLog.Debug("PDU Session ID in Rel Req in gsmbuild: ", pduSessIDRelReq)
 	pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDRelReq))
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)

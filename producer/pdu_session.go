@@ -182,13 +182,13 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	establishmentRequest := m.PDUSessionEstablishmentRequest
 
 	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
-	// Modified by cdac
+	// Modified to fix the Unstructured Session Type
 	if smContext.SelectedPDUSessionType == nasMessage.PDUSessionTypeUnstructured {
 		smContext.SubPduSessLog.Errorf("Unstructured PDU Session Not Supported")
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UnknownPDUSessionType")
 		return fmt.Errorf("Unstructured PDU Session not supported error")
 	}
-	// End of CDAC edit
+	// End of modification
 	if err := smContext.PCFSelection(); err != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving PCF Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFDiscoveryFailure")
