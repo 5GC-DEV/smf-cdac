@@ -13,7 +13,9 @@ import (
 	"github.com/omec-project/nas/nasConvert"
 	"github.com/omec-project/nas/nasMessage"
 	"github.com/omec-project/nas/nasType"
+	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/smf/qos"
+	"github.com/omec-project/smf/transaction"
 )
 
 func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error) {
@@ -175,7 +177,7 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionReleaseCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	pDUSessionReleaseCommand.SetPTI(smContext.Pti)
-	// Modified by CDAC TVM
+	// Modification According to the 3GPP TS 24.501, Section 6.3.3 Network-requested PDU session release procedure
 	pDUSessionReleaseCommand.SetCauseValue(0x24)
 	// End of Modification
 
@@ -205,7 +207,15 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	return m.PlainNasEncode()
 }
 
-func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
+func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SMContext) ([]byte, error) {
+	// Modified to fix the invalid PDUSessionID
+	body := txn.Req.(models.UpdateSmContextRequest)
+	msg := nas.NewMessage()
+	err := msg.GsmMessageDecode(&body.BinaryDataN1SmMessage)
+	if err != nil {
+		smContext.SubPduSessLog.Errorln("GsmMessageDecode error")
+	}
+
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
 	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
@@ -215,12 +225,16 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 
 	pDUSessionReleaseReject.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
 	pDUSessionReleaseReject.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
-
-	pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
+	// Setting PDUSessionID from the Release Request
+	pduSessIDRelReq := int32(msg.PDUSessionReleaseRequest.PDUSessionID.GetPDUSessionID())
+	smContext.SubPduSessLog.Debug("PDU Session ID in Release Req: ", pduSessIDRelReq)
+	pDUSessionReleaseReject.SetPDUSessionID(uint8(pduSessIDRelReq))
+	// pDUSessionReleaseReject.SetPDUSessionID(uint8(smContext.PDUSessionID))
 
 	pDUSessionReleaseReject.SetPTI(smContext.Pti)
 	// TODO: fix to real value
-	pDUSessionReleaseReject.SetCauseValue(nasMessage.Cause5GSMRequestRejectedUnspecified)
+	// Modified According to the 3GPP TS 24.501, Section 7.3.2
+	pDUSessionReleaseReject.SetCauseValue(nasMessage.Cause5GSMInvalidPDUSessionIdentity)
 
 	return m.PlainNasEncode()
 }
