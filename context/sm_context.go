@@ -570,7 +570,7 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 		} else {
 			return fmt.Errorf("PduSessionType_ETHERNET is not allowed in DNN[%s] configuration", smContext.Dnn)
 		}
-	// Modification start by CDAC
+	// Modified to fix the Unstructured Session type
 	case models.PduSessionType_UNSTRUCTURED:
 		smContext.SelectedPDUSessionType = nasConvert.ModelsToPDUSessionType(models.PduSessionType_UNSTRUCTURED)
 		return fmt.Errorf("Unstructured PDU Session type")
