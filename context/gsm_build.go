@@ -15,6 +15,7 @@ import (
 	"github.com/omec-project/nas/nasType"
 	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/smf/qos"
+	errors "github.com/omec-project/smf/smferrors"
 	"github.com/omec-project/smf/transaction"
 )
 
@@ -236,5 +237,21 @@ func BuildGSMPDUSessionReleaseReject(txn *transaction.Transaction, smContext *SM
 	// Modified According to the 3GPP TS 24.501, Section 7.3.2
 	pDUSessionReleaseReject.SetCauseValue(nasMessage.Cause5GSMInvalidPDUSessionIdentity)
 
+	return m.PlainNasEncode()
+}
+
+func BuildGSMPDUSessionReleaseRejectWithCause(smContext *SMContext, pduSessionID int32, cause string) ([]byte, error) {
+	m := nas.NewMessage()
+	m.GsmMessage = nas.NewGsmMessage()
+	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
+	m.GsmHeader.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+	m.PDUSessionReleaseReject = nasMessage.NewPDUSessionReleaseReject(0x0)
+	pDUSessionReleaseRejectWithCause := m.PDUSessionReleaseReject
+	pDUSessionReleaseRejectWithCause.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
+	pDUSessionReleaseRejectWithCause.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+	pDUSessionReleaseRejectWithCause.SetPDUSessionID(uint8(pduSessionID))
+	pDUSessionReleaseRejectWithCause.SetPTI(smContext.Pti)
+	uint8Cause := errors.ErrorCause[cause]
+	pDUSessionReleaseRejectWithCause.SetCauseValue(uint8Cause)
 	return m.PlainNasEncode()
 }
