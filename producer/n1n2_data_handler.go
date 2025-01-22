@@ -29,11 +29,13 @@ type pfcpParam struct {
 }
 
 func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction) error {
+	// smContext.SubPduSessLog.Infoln("sample test")
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
 
 	if body.BinaryDataN1SmMessage != nil {
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, Binary Data N1 SmMessage isn't nil")
+		smContext.SubPduSessLog.Infoln("sample test")
 		m := nas.NewMessage()
 		err := m.GsmMessageDecode(&body.BinaryDataN1SmMessage)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, Update SM Context Request N1SmMessage:", m)
