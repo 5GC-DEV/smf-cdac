@@ -14,6 +14,7 @@ import (
 	"github.com/omec-project/nas/nasMessage"
 	"github.com/omec-project/nas/nasType"
 	"github.com/omec-project/smf/qos"
+	errors "github.com/omec-project/smf/smferrors"
 )
 
 func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error) {
@@ -175,7 +176,7 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionReleaseCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	pDUSessionReleaseCommand.SetPTI(smContext.Pti)
-	// Modified by CDAC TVM
+	// Modification According to the 3GPP TS 24.501, Section 6.3.3 Network-requested PDU session release procedure
 	pDUSessionReleaseCommand.SetCauseValue(0x24)
 	// End of Modification
 
@@ -222,5 +223,21 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 	// TODO: fix to real value
 	pDUSessionReleaseReject.SetCauseValue(nasMessage.Cause5GSMRequestRejectedUnspecified)
 
+	return m.PlainNasEncode()
+}
+
+func BuildGSMPDUSessionReleaseRejectWithCause(smContext *SMContext, pduSessionID int32, cause string) ([]byte, error) {
+	m := nas.NewMessage()
+	m.GsmMessage = nas.NewGsmMessage()
+	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
+	m.GsmHeader.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+	m.PDUSessionReleaseReject = nasMessage.NewPDUSessionReleaseReject(0x0)
+	pDUSessionReleaseRejectWithCause := m.PDUSessionReleaseReject
+	pDUSessionReleaseRejectWithCause.SetMessageType(nas.MsgTypePDUSessionReleaseReject)
+	pDUSessionReleaseRejectWithCause.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+	pDUSessionReleaseRejectWithCause.SetPDUSessionID(uint8(pduSessionID))
+	pDUSessionReleaseRejectWithCause.SetPTI(smContext.Pti)
+	uint8Cause := errors.ErrorCause[cause]
+	pDUSessionReleaseRejectWithCause.SetCauseValue(uint8Cause)
 	return m.PlainNasEncode()
 }

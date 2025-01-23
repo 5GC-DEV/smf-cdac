@@ -182,14 +182,14 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	establishmentRequest := m.PDUSessionEstablishmentRequest
 
 	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
-	// Modified by cdac
+	// Modified to fix the Unsupported Session types
 	if smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4 && smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4IPv6 {
 		pduTypeStr := pduSessionTypeToString(smContext.SelectedPDUSessionType)
 		smContext.SubPduSessLog.Errorf("%s PDU Session Not Supported", pduTypeStr)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
 		return fmt.Errorf("%s PDU Session not supported", pduTypeStr)
 	}
-	// End of CDAC edit
+	// End of modification
 	if err := smContext.PCFSelection(); err != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving PCF Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFDiscoveryFailure")
