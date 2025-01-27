@@ -12,6 +12,8 @@ import (
 )
 
 func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage.PDUSessionEstablishmentRequest) {
+	smContext.SubGsmLog.Info("---pdusessionID in smcontext: ", smContext.PDUSessionID)
+	smContext.SubGsmLog.Info("---pdusessionID from estab req: ", int32(req.PDUSessionID.GetPDUSessionID()))
 	// Retrieve PDUSessionID
 	smContext.PDUSessionID = int32(req.PDUSessionID.GetPDUSessionID())
 
