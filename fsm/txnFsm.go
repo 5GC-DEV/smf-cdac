@@ -29,6 +29,7 @@ func (SmfTxnFsm) TxnDecode(txn *transaction.Transaction) (transaction.TxnEvent, 
 }
 
 func (SmfTxnFsm) TxnLoadCtxt(txn *transaction.Transaction) (transaction.TxnEvent, error) {
+	txn.TxnFsmLog.Infof("---In TxnLoadCtxt")
 	switch txn.MsgType {
 	case svcmsgtypes.CreateSmContext:
 		req := txn.Req.(models.PostSmContextsRequest)

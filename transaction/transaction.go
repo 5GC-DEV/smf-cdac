@@ -109,6 +109,7 @@ func NewTransaction(req, rsp interface{}, msgType svcmsgtypes.SmfMsgType) *Trans
 
 	t.initLogTags()
 	t.TxnFsmLog.Debugf("new txn created")
+	t.TxnFsmLog.Infof("---new txn created")
 	return t
 }
 
@@ -170,16 +171,18 @@ func InitTxnFsm(fsm txnFsm) {
 }
 
 func (t *Transaction) StartTxnLifeCycle(fsm txnFsm) {
+	t.TxnFsmLog.Infof("---StartTxnLifeCycle")
 	nextEvent := TxnEventInit
 	var err error
 
 	for {
 		currEvent := nextEvent
 		t.TxnFsmLog.Debugf("processing event[%v]", currEvent.String())
+		t.TxnFsmLog.Infof("---processing event[%v]", currEvent.String())
 		if nextEvent, err = TxnFsmHandler[currEvent](t); err != nil {
 			t.TxnFsmLog.Errorf("TxnFsm Error, Stage[%s] Err[%v]", currEvent.String(), err.Error())
 		}
-
+		t.TxnFsmLog.Infof("---nextEvent[%v]: ", nextEvent.String())
 		// Current active txn is over, Schedule Next Txn if available
 		if currEvent == TxnEventEnd && nextEvent == TxnEventRun {
 			if t.NextTxn != nil {
