@@ -669,6 +669,7 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 }
 
 func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) error {
+	smContext.SubPfcpLog.Info("Sending PDU Session N1N2 Transfer")
 	// N1N2 Request towards AMF
 	n1n2Request := models.N1N2MessageTransferRequest{}
 
@@ -695,7 +696,7 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 
 	// N1N2 Json Data
 	n1n2Request.JsonData = &models.N1N2MessageTransferReqData{PduSessionId: smContext.PDUSessionID}
-
+	smContext.SubPfcpLog.Info("---success value: ", success)
 	if success {
 		if smNasBuf, err := smf_context.BuildGSMPDUSessionEstablishmentAccept(smContext); err != nil {
 			logger.PduSessLog.Errorf("build GSM PDUSessionEstablishmentAccept failed: %s", err)
@@ -721,10 +722,12 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 	}
 
 	smContext.SubPduSessLog.Infof("N1N2 transfer initiated")
+	smContext.SubPfcpLog.Info("---smcontext supi: ", smContext.Supi)
 	rspData, _, err := smContext.
 		CommunicationClient.
 		N1N2MessageCollectionDocumentApi.
 		N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
+	smContext.SubPduSessLog.Infof("---rspdata cause: ", rspData.Cause)
 	if err != nil {
 		smContext.SubPfcpLog.Warnf("send N1N2Transfer failed, %v ", err.Error())
 		err = smContext.CommitSmPolicyDecision(false)

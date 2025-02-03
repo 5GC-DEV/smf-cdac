@@ -132,6 +132,7 @@ func HandleStatePfcpCreatePendingEventPfcpSessCreate(event SmEvent, eventData *S
 func HandleStateN1N2TransferPendingEventN1N2Transfer(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
 	txn := eventData.Txn.(*transaction.Transaction)
 	smCtxt := txn.Ctxt.(*smf_context.SMContext)
+	smCtxt.SubFsmLog.Info("---In HandleStateN1N2TransferPendingEventN1N2Transfer")
 
 	if err := producer.SendPduSessN1N2Transfer(smCtxt, true); err != nil {
 		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_rsp_failure)
@@ -151,7 +152,7 @@ func HandleStateN1N2TransferPendingEventN1N2Transfer(event SmEvent, eventData *S
 func HandleStatePfcpCreatePendingEventPfcpSessCreateFailure(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
 	txn := eventData.Txn.(*transaction.Transaction)
 	smCtxt := txn.Ctxt.(*smf_context.SMContext)
-
+	smCtxt.SubFsmLog.Info("---In HandleStatePfcpCreatePendingEventPfcpSessCreateFailure")
 	// sending n1n2 transfer failure to amf
 	if err := producer.SendPduSessN1N2Transfer(smCtxt, false); err != nil {
 		smCtxt.SubFsmLog.Errorf("N1N2 transfer failure error, %v ", err.Error())
