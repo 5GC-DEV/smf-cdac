@@ -527,7 +527,10 @@ func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER,
 		} else {
 			iface = ULDestUPF.GetInterface(models.UpInterfaceType_N9, smContext.Dnn)
 		}
-
+		if iface == nil {
+			logger.CtxLog.Errorf("UPF Interface is nil for DNN [%v], UPF [%v]", smContext.Dnn, ULDestUPF)
+			return fmt.Errorf("UPF Interface is nil for DNN [%v], UPF [%v]", smContext.Dnn, ULDestUPF)
+		}
 		if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err != nil {
 			logger.CtxLog.Errorf("activate UpLink PDR[%v] failed %v ", name, err)
 			return err

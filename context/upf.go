@@ -304,20 +304,24 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 // *** add unit test ***//
 // GetInterface return the UPFInterfaceInfo that match input cond
 func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
+	logger.CtxLog.Infof("DNN: %v", dnn)
 	switch interfaceType {
 	case models.UpInterfaceType_N3:
 		for i, iface := range upf.N3Interfaces {
+			logger.CtxLog.Infof("UPF N3 Interface: %v", iface.NetworkInstance)
 			if iface.NetworkInstance == dnn {
 				return &upf.N3Interfaces[i]
 			}
 		}
 	case models.UpInterfaceType_N9:
 		for i, iface := range upf.N9Interfaces {
+			logger.CtxLog.Infof("UPF N9 Interface: %v", iface.NetworkInstance)
 			if iface.NetworkInstance == dnn {
 				return &upf.N9Interfaces[i]
 			}
 		}
 	}
+	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
 	return nil
 }
 
