@@ -90,6 +90,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		return fmt.Errorf("GsmMsgDecodeError")
 	}
 	// increments pdu session requests stats - by cdac tvm
+	logger.PduSessLog.Info("---nfinstancd id: ", smf_context.SMF_Self().NfInstanceID)
+	logger.PduSessLog.Info("---ip addr: ", smContext.PDUAddress.Ip.String())
 	metrics.IncrementNoOfSessReq(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "success")
 
 	createData := request.JsonData
