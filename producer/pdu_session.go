@@ -90,9 +90,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		return fmt.Errorf("GsmMsgDecodeError")
 	}
 	// increments pdu session requests stats - by cdac tvm
-	logger.PduSessLog.Info("---nfinstancd id: ", smf_context.SMF_Self().NfInstanceID)
-	logger.PduSessLog.Info("---ip addr: ", smContext.PDUAddress.Ip.String())
-	metrics.IncrementNoOfSessReq(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "success")
+	metrics.IncrementNoOfSessReq(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
 
 	createData := request.JsonData
 
@@ -114,7 +112,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			createData.SNssai.Sst, createData.SNssai.Sd, createData.Dnn)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("DnnNotSupported")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("SnssaiError")
 	}
 
@@ -123,13 +121,13 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving UDM Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UDMDiscoveryFailure")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("UdmError")
 	} else if problemDetails != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving UDM Problem[%+v]", problemDetails)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UDMDiscoveryFailure")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("UdmError")
 	} else {
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, send NF Discovery Serving UDM Successful")
@@ -140,7 +138,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, failed allocate IP address: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("IpAllocError")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("IpAllocError")
 	} else {
 		smContext.PDUAddress = &smf_context.UeIpAddr{Ip: ip, UpfProvided: false}
@@ -172,7 +170,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, get SessionManagementSubscriptionData error: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("SubscriptionDataFetchError")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("SubscriptionError")
 	} else {
 		defer func() {
@@ -189,7 +187,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SessionManagementSubscriptionData from UDM is nil")
 			txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("SubscriptionDataLenError")
 			// increments session level stats - by cdac tvm
-			metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+			metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 			return fmt.Errorf("NoSubscriptionError")
 		}
 	}
@@ -203,7 +201,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("Unstructured PDU Session Not Supported")
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UnknownPDUSessionType")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("Unstructured PDU Session not supported error")
 	}
 	// End of CDAC edit
@@ -211,7 +209,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving PCF Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFDiscoveryFailure")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("PcfError")
 	}
 	smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, send NF Discovery Serving PCF success")
@@ -224,14 +222,14 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SMPolicyAssociationCreate error: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFPolicyCreateFailure")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("PcfAssoError")
 	} else if httpStatus != http.StatusCreated {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationCreate), "In", http.StatusText(httpStatus), "error")
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SMPolicyAssociationCreate http status: ", http.StatusText(httpStatus))
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFPolicyCreateFailure")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("PcfAssoError")
 	} else {
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, Policy association create success")
@@ -282,7 +280,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 				smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, data path error: %v", err.Error())
 				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UPFDataPathError")
 				// increments session level stats - by cdac tvm
-				metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+				metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 				return fmt.Errorf("DataPathError")
 			}
 		}
@@ -295,7 +293,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("InsufficientResourceSliceDnn")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("InsufficientResourceSliceDnn")
 	}
 
@@ -304,13 +302,13 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving AMF Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("AMFDiscoveryFailure")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("AmfError")
 	} else if problemDetails != nil {
 		smContext.SubPduSessLog.Warnf("PDUSessionSMContextCreate, send NF Discovery Serving AMF Problem[%+v]", problemDetails)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("AMFDiscoveryFailure")
 		// increments session level stats - by cdac tvm
-		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "failure")
+		metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "failure")
 		return fmt.Errorf("AmfError")
 	} else {
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextCreate, Send NF Discovery Serving AMF success")
@@ -717,7 +715,7 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 			n1n2Request.BinaryDataN1Message = smNasBuf
 			n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer
 			// increments session level stats - by cdac tvm
-			metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, smContext.PDUAddress.Ip.String(), "success")
+			metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
 		}
 
 		if n2Pdu, err := smf_context.BuildPDUSessionResourceSetupRequestTransfer(smContext); err != nil {
