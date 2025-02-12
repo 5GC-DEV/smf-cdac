@@ -22,7 +22,6 @@ import (
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/metrics"
-	"github.com/omec-project/smf/util"
 	"github.com/omec-project/util/drsm"
 )
 
@@ -38,7 +37,6 @@ const (
 var smfContext SMFContext
 
 type DrsmCtxts struct {
-	TeidPool drsm.DrsmInterface
 	SeidPool drsm.DrsmInterface
 	UeIpPool drsm.DrsmInterface
 }
@@ -159,8 +157,6 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 		smfContext.URIScheme = models.UriScheme(sbi.Scheme)
 		smfContext.RegisterIPv4 = factory.SMF_DEFAULT_IPV4 // default localhost
 		smfContext.SBIPort = factory.SMF_DEFAULT_PORT_INT  // default port
-		smfContext.Key = util.SmfKeyPath                   // default key path
-		smfContext.PEM = util.SmfPemPath                   // default PEM path
 
 		if sbi.RegisterIPv4 != "" {
 			// smfContext.RegisterIPv4 = sbi.RegisterIPv4
@@ -435,13 +431,6 @@ func (smfCtxt *SMFContext) InitDrsm() error {
 	// for local FSEID
 	if drsmCtxt, err := drsm.InitDRSM("fseid", podId, db, opt); err == nil {
 		smfCtxt.DrsmCtxts.SeidPool = drsmCtxt
-	} else {
-		return err
-	}
-
-	// for local FTEID
-	if drsmCtxt, err := drsm.InitDRSM("fteid", podId, db, opt); err == nil {
-		smfCtxt.DrsmCtxts.TeidPool = drsmCtxt
 	} else {
 		return err
 	}
