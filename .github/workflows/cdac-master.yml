@@ -15,12 +15,8 @@ on:
 
 jobs:
 
-  build-upfadapter:
+  build:
     runs-on: ubuntu-latest
-    if: github.repository_owner == '5GC-DEV'
-    defaults:
-      run:
-        working-directory: ./upfadapter
     steps:
       - uses: actions/checkout@v4
 

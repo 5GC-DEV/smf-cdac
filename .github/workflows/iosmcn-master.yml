@@ -14,12 +14,8 @@ on:
 
 jobs:
 
-  build-upfadapter:
+  build:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'ios-mcn-core'
-    defaults:
-      run:
-        working-directory: ./upfadapter
     steps:
       - uses: actions/checkout@v4
 
