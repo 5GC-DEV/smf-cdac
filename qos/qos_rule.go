@@ -124,7 +124,7 @@ func BuildAddDefaultQosRule(defQFI uint8) *QosRule {
 	return defQosRule
 }
 
-func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
+/*func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	qosRules := QoSRules{}
 
 	smPolicyDecision := smPolicyUpdates.SmPolicyDecision
@@ -137,6 +137,65 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
 			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 			qosRules = append(qosRules, *qosRule)
+		}
+	}
+
+
+	return qosRules
+}*/
+// C-DAC
+func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
+	qosRules := QoSRules{}
+
+	if smPolicyUpdates == nil {
+		log.Println("BuildQosRules: smPolicyUpdates is nil")
+		return qosRules
+	}
+
+	smPolicyDecision := smPolicyUpdates.SmPolicyDecision
+	pccRulesUpdate := smPolicyUpdates.PccRuleUpdate
+
+	// Ensure SmPolicyDecision is not nil
+	if smPolicyDecision == nil {
+		log.Println("BuildQosRules: smPolicyDecision is nil")
+		return qosRules
+	}
+
+	// New Rules to be added
+	if pccRulesUpdate != nil {
+		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
+			log.Printf("BuildQosRules: Processing PCC rule [%s]", pccRuleName)
+
+			if pccRuleVal == nil {
+				log.Printf("BuildQosRules: pccRuleVal is nil for [%s]", pccRuleName)
+				continue
+			}
+
+			// Ensure RefQosData is not empty
+			if len(pccRuleVal.RefQosData) == 0 {
+				log.Printf("BuildQosRules: RefQosData is empty for PCC rule [%s]", pccRuleName)
+				continue
+			}
+
+			log.Printf("BuildQosRules: Fetching QoS data for reference [%s]", pccRuleVal.RefQosData[0])
+			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+
+			// Check if QoS data is valid
+			if refQosData == nil {
+				log.Printf("BuildQosRules: refQosData is nil for reference [%s]", pccRuleVal.RefQosData[0])
+				continue
+			}
+
+			log.Printf("BuildQosRules: Building QoS Rule for PCC rule [%s]", pccRuleName)
+			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+
+			if qosRule == nil {
+				log.Printf("BuildQosRules: Failed to build QoS rule for PCC rule [%s]", pccRuleName)
+				continue
+			}
+
+			qosRules = append(qosRules, *qosRule)
+			log.Printf("BuildQosRules: Successfully added QoS Rule for PCC rule [%s]", pccRuleName)
 		}
 	}
 
@@ -156,7 +215,7 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	return qosRules
 }
 
-func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+/*func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
 	qRule := QosRule{
 		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
 		DQR:           btou(qosData.DefQosFlowIndication),
@@ -167,6 +226,33 @@ func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData
 
 	qRule.BuildPacketFilterListFromPccRule(pccRule)
 
+	return &qRule
+}*/
+// C-DAC
+func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+	if pccRule == nil {
+		log.Println("BuildAddQoSRuleFromPccRule: pccRule is nil")
+		return nil
+	}
+
+	if qosData == nil {
+		log.Println("BuildAddQoSRuleFromPccRule: qosData is nil")
+		return nil
+	}
+
+	log.Printf("BuildAddQoSRuleFromPccRule: Processing PCC Rule ID [%s] with QoS ID [%s]", pccRule.PccRuleId, qosData.QosId)
+
+	qRule := QosRule{
+		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
+		DQR:           btou(qosData.DefQosFlowIndication),
+		OperationCode: pccRuleOpCode,
+		Precedence:    uint8(pccRule.Precedence),
+		QFI:           GetQosFlowIdFromQosId(qosData.QosId),
+	}
+
+	qRule.BuildPacketFilterListFromPccRule(pccRule)
+
+	log.Printf("BuildAddQoSRuleFromPccRule: Successfully built QoS Rule ID [%d]", qRule.Identifier)
 	return &qRule
 }
 
