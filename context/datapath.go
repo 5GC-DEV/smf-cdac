@@ -484,7 +484,7 @@ func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData strin
 
 	if refQos == nil {
 		logger.PduSessLog.Errorln("refQos is nil")
-		return nil, errors.New("Failed to get QoS Data")
+		return nil, errors.New("failed to get QoS Data")
 	}
 
 	if dpNode.UPF == nil {
