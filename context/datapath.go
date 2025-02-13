@@ -435,7 +435,7 @@ func (dataPath *DataPath) ActivateUlDlTunnel(smContext *SMContext) error {
 	return nil
 }
 
-func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData string, tcData string) (*QER, error) {
+/*func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData string, tcData string) (*QER, error) {
 	smPolicyDec := smContext.SmPolicyUpdates[0].SmPolicyDecision
 	refQos := qos.GetQoSDataFromPolicyDecision(smPolicyDec, qosData)
 	tc := qos.GetTcDataFromPolicyDecision(smPolicyDec, tcData)
@@ -468,6 +468,56 @@ func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData strin
 
 		flowQER = newQER
 	}
+
+	return flowQER, nil
+}*/
+
+func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData string, tcData string) (*QER, error) {
+	if len(smContext.SmPolicyUpdates) == 0 {
+		logger.PduSessLog.Errorln("SmPolicyUpdates is empty")
+		return nil, errors.New("SmPolicyUpdates is empty")
+	}
+
+	smPolicyDec := smContext.SmPolicyUpdates[0].SmPolicyDecision
+	refQos := qos.GetQoSDataFromPolicyDecision(smPolicyDec, qosData)
+	tc := qos.GetTcDataFromPolicyDecision(smPolicyDec, tcData)
+
+	if refQos == nil {
+		logger.PduSessLog.Errorln("refQos is nil")
+		return nil, errors.New("Failed to get QoS Data")
+	}
+
+	if dpNode.UPF == nil {
+		logger.PduSessLog.Errorln("UPF is nil in DataPathNode")
+		return nil, errors.New("UPF is nil")
+	}
+
+	// Get Flow Status
+	gateStatus := GateOpen
+	if tc != nil && tc.FlowStatus == models.FlowStatus_DISABLED {
+		gateStatus = GateClose
+	}
+
+	var flowQER *QER
+
+	newQER, err := dpNode.UPF.AddQER()
+	if err != nil {
+		logger.PduSessLog.Errorln("new QER failed")
+		return nil, err
+	}
+
+	newQER.QFI.QFI = qos.GetQosFlowIdFromQosId(refQos.QosId)
+	newQER.GateStatus = &GateStatus{
+		ULGate: gateStatus,
+		DLGate: gateStatus,
+	}
+
+	newQER.MBR = &MBR{
+		ULMBR: util.BitRateTokbps(refQos.MaxbrUl),
+		DLMBR: util.BitRateTokbps(refQos.MaxbrDl),
+	}
+
+	flowQER = newQER
 
 	return flowQER, nil
 }
