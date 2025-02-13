@@ -31,14 +31,14 @@ jobs:
           username: ${{ secrets.GHCRUSER }}
           password: ${{ secrets.GHCRPASS }}
 
-      - name: Build and push "master-latest" Docker image
+      - name: Build and push "main-latest" Docker image
         env:
           DOCKER_TAG: iosmcn-smf-release-${{ env.RELEASE_VERSION }}
         run: |
           make docker-build
           make docker-push
 
-      - name: Build and push "master-GIT_SHA" Docker image
+      - name: Build and push "main-GIT_SHA" Docker image
         env:
           DOCKER_TAG: iosmcn-smf-release-${{ env.RELEASE_VERSION }}
         run: |
