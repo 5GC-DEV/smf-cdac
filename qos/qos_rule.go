@@ -177,12 +177,12 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 				continue
 			}
 
-			log.Printf("BuildQosRules: Fetching QoS data for reference [%s]", pccRuleVal.RefQosData[0])
-			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+			log.Printf("BuildQosRules: Fetching QoS data for reference [%s]", pccRuleVal.RefQosData[1])
+			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[1])
 
 			// Check if QoS data is valid
 			if refQosData == nil {
-				log.Printf("BuildQosRules: refQosData is nil for reference [%s]", pccRuleVal.RefQosData[0])
+				log.Printf("BuildQosRules: refQosData is nil for reference [%s]", pccRuleVal.RefQosData[1])
 				continue
 			}
 
