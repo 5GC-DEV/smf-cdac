@@ -479,6 +479,14 @@ func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData strin
 	}
 
 	smPolicyDec := smContext.SmPolicyUpdates[0].SmPolicyDecision
+	if smPolicyDec == nil {
+		logger.PduSessLog.Errorln("smPolicyDec is nil")
+		return nil, errors.New("smPolicyDec is nil")
+	}
+	logger.PduSessLog.Infof("qosData: %s, smPolicyDec: %+v", qosData, smPolicyDec)
+	for key := range smPolicyDec.QosDecs {
+		logger.PduSessLog.Infof("Available QoSData key: %s", key)
+	}
 	refQos := qos.GetQoSDataFromPolicyDecision(smPolicyDec, qosData)
 	tc := qos.GetTcDataFromPolicyDecision(smPolicyDec, tcData)
 

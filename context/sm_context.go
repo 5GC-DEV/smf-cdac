@@ -455,7 +455,7 @@ func (smContext *SMContext) GetNodeIDByLocalSEID(seid uint64) (nodeID NodeID) {
 }
 
 func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
-	logger.PduSessLog.Traceln("In AllocateLocalSEIDForDataPath")
+	logger.PduSessLog.Infoln("In AllocateLocalSEIDForDataPath")
 	for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
 		NodeIDtoIP := curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String()
 		logger.PduSessLog.Traceln("NodeIDtoIP: ", NodeIDtoIP)

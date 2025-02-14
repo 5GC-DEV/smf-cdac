@@ -368,7 +368,6 @@ func GetQoSDataFromPolicyDecision(smPolicyDecision *models.SmPolicyDecision, ref
 	}
 
 	return qos
-
 }
 
 func (d *QosFlowDescriptionsAuthorized) AddDefaultQosFlowDescription(sessRule *models.SessionRule) {
