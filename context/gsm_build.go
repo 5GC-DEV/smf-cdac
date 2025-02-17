@@ -8,6 +8,7 @@ package context
 
 import (
 	"encoding/hex"
+	"net"
 
 	"github.com/omec-project/nas"
 	"github.com/omec-project/nas/nasConvert"
@@ -115,6 +116,30 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 			err := protocolConfigurationOptions.AddIPv4LinkMTU(smContext.DNNInfo.MTU)
 			if err != nil {
 				smContext.SubGsmLog.Warnln("Error while adding MTU: ", err)
+			}
+		}
+
+		// IPv4 P-CSCF
+		if smContext.ProtocolConfigurationOptions.PCSCFIPv4Request {
+			pcsfIpStr := "172.22.0.21"
+
+			smContext.SubGsmLog.Infof("PCSCF Info: %v", smfContext.PCSCFInfo)
+
+			if smfContext.PCSCFInfo.IPv4Addr != "" {
+				pcsfIpStr = smfContext.PCSCFInfo.IPv4Addr
+			} else {
+				smContext.SubGsmLog.Warnf("PCSCF config info is nil")
+			}
+
+			smContext.SubGsmLog.Infof("PCSCF Ip: %v", pcsfIpStr)
+			pcscfIP := net.ParseIP(pcsfIpStr)
+			if pcscfIP == nil {
+				smContext.SubGsmLog.Warnln("Invalid P-CSCF IP address")
+			} else {
+				err := protocolConfigurationOptions.AddPCSCFIPv4Address(pcscfIP)
+				if err != nil {
+					smContext.SubGsmLog.Warnln("Error while adding P-CSCF IPv4 Addr: ", err)
+				}
 			}
 		}
 

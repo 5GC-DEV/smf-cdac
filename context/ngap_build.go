@@ -229,7 +229,10 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	ie.Id.Value = ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
 	sessRule := ctx.SelectedSessionRule()
-	if sessRule == nil || sessRule.AuthSessAmbr == nil {
+	if sessRule == nil {
+		return nil, fmt.Errorf("sessRule is nil")
+	}
+	if sessRule.AuthSessAmbr == nil {
 		return nil, fmt.Errorf("no PDU Session AMBR")
 	}
 	ie.Value = ngapType.PDUSessionResourceModifyRequestTransferIEsValue{

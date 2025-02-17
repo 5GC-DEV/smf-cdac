@@ -58,12 +58,53 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		return err
 	}
 
+	pfcpParam := &pfcpParam{
+		pdrList: []*smf_context.PDR{},
+		farList: []*smf_context.FAR{},
+		barList: []*smf_context.BAR{},
+		qerList: []*smf_context.QER{},
+	}
+
+	// pfcpParam.qerList = append(pfcpParam.qerList, qerList...)
+
+	smContext.SubPduSessLog.Infof("SMPolicyUpdateNotify, send PFCP Modification")
+	var err error
+
+	// Initiate PFCP Modify
+	if err = SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+		// Modify failure
+		smContext.SubCtxLog.Errorf("pfcp session modify error: %v ", err.Error())
+
+		// Form Modify err rsp
+		httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
+
+		/*
+			// TODO: Add Ctxt cleanup if PFCP response is context not found,
+			// just initiating PFCP session release will not help
+				//PFCP Modify Err, initiate release
+				SendPfcpSessionReleaseReq(smContext)
+				//Change state to InactivePending
+				smContext.ChangeState(smf_context.SmStateInActivePending)
+				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		*/
+	} else {
+		// Modify Success
+		httpResponse = &httpwrapper.Response{
+			Status: http.StatusOK,
+			Body:   httpResponse,
+		}
+
+		smContext.ChangeState(smf_context.SmStateActive)
+		smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
+	}
+
 	// N1N2 and UPF update Success
 	// Commit SM Policy Decision to SM Context
 	// TODO
 	// smContext.SMLock.Lock()
 	// defer smContext.SMLock.Unlock()
 	// smContext.CommitSmPolicyDecision(true)
+	txn.Rsp = httpResponse
 	return nil
 }
 

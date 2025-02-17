@@ -92,6 +92,7 @@ type Configuration struct {
 	EnableDbStore            bool                 `yaml:"enableDBStore,omitempty"`
 	EnableUpfAdapter         bool                 `yaml:"enableUPFAdapter,omitempty"`
 	ULCL                     bool                 `yaml:"ulcl,omitempty"`
+	PCSCFInfo                PCSCFInfo            `yaml:"pcscfInfos,omitempty"`
 }
 
 type StaticIpInfo struct {
@@ -217,6 +218,11 @@ type UPLink struct {
 	B string `yaml:"B"`
 }
 
+type PCSCFInfo struct {
+	IPv4Addr string `yaml:"ipv4,omitempty"`
+	IPv6Addr string `yaml:"ipv6,omitempty"`
+}
+
 var ConfigPodTrigger chan bool
 
 func init() {
@@ -259,6 +265,7 @@ func (c *Config) updateConfig(commChannel chan *protos.NetworkSliceResponse) boo
 		c.Configuration.SNssaiInfo = cfgNew.SNssaiInfo
 		c.Configuration.UserPlaneInformation = cfgNew.UserPlaneInformation
 		SmfConfigSyncLock.Unlock()
+		logger.GrpcLog.Infof("PCSCF Configurations: %v", c.Configuration.PCSCFInfo)
 		// Send trigger to update SMF Context
 		ConfigPodTrigger <- true
 	}
