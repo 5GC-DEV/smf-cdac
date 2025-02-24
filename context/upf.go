@@ -14,6 +14,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -303,7 +304,7 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 
 // *** add unit test ***//
 // GetInterface return the UPFInterfaceInfo that match input cond
-func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
+/*func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
 	logger.CtxLog.Infof("DNN: %v", dnn)
 	switch interfaceType {
 	case models.UpInterfaceType_N3:
@@ -321,6 +322,32 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 			}
 		}
 	}
+	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
+	return nil
+}*/
+
+func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
+	logger.CtxLog.Infof("DNN: %v", dnn)
+
+	switch interfaceType {
+	case models.UpInterfaceType_N3:
+		logger.CtxLog.Infof("Total UPF N3 Interfaces: %d", len(upf.N3Interfaces))
+		for i, iface := range upf.N3Interfaces {
+			logger.CtxLog.Infof("Checking UPF N3 Interface: %v", iface.NetworkInstance)
+			if strings.TrimSpace(iface.NetworkInstance) == strings.TrimSpace(dnn) {
+				return &upf.N3Interfaces[i]
+			}
+		}
+	case models.UpInterfaceType_N9:
+		logger.CtxLog.Infof("Total UPF N9 Interfaces: %d", len(upf.N9Interfaces))
+		for i, iface := range upf.N9Interfaces {
+			logger.CtxLog.Infof("Checking UPF N9 Interface: %v", iface.NetworkInstance)
+			if strings.TrimSpace(iface.NetworkInstance) == strings.TrimSpace(dnn) {
+				return &upf.N9Interfaces[i]
+			}
+		}
+	}
+
 	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
 	return nil
 }
