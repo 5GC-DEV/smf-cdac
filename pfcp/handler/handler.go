@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
 	"github.com/omec-project/openapi/models"
@@ -250,9 +251,17 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 		// validate if DNNs served by UPF matches with the one provided by UPF
 		if userPlaneIPResourceInformation != nil {
 			upfProvidedDnn := string(userPlaneIPResourceInformation.NetworkInstance)
-			if !upf.IsDnnConfigured(upfProvidedDnn) {
+			/*if !upf.IsDnnConfigured(upfProvidedDnn) {
 				logger.PfcpLog.Errorf("handle PFCP Association Setup success Response, DNN mismatch, [%v] is not configured ", upfProvidedDnn)
 				return
+			}*/
+			dnnList := strings.Split(upfProvidedDnn, ",")
+			for _, dnn := range dnnList {
+				dnn = strings.TrimSpace(dnn) // Remove extra spaces
+				if !upf.IsDnnConfigured(dnn) {
+					logger.PfcpLog.Errorf("handle PFCP Association Setup success Response, DNN mismatch, [%v] is not configured", dnn)
+					return
+				}
 			}
 		}
 

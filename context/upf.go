@@ -687,14 +687,18 @@ func (upf *UPF) isSupportSnssai(snssai *SNssai) bool {
 
 func (upf *UPF) IsDnnConfigured(sDnn string) bool {
 	// iterate through slices and check if DNN is configured
-
+	logger.CtxLog.Infof("Checking if DNN '%s' is configured", sDnn)
 	for _, slice := range upf.SNssaiInfos {
+		logger.CtxLog.Infof("Checking S-NSSAI: %+v", slice.SNssai)
 		for _, dnn := range slice.DnnList {
+			logger.CtxLog.Infof("Comparing with configured DNN: %s", dnn.Dnn)
 			if dnn.Dnn == sDnn {
+				logger.CtxLog.Infof("DNN '%s' is configured", sDnn)
 				return true
 			}
 		}
 	}
+	logger.CtxLog.Warnf("DNN '%s' is not configured", sDnn)
 	return false
 }
 
