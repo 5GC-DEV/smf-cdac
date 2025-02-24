@@ -334,16 +334,26 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 		logger.CtxLog.Infof("Total UPF N3 Interfaces: %d", len(upf.N3Interfaces))
 		for i, iface := range upf.N3Interfaces {
 			logger.CtxLog.Infof("Checking UPF N3 Interface: %v", iface.NetworkInstance)
-			if strings.TrimSpace(iface.NetworkInstance) == strings.TrimSpace(dnn) {
-				return &upf.N3Interfaces[i]
+
+			// Split multiple DNNs and check if dnn exists
+			dnnList := strings.Split(iface.NetworkInstance, ",")
+			for _, d := range dnnList {
+				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
+					return &upf.N3Interfaces[i]
+				}
 			}
 		}
 	case models.UpInterfaceType_N9:
 		logger.CtxLog.Infof("Total UPF N9 Interfaces: %d", len(upf.N9Interfaces))
 		for i, iface := range upf.N9Interfaces {
 			logger.CtxLog.Infof("Checking UPF N9 Interface: %v", iface.NetworkInstance)
-			if strings.TrimSpace(iface.NetworkInstance) == strings.TrimSpace(dnn) {
-				return &upf.N9Interfaces[i]
+
+			// Split multiple DNNs and check if dnn exists
+			dnnList := strings.Split(iface.NetworkInstance, ",")
+			for _, d := range dnnList {
+				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
+					return &upf.N9Interfaces[i]
+				}
 			}
 		}
 	}
