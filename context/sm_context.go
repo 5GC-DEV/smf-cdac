@@ -573,7 +573,7 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 	// Modified to fix the Unstructured Session type
 	case models.PduSessionType_UNSTRUCTURED:
 		smContext.SelectedPDUSessionType = nasConvert.ModelsToPDUSessionType(models.PduSessionType_UNSTRUCTURED)
-		return fmt.Errorf("Unstructured PDU Session type")
+		return fmt.Errorf("unstructured PDU Session type")
 	// End of Modification
 	default:
 		return fmt.Errorf("requested PDU Sesstion type[%d] is not supported", requestedPDUSessionType)
