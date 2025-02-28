@@ -14,6 +14,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -303,7 +304,7 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 
 // *** add unit test ***//
 // GetInterface return the UPFInterfaceInfo that match input cond
-func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
+/*func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
 	logger.CtxLog.Infof("DNN: %v", dnn)
 	switch interfaceType {
 	case models.UpInterfaceType_N3:
@@ -321,6 +322,42 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 			}
 		}
 	}
+	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
+	return nil
+}*/
+
+func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
+	logger.CtxLog.Infof("DNN: %v", dnn)
+
+	switch interfaceType {
+	case models.UpInterfaceType_N3:
+		logger.CtxLog.Infof("Total UPF N3 Interfaces: %d", len(upf.N3Interfaces))
+		for i, iface := range upf.N3Interfaces {
+			logger.CtxLog.Infof("Checking UPF N3 Interface: %v", iface.NetworkInstance)
+
+			// Split multiple DNNs and check if dnn exists
+			dnnList := strings.Split(iface.NetworkInstance, ",")
+			for _, d := range dnnList {
+				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
+					return &upf.N3Interfaces[i]
+				}
+			}
+		}
+	case models.UpInterfaceType_N9:
+		logger.CtxLog.Infof("Total UPF N9 Interfaces: %d", len(upf.N9Interfaces))
+		for i, iface := range upf.N9Interfaces {
+			logger.CtxLog.Infof("Checking UPF N9 Interface: %v", iface.NetworkInstance)
+
+			// Split multiple DNNs and check if dnn exists
+			dnnList := strings.Split(iface.NetworkInstance, ",")
+			for _, d := range dnnList {
+				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
+					return &upf.N9Interfaces[i]
+				}
+			}
+		}
+	}
+
 	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
 	return nil
 }
@@ -687,14 +724,18 @@ func (upf *UPF) isSupportSnssai(snssai *SNssai) bool {
 
 func (upf *UPF) IsDnnConfigured(sDnn string) bool {
 	// iterate through slices and check if DNN is configured
-
+	logger.CtxLog.Infof("Checking if DNN '%s' is configured", sDnn)
 	for _, slice := range upf.SNssaiInfos {
+		logger.CtxLog.Infof("Checking S-NSSAI: %+v", slice.SNssai)
 		for _, dnn := range slice.DnnList {
+			logger.CtxLog.Infof("Comparing with configured DNN: %s", dnn.Dnn)
 			if dnn.Dnn == sDnn {
+				logger.CtxLog.Infof("DNN '%s' is configured", sDnn)
 				return true
 			}
 		}
 	}
+	logger.CtxLog.Warnf("DNN '%s' is not configured", sDnn)
 	return false
 }
 
