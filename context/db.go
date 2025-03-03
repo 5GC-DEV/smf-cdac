@@ -124,14 +124,23 @@ func (smContext *SMContext) MarshalJSON() ([]byte, error) {
 		PFCPContextVal[key] = pfcpSessionContextInDB
 	}
 
+	convertedMap := make(map[string]int)
+	if smContext.BPManager != nil { // Ensure BPManager exists
+		for key, val := range smContext.BPManager.UpdatedBranchingPoint {
+			convertedMap[fmt.Sprintf("%p", key)] = val // Convert pointer to string
+		}
+	}
+
 	return json.Marshal(&struct {
 		*Alias
-		PFCPContext PFCPContextInDB `json:"pfcpContext"`
-		Tunnel      UPTunnelInDB    `json:"tunnel"`
+		PFCPContext           map[string]PFCPSessionContextInDB `json:"pfcpContext"`
+		Tunnel                UPTunnelInDB                      `json:"tunnel"`
+		UpdatedBranchingPoint map[string]int                    `json:"updatedBranchingPoint"`
 	}{
-		Alias:       (*Alias)(smContext),
-		PFCPContext: PFCPContextVal,
-		Tunnel:      upTunnelVal,
+		Alias:                 (*Alias)(smContext), // Embedding SMContext
+		PFCPContext:           PFCPContextVal,      // Ensure proper conversion if needed
+		Tunnel:                upTunnelVal,         // Ensure proper conversion if needed
+		UpdatedBranchingPoint: convertedMap,        // Use the converted map
 	})
 }
 
