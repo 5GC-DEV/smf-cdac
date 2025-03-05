@@ -6,7 +6,6 @@
 package factory
 
 import (
-	"fmt"
 	"testing"
 
 	protos "github.com/anaswarac-dac/config5g-cdac/proto/sdcoreConfig"
@@ -468,7 +467,7 @@ func TestKafkaEnabledByDefault(t *testing.T) {
 // Webui URL is not set then default Webui URL value is returned
 func TestGetDefaultWebuiUrl(t *testing.T) {
 	if err := InitConfigFactory("../config/smfcfg.yaml"); err != nil {
-		fmt.Printf("Error in InitConfigFactory: %v\n", err)
+		t.Logf("error in InitConfigFactory: %v", err)
 	}
 	got := SmfConfig.Configuration.WebuiUri
 	want := "webui:9876"
@@ -478,7 +477,7 @@ func TestGetDefaultWebuiUrl(t *testing.T) {
 // Webui URL is set to a custom value then custom Webui URL is returned
 func TestGetCustomWebuiUrl(t *testing.T) {
 	if err := InitConfigFactory("../config/smfcfg_with_custom_webui_url.yaml"); err != nil {
-		fmt.Printf("Error in InitConfigFactory: %v\n", err)
+		t.Logf("error in InitConfigFactory: %v", err)
 	}
 	got := SmfConfig.Configuration.WebuiUri
 	want := "myspecialwebui:9872"

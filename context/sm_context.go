@@ -17,14 +17,14 @@ import (
 	"sync/atomic"
 
 	"github.com/google/uuid"
-	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
 	"github.com/omec-project/nas/nasConvert"
 	"github.com/omec-project/nas/nasMessage"
-	nrf_cache "github.com/omec-project/nrf/nrfcache"
 	"github.com/omec-project/openapi/Namf_Communication"
 	"github.com/omec-project/openapi/Nnrf_NFDiscovery"
+	"github.com/omec-project/openapi/Npcf_PolicyAuthorization"
 	"github.com/omec-project/openapi/Npcf_SMPolicyControl"
 	"github.com/omec-project/openapi/models"
+	nrfCache "github.com/omec-project/openapi/nrfcache"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/metrics"
@@ -33,7 +33,8 @@ import (
 	errors "github.com/omec-project/smf/smferrors"
 	"github.com/omec-project/smf/transaction"
 	"github.com/omec-project/util/httpwrapper"
-	"github.com/sirupsen/logrus"
+	mi "github.com/omec-project/util/metricinfo"
+	"go.uber.org/zap"
 )
 
 const (
@@ -125,8 +126,9 @@ type SMContext struct {
 	PDUAddress *UeIpAddr `json:"pduAddress,omitempty" yaml:"pduAddress" bson:"pduAddress,omitempty"`
 
 	// Client
-	SMPolicyClient      *Npcf_SMPolicyControl.APIClient `json:"smPolicyClient,omitempty" yaml:"smPolicyClient" bson:"smPolicyClient,omitempty"`                // ?
-	CommunicationClient *Namf_Communication.APIClient   `json:"communicationClient,omitempty" yaml:"communicationClient" bson:"communicationClient,omitempty"` // ?
+	SMPolicyClient            *Npcf_SMPolicyControl.APIClient     `json:"smPolicyClient,omitempty" yaml:"smPolicyClient" bson:"smPolicyClient,omitempty"`                                  // ?
+	CommunicationClient       *Namf_Communication.APIClient       `json:"communicationClient,omitempty" yaml:"communicationClient" bson:"communicationClient,omitempty"`                   // ?
+	PolicyAuthorizationClient *Npcf_PolicyAuthorization.APIClient `json:"policyAuthorizationClient,omitempty" yaml:"policyAuthorizationClient" bson:"policyAuthorizationClient,omitempty"` // ?
 
 	// encountered a cycle via *context.GTPTunnel
 	Tunnel *UPTunnel `json:"-" yaml:"tunnel" bson:"-"`
@@ -138,13 +140,13 @@ type SMContext struct {
 	// PCO Related
 	ProtocolConfigurationOptions *ProtocolConfigurationOptions `json:"protocolConfigurationOptions" yaml:"protocolConfigurationOptions" bson:"protocolConfigurationOptions"` // ignore
 
-	SubGsmLog      *logrus.Entry `json:"-" yaml:"subGsmLog" bson:"-,"`     // ignore
-	SubPfcpLog     *logrus.Entry `json:"-" yaml:"subPfcpLog" bson:"-"`     // ignore
-	SubPduSessLog  *logrus.Entry `json:"-" yaml:"subPduSessLog" bson:"-"`  // ignore
-	SubCtxLog      *logrus.Entry `json:"-" yaml:"subCtxLog" bson:"-"`      // ignore
-	SubConsumerLog *logrus.Entry `json:"-" yaml:"subConsumerLog" bson:"-"` // ignore
-	SubFsmLog      *logrus.Entry `json:"-" yaml:"subFsmLog" bson:"-"`      // ignore
-	SubQosLog      *logrus.Entry `json:"-" yaml:"subQosLog" bson:"-"`      // ignore
+	SubGsmLog      *zap.SugaredLogger `json:"-" yaml:"subGsmLog" bson:"-,"`     // ignore
+	SubPfcpLog     *zap.SugaredLogger `json:"-" yaml:"subPfcpLog" bson:"-"`     // ignore
+	SubPduSessLog  *zap.SugaredLogger `json:"-" yaml:"subPduSessLog" bson:"-"`  // ignore
+	SubCtxLog      *zap.SugaredLogger `json:"-" yaml:"subCtxLog" bson:"-"`      // ignore
+	SubConsumerLog *zap.SugaredLogger `json:"-" yaml:"subConsumerLog" bson:"-"` // ignore
+	SubFsmLog      *zap.SugaredLogger `json:"-" yaml:"subFsmLog" bson:"-"`      // ignore
+	SubQosLog      *zap.SugaredLogger `json:"-" yaml:"subQosLog" bson:"-"`      // ignore
 
 	// encountered a cycle via *context.SMContext
 	ActiveTxn *transaction.Transaction `json:"-" yaml:"activeTxn" bson:"-,"` // ignore
@@ -228,18 +230,13 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 }
 
 func (smContext *SMContext) initLogTags() {
-	subField := logrus.Fields{
-		"uuid": smContext.Ref,
-		"id":   smContext.Identifier, "pduid": smContext.PDUSessionID,
-	}
-
-	smContext.SubPfcpLog = logger.PfcpLog.WithFields(subField)
-	smContext.SubCtxLog = logger.CtxLog.WithFields(subField)
-	smContext.SubPduSessLog = logger.PduSessLog.WithFields(subField)
-	smContext.SubGsmLog = logger.GsmLog.WithFields(subField)
-	smContext.SubConsumerLog = logger.ConsumerLog.WithFields(subField)
-	smContext.SubFsmLog = logger.FsmLog.WithFields(subField)
-	smContext.SubQosLog = logger.QosLog.WithFields(subField)
+	smContext.SubPfcpLog = logger.PfcpLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
+	smContext.SubCtxLog = logger.CtxLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
+	smContext.SubPduSessLog = logger.PduSessLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
+	smContext.SubGsmLog = logger.GsmLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
+	smContext.SubConsumerLog = logger.ConsumerLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
+	smContext.SubFsmLog = logger.FsmLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
+	smContext.SubQosLog = logger.QosLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
 }
 
 func (smContext *SMContext) ChangeState(nextState SMContextState) {
@@ -400,7 +397,7 @@ func (smContext *SMContext) PCFSelection() error {
 	var err error
 
 	if SMF_Self().EnableNrfCaching {
-		rep, err = nrf_cache.SearchNFInstances(SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
+		rep, err = nrfCache.SearchNFInstances(SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
 		if err != nil {
 			return err
 		}
@@ -422,7 +419,7 @@ func (smContext *SMContext) PCFSelection() error {
 		if res != nil {
 			if status := res.StatusCode; status != http.StatusOK {
 				metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", "Failure", "")
-				logger.CtxLog.Warningf("NFDiscovery PCF return status: %d\n", status)
+				logger.CtxLog.Warnf("NFDiscovery PCF return status: %d", status)
 			}
 		}
 
@@ -431,13 +428,19 @@ func (smContext *SMContext) PCFSelection() error {
 	}
 
 	smContext.SelectedPCFProfile = rep.NfInstances[0]
+	logger.CtxLog.Infof("PCF IP Addresses: %v", smContext.SelectedPCFProfile.Ipv4Addresses)
+	logger.CtxLog.Infof("PCF PCF Info: %v", smContext.SelectedPCFProfile.PcfInfo)
 
-	// Create SMPolicyControl Client for this SM Context
+	// Create SMPolicyControl & PolicyAuthorization Client for this SM Context
 	for _, service := range *smContext.SelectedPCFProfile.NfServices {
 		if service.ServiceName == models.ServiceName_NPCF_SMPOLICYCONTROL {
 			SmPolicyControlConf := Npcf_SMPolicyControl.NewConfiguration()
 			SmPolicyControlConf.SetBasePath(service.ApiPrefix)
 			smContext.SMPolicyClient = Npcf_SMPolicyControl.NewAPIClient(SmPolicyControlConf)
+		} else if service.ServiceName == models.ServiceName_NPCF_POLICYAUTHORIZATION {
+			PolicyAuthorizationConf := Npcf_PolicyAuthorization.NewConfiguration()
+			PolicyAuthorizationConf.SetBasePath(service.ApiPrefix)
+			smContext.PolicyAuthorizationClient = Npcf_PolicyAuthorization.NewAPIClient(PolicyAuthorizationConf)
 		}
 	}
 
@@ -458,7 +461,7 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 	logger.PduSessLog.Infoln("In AllocateLocalSEIDForDataPath")
 	for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
 		NodeIDtoIP := curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String()
-		logger.PduSessLog.Traceln("NodeIDtoIP: ", NodeIDtoIP)
+		logger.PduSessLog.Debugln("NodeIDtoIP:", NodeIDtoIP)
 		if _, exist := smContext.PFCPContext[NodeIDtoIP]; !exist {
 			allocatedSEID, err := AllocateLocalSEID()
 			if err != nil {
@@ -591,9 +594,36 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 // SelectedSessionRule - return the SMF selected session rule for this SM Context
 func (smContext *SMContext) SelectedSessionRule() *models.SessionRule {
 	// Policy update in progress
-	if len(smContext.SmPolicyUpdates) > 0 {
+
+	logger.CtxLog.Infof("SelectedSessionRule len(smContext.SmPolicyUpdates): %v", len(smContext.SmPolicyUpdates))
+
+	if smContext.SmPolicyUpdates != nil {
+		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
+	}
+
+	if smContext.SmPolicyUpdates[0] != nil {
+		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0]: %v", smContext.SmPolicyUpdates[0])
+	}
+
+	if smContext.SmPolicyUpdates[0].SessRuleUpdate != nil {
+		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0].SessRuleUpdate: %v", smContext.SmPolicyUpdates[0].SessRuleUpdate)
+	}
+
+	if smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil {
+		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule: %v", smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule)
+	}
+
+	logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyData: %v", smContext.SmPolicyData)
+
+	logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyData.SmCtxtSessionRules: %v", smContext.SmPolicyData.SmCtxtSessionRules)
+
+	logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyData.SmCtxtSessionRules.ActiveRule: %v", smContext.SmPolicyData.SmCtxtSessionRules.ActiveRule)
+
+	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil {
+		logger.CtxLog.Infof("return smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule")
 		return smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule
 	} else {
+		logger.CtxLog.Infof("return smContext.SmPolicyData.SmCtxtSessionRules.ActiveRule")
 		return smContext.SmPolicyData.SmCtxtSessionRules.ActiveRule
 	}
 }

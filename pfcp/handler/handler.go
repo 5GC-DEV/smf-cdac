@@ -12,7 +12,6 @@ import (
 	"net"
 	"strings"
 
-	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
 	"github.com/omec-project/openapi/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/factory"
@@ -22,6 +21,7 @@ import (
 	pfcp_message "github.com/omec-project/smf/pfcp/message"
 	"github.com/omec-project/smf/pfcp/udp"
 	"github.com/omec-project/smf/producer"
+	mi "github.com/omec-project/util/metricinfo"
 	"github.com/wmnsk/go-pfcp/ie"
 	"github.com/wmnsk/go-pfcp/message"
 )
@@ -39,7 +39,7 @@ func FindUEIPAddress(createdPDRIEs []*ie.IE) net.IP {
 func HandlePfcpHeartbeatRequest(msg *udp.Message) {
 	_, ok := msg.PfcpMessage.(*message.HeartbeatRequest)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for heartbeat request")
+		logger.PfcpLog.Errorln("invalid message type for heartbeat request")
 		return
 	}
 	logger.PfcpLog.Infof("handle PFCP Heartbeat Request")
@@ -52,17 +52,17 @@ func HandlePfcpHeartbeatRequest(msg *udp.Message) {
 func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 	rsp, ok := msg.PfcpMessage.(*message.HeartbeatResponse)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for heartbeat response")
+		logger.PfcpLog.Errorln("invalid message type for heartbeat response")
 		return
 	}
-	logger.PfcpLog.Infof("handle PFCP Heartbeat Response")
+	logger.PfcpLog.Infoln("handle PFCP Heartbeat Response")
 
 	// Get NodeId from Seq:NodeId Map
 	seq := rsp.Sequence()
 	nodeID := pfcp_message.FetchPfcpTxn(seq)
 
 	if nodeID == nil {
-		logger.PfcpLog.Errorf("No pending pfcp heartbeat response for sequence no: %v", seq)
+		logger.PfcpLog.Errorf("no pending pfcp heartbeat response for sequence no: %v", seq)
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "invalid_seqno")
 		return
 	}
@@ -71,7 +71,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 
 	upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can't find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
+		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "unknown_upf")
 		return
 	}
@@ -115,7 +115,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 func SetUpfInactive(nodeID smf_context.NodeID, msgTypeName string) {
 	upf := smf_context.RetrieveUPFNodeByNodeID(nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can't find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
+		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, msgTypeName, "In", "Failure", "unknown_upf")
 		return
 	}
@@ -127,20 +127,20 @@ func SetUpfInactive(nodeID smf_context.NodeID, msgTypeName string) {
 }
 
 func HandlePfcpPfdManagementRequest(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP PFD Management Request handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP PFD Management Request handling is not implemented")
 }
 
 func HandlePfcpPfdManagementResponse(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP PFD Management Response handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP PFD Management Response handling is not implemented")
 }
 
 func HandlePfcpAssociationSetupRequest(msg *udp.Message) {
 	req, ok := msg.PfcpMessage.(*message.AssociationSetupRequest)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for association setup request")
+		logger.PfcpLog.Errorln("invalid message type for association setup request")
 		return
 	}
-	logger.PfcpLog.Infof("handle PFCP Association Setup Request")
+	logger.PfcpLog.Infoln("handle PFCP Association Setup Request")
 
 	nodeIDIE := req.NodeID
 	if nodeIDIE == nil {
@@ -160,7 +160,7 @@ func HandlePfcpAssociationSetupRequest(msg *udp.Message) {
 
 	upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can't find UPF[%s]", nodeIDStr)
+		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeIDStr)
 		return
 	}
 
@@ -197,10 +197,10 @@ func HandlePfcpAssociationSetupRequest(msg *udp.Message) {
 func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 	rsp, ok := msg.PfcpMessage.(*message.AssociationSetupResponse)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for association setup response")
+		logger.PfcpLog.Errorln("invalid message type for association setup response")
 		return
 	}
-	logger.PfcpLog.Infof("handle PFCP Association Setup Response")
+	logger.PfcpLog.Infoln("handle PFCP Association Setup Response")
 
 	nodeIDIE := rsp.NodeID
 
@@ -235,7 +235,7 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 
 		upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 		if upf == nil {
-			logger.PfcpLog.Errorf("can't find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
+			logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
 			return
 		}
 
@@ -332,20 +332,20 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 }
 
 func HandlePfcpAssociationUpdateRequest(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Association Update Request handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Association Update Request handling is not implemented")
 }
 
 func HandlePfcpAssociationUpdateResponse(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Association Update Response handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Association Update Response handling is not implemented")
 }
 
 func HandlePfcpAssociationReleaseRequest(msg *udp.Message) {
 	pfcpMsg, ok := msg.PfcpMessage.(*message.AssociationReleaseRequest)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for association release request")
+		logger.PfcpLog.Errorln("invalid message type for association release request")
 		return
 	}
-	logger.PfcpLog.Infof("handle PFCP Association Release Request")
+	logger.PfcpLog.Infoln("handle PFCP Association Release Request")
 
 	nodeIDIE := pfcpMsg.NodeID
 	if nodeIDIE == nil {
@@ -363,7 +363,7 @@ func HandlePfcpAssociationReleaseRequest(msg *udp.Message) {
 
 	upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can't find UPF[%s]", nodeIDStr)
+		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeIDStr)
 		return
 	}
 	smf_context.RemoveUPFNodeByNodeID(*nodeID)
@@ -376,10 +376,10 @@ func HandlePfcpAssociationReleaseRequest(msg *udp.Message) {
 func HandlePfcpAssociationReleaseResponse(msg *udp.Message) {
 	pfcpMsg, ok := msg.PfcpMessage.(*message.AssociationReleaseResponse)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for association release response")
+		logger.PfcpLog.Errorln("invalid message type for association release response")
 		return
 	}
-	logger.PfcpLog.Infof("handle PFCP Association Release Response")
+	logger.PfcpLog.Infoln("handle PFCP Association Release Response")
 	if pfcpMsg.Cause == nil {
 		logger.PfcpLog.Errorln("pfcp association release response needs Cause")
 		return
@@ -406,29 +406,29 @@ func HandlePfcpAssociationReleaseResponse(msg *udp.Message) {
 }
 
 func HandlePfcpVersionNotSupportedResponse(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Version Not Support Response handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Version Not Support Response handling is not implemented")
 }
 
 func HandlePfcpNodeReportRequest(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Node Report Request handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Node Report Request handling is not implemented")
 }
 
 func HandlePfcpNodeReportResponse(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Node Report Response handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Node Report Response handling is not implemented")
 }
 
 func HandlePfcpSessionSetDeletionRequest(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Session Set Deletion Request handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Session Set Deletion Request handling is not implemented")
 }
 
 func HandlePfcpSessionSetDeletionResponse(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Session Set Deletion Response handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Session Set Deletion Response handling is not implemented")
 }
 
 func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 	rsp, ok := msg.PfcpMessage.(*message.SessionEstablishmentResponse)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for session establishment response")
+		logger.PfcpLog.Errorln("invalid message type for session establishment response")
 		return
 	}
 	logger.PfcpLog.Infof("handle PFCP Session Establishment Response")
@@ -436,7 +436,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 	SEID := rsp.SEID()
 	if SEID == 0 {
 		if eventData, ok := msg.EventData.(udp.PfcpEventData); !ok {
-			logger.PfcpLog.Warnf("PFCP Session Establish Response found invalid event data, response discarded")
+			logger.PfcpLog.Warnln("PFCP Session Establish Response found invalid event data, response discarded")
 			return
 		} else {
 			SEID = eventData.LSEID
@@ -487,7 +487,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 	ANUPF := smContext.Tunnel.DataPathPool.GetDefaultPath().FirstDPNode
 
 	if rsp.NodeID == nil {
-		logger.PfcpLog.Errorf("PFCP Session Establishment Response missing NodeID")
+		logger.PfcpLog.Errorln("PFCP Session Establishment Response missing NodeID")
 		return
 	}
 	rspNodeIDStr, err := rsp.NodeID.NodeID()
@@ -500,7 +500,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 	if ANUPF.UPF.NodeID.ResolveNodeIdToIp().Equal(nodeID.ResolveNodeIdToIp()) {
 		// UPF Accept
 		if rsp.Cause == nil {
-			logger.PfcpLog.Errorf("PFCP Session Establishment Response missing Cause")
+			logger.PfcpLog.Errorln("PFCP Session Establishment Response missing Cause")
 			return
 		}
 		causeValue, err := rsp.Cause.Cause()
@@ -510,7 +510,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 		}
 		if causeValue == ie.CauseRequestAccepted {
 			smContext.SBIPFCPCommunicationChan <- smf_context.SessionEstablishSuccess
-			smContext.SubPfcpLog.Infof("PFCP Session Establishment accepted")
+			smContext.SubPfcpLog.Infoln("PFCP Session Establishment accepted")
 		} else {
 			smContext.SBIPFCPCommunicationChan <- smf_context.SessionEstablishFailed
 			smContext.SubPfcpLog.Errorf("PFCP Session Establishment rejected with cause [%v]", causeValue)
@@ -532,17 +532,17 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 	rsp, ok := msg.PfcpMessage.(*message.SessionModificationResponse)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for session establishment response")
+		logger.PfcpLog.Errorln("invalid message type for session establishment response")
 		return
 	}
 
-	logger.PfcpLog.Infof("handle PFCP Session Modification Response")
+	logger.PfcpLog.Infoln("handle PFCP Session Modification Response")
 
 	SEID := rsp.SEID()
 
 	if SEID == 0 {
 		if eventData, ok := msg.EventData.(udp.PfcpEventData); !ok {
-			logger.PfcpLog.Warnf("PFCP Session Modification Response found invalid event data, response discarded")
+			logger.PfcpLog.Warnln("PFCP Session Modification Response found invalid event data, response discarded")
 			return
 		} else {
 			SEID = eventData.LSEID
@@ -562,7 +562,7 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 	}
 
 	if rsp.Cause == nil {
-		logger.PfcpLog.Errorf("PFCP Session Modification Response missing Cause")
+		logger.PfcpLog.Errorln("PFCP Session Modification Response missing Cause")
 		return
 	}
 
@@ -578,7 +578,7 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 			upfNodeID := smContext.GetNodeIDByLocalSEID(SEID)
 			upfIP := upfNodeID.ResolveNodeIdToIp().String()
 			delete(smContext.PendingUPF, upfIP)
-			smContext.SubPduSessLog.Tracef("Delete pending pfcp response: UPF IP [%s]\n", upfIP)
+			smContext.SubPduSessLog.Debugf("delete pending pfcp response: UPF IP [%s]", upfIP)
 
 			if smContext.PendingUPF.IsEmpty() {
 				smContext.SBIPFCPCommunicationChan <- smf_context.SessionUpdateSuccess
@@ -594,32 +594,32 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 			}
 		}
 
-		smContext.SubPfcpLog.Infof("PFCP Session Modification Success[%d]\n", SEID)
+		smContext.SubPfcpLog.Infof("PFCP Session Modification Success[%d]", SEID)
 	} else {
-		smContext.SubPfcpLog.Infof("PFCP Session Modification Failed[%d]\n", SEID)
+		smContext.SubPfcpLog.Infof("PFCP Session Modification Failed[%d]", SEID)
 		if smContext.SMContextState == smf_context.SmStatePfcpModify {
 			smContext.SBIPFCPCommunicationChan <- smf_context.SessionUpdateFailed
 		}
 	}
 
-	smContext.SubCtxLog.Traceln("PFCP Session Context")
+	smContext.SubCtxLog.Debugln("PFCP Session Context")
 	for _, ctx := range smContext.PFCPContext {
-		smContext.SubCtxLog.Traceln(ctx.String())
+		smContext.SubCtxLog.Debugln(ctx.String())
 	}
 }
 
 func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 	rsp, ok := msg.PfcpMessage.(*message.SessionDeletionResponse)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for session deletion response")
+		logger.PfcpLog.Errorln("invalid message type for session deletion response")
 		return
 	}
-	logger.PfcpLog.Infof("handle PFCP Session Deletion Response")
+	logger.PfcpLog.Infoln("handle PFCP Session Deletion Response")
 	SEID := rsp.SEID()
 
 	if SEID == 0 {
 		if eventData, ok := msg.EventData.(udp.PfcpEventData); !ok {
-			logger.PfcpLog.Warnf("PFCP Session Deletion Response found invalid event data, response discarded")
+			logger.PfcpLog.Warnln("PFCP Session Deletion Response found invalid event data, response discarded")
 			return
 		} else {
 			SEID = eventData.LSEID
@@ -628,13 +628,13 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 	smContext := smf_context.GetSMContextBySEID(SEID)
 
 	if smContext == nil {
-		logger.PfcpLog.Warnf("PFCP Session Deletion Response found SM context nil, response discarded")
+		logger.PfcpLog.Warnln("PFCP Session Deletion Response found SM context nil, response discarded")
 		return
 		// TODO fix: SEID should be the value sent by UPF but now the SEID value is from sm context
 	}
 
 	if rsp.Cause == nil {
-		logger.PfcpLog.Errorf("PFCP Session Deletion Response missing Cause")
+		logger.PfcpLog.Errorln("PFCP Session Deletion Response missing Cause")
 		return
 	}
 
@@ -649,29 +649,29 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			upfNodeID := smContext.GetNodeIDByLocalSEID(SEID)
 			upfIP := upfNodeID.ResolveNodeIdToIp().String()
 			delete(smContext.PendingUPF, upfIP)
-			smContext.SubPduSessLog.Tracef("Delete pending pfcp response: UPF IP [%s]\n", upfIP)
+			smContext.SubPduSessLog.Debugf("delete pending pfcp response: UPF IP [%s]", upfIP)
 
 			if smContext.PendingUPF.IsEmpty() && !smContext.LocalPurged {
 				smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
 			}
 		}
-		smContext.SubPfcpLog.Infof("PFCP Session Deletion Success[%d]\n", SEID)
+		smContext.SubPfcpLog.Infof("PFCP Session Deletion Success[%d]", SEID)
 	} else {
 		if smContext.SMContextState == smf_context.SmStatePfcpRelease && !smContext.LocalPurged {
 			smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
 		}
-		smContext.SubPfcpLog.Infof("PFCP Session Deletion Failed[%d]\n", SEID)
+		smContext.SubPfcpLog.Infof("PFCP Session Deletion Failed[%d]", SEID)
 	}
 }
 
 func HandlePfcpSessionReportRequest(msg *udp.Message) {
 	req, ok := msg.PfcpMessage.(*message.SessionReportRequest)
 	if !ok {
-		logger.PfcpLog.Errorf("invalid message type for session report request")
+		logger.PfcpLog.Errorln("invalid message type for session report request")
 		return
 	}
 
-	logger.PfcpLog.Infof("handle PFCP Session Report Request")
+	logger.PfcpLog.Infoln("handle PFCP Session Report Request")
 
 	SEID := req.SEID()
 	smContext := smf_context.GetSMContextBySEID(SEID)
@@ -681,7 +681,7 @@ func HandlePfcpSessionReportRequest(msg *udp.Message) {
 	var pfcpSRflag smf_context.PFCPSRRspFlags
 
 	if smContext == nil {
-		logger.PfcpLog.Warnf("PFCP Session Report Request Found SM Context NULL, Request Rejected")
+		logger.PfcpLog.Warnln("PFCP Session Report Request Found SM Context NULL, Request Rejected")
 		cause = ie.CauseRequestRejected
 
 		// Rejecting buffering at UPF since not able to process Session Report Request
@@ -701,11 +701,11 @@ func HandlePfcpSessionReportRequest(msg *udp.Message) {
 		if req.ReportType.HasDLDR() {
 			downlinkServiceInfo, err := req.DownlinkDataReport.DownlinkDataServiceInformation()
 			if err != nil {
-				logger.PfcpLog.Warnf("DownlinkDataServiceInformation not found in DownlinkDataReport")
+				logger.PfcpLog.Warnln("DownlinkDataServiceInformation not found in DownlinkDataReport")
 			}
 
 			if downlinkServiceInfo != nil {
-				smContext.SubPfcpLog.Warnf("PFCP Session Report Request DownlinkDataServiceInformation handling is not implemented")
+				smContext.SubPfcpLog.Warnln("PFCP Session Report Request DownlinkDataServiceInformation handling is not implemented")
 			}
 
 			n1n2Request := models.N1N2MessageTransferRequest{}
@@ -786,5 +786,5 @@ func HandlePfcpSessionReportRequest(msg *udp.Message) {
 }
 
 func HandlePfcpSessionReportResponse(msg *udp.Message) {
-	logger.PfcpLog.Warnf("PFCP Session Report Response handling is not implemented")
+	logger.PfcpLog.Warnln("PFCP Session Report Response handling is not implemented")
 }

@@ -5,7 +5,6 @@
 package qos
 
 import (
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -85,7 +84,7 @@ type QosFlowsUpdate struct {
 func GetQosFlowIdFromQosId(qosId string) uint8 {
 	id, err := strconv.Atoi(qosId)
 	if err != nil {
-		logger.CtxLog.Errorf("String can not be converted to integer: %+v", err)
+		logger.CtxLog.Errorf("string can not be converted to integer: %+v", err)
 		return 0
 	} else {
 		return uint8(id)
@@ -104,7 +103,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	// QoS Flow Description to be Added
 	if qosFlowUpdate != nil {
 		for name, qosFlow := range qosFlowUpdate.add {
-			log.Printf("Adding Qos Flow Description [%v] ", name)
+			logger.QosLog.Infof("adding Qos Flow Description [%v]", name)
 			QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
 		}
 	}
@@ -183,7 +182,7 @@ func GetBitRate(sBitRate string) (val uint16, unit uint8) {
 
 	// rate
 	if rate, err := strconv.Atoi(sl[0]); err != nil {
-		log.Printf("invalid bit rate [%v]", sBitRate)
+		logger.QosLog.Errorf("invalid bit rate [%v]", sBitRate)
 	} else {
 		val = uint16(rate)
 	}
@@ -400,6 +399,6 @@ func GetDefaultQoSDataFromPolicyDecision(smPolicyDecision *models.SmPolicyDecisi
 		}
 	}
 
-	log.Fatal("Default Qos Data not received from PCF")
+	logger.QosLog.Fatalln("default Qos Data not received from PCF")
 	return nil
 }

@@ -133,7 +133,7 @@ func NewUPFInterfaceInfo(i *factory.InterfaceUpfInfoItem) *UPFInterfaceInfo {
 	interfaceInfo.IPv4EndPointAddresses = make([]net.IP, 0)
 	interfaceInfo.IPv6EndPointAddresses = make([]net.IP, 0)
 
-	logger.CtxLog.Infoln("Endpoints:", i.Endpoints)
+	logger.CtxLog.Infoln("endpoints:", i.Endpoints)
 
 	for _, endpoint := range i.Endpoints {
 		eIP := net.ParseIP(endpoint)
@@ -259,7 +259,7 @@ func (upTunnel *UPTunnel) AddDataPath(dataPath *DataPath) {
 	logger.CtxLog.Info("*** Add Path")
 	pathID, err := upTunnel.PathIDGenerator.Allocate()
 	if err != nil {
-		logger.CtxLog.Warnf("Allocate pathID error: %+v", err)
+		logger.CtxLog.Warnf("allocate pathID error: %+v", err)
 		return
 	}
 
@@ -405,7 +405,7 @@ func RetrieveUPFNodeByNodeID(nodeID NodeID) *UPF {
 			(curUPF.NodeID.NodeIdType == NodeIdTypeFqdn || nodeID.NodeIdType == NodeIdTypeFqdn) {
 			curUPFNodeIdIP := curUPF.NodeID.ResolveNodeIdToIp().To4()
 			nodeIdIP := nodeID.ResolveNodeIdToIp().To4()
-			logger.CtxLog.Tracef("RetrieveUPF - upfNodeIdIP:[%+v], nodeIdIP:[%+v]", curUPFNodeIdIP, nodeIdIP)
+			logger.CtxLog.Debugf("retrieveUPF - upfNodeIdIP:[%+v], nodeIdIP:[%+v]", curUPFNodeIdIP, nodeIdIP)
 			if reflect.DeepEqual(curUPFNodeIdIP, nodeIdIP) {
 				targetUPF = curUPF
 				return false
@@ -430,7 +430,7 @@ func RemoveUPFNodeByNodeID(nodeID NodeID) bool {
 			(upf.NodeID.NodeIdType == NodeIdTypeFqdn || nodeID.NodeIdType == NodeIdTypeFqdn) {
 			upfNodeIdIP := upf.NodeID.ResolveNodeIdToIp().To4()
 			nodeIdIP := nodeID.ResolveNodeIdToIp().To4()
-			logger.CtxLog.Tracef("RemoveUPF - upfNodeIdIP:[%+v], nodeIdIP:[%+v]", upfNodeIdIP, nodeIdIP)
+			logger.CtxLog.Debugf("removeUPF - upfNodeIdIP:[%+v], nodeIdIP:[%+v]", upfNodeIdIP, nodeIdIP)
 			if reflect.DeepEqual(upfNodeIdIP, nodeIdIP) {
 				return false
 			}

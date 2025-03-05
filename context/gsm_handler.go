@@ -46,9 +46,9 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 		protocolConfigurationOptions := nasConvert.NewProtocolConfigurationOptions()
 		unmarshalErr := protocolConfigurationOptions.UnMarshal(EPCOContents)
 		if unmarshalErr != nil {
-			smContext.SubGsmLog.Errorf("Parsing PCO failed: %s", unmarshalErr)
+			smContext.SubGsmLog.Errorf("parsing PCO failed: %s", unmarshalErr)
 		}
-		smContext.SubGsmLog.Infoln("Protocol Configuration Options")
+		smContext.SubGsmLog.Infoln("protocol Configuration Options")
 		smContext.SubGsmLog.Infoln(protocolConfigurationOptions)
 
 		// Send MTU to UE always even if UE does not request it.
@@ -56,8 +56,8 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 		smContext.ProtocolConfigurationOptions.IPv4LinkMTURequest = true
 
 		for _, container := range protocolConfigurationOptions.ProtocolOrContainerList {
-			smContext.SubGsmLog.Traceln("Container ID: ", container.ProtocolOrContainerID)
-			smContext.SubGsmLog.Traceln("Container Length: ", container.LengthOfContents)
+			smContext.SubGsmLog.Debugln("Container ID:", container.ProtocolOrContainerID)
+			smContext.SubGsmLog.Debugln("Container Length:", container.LengthOfContents)
 			switch container.ProtocolOrContainerID {
 			case nasMessage.PCSCFIPv6AddressRequestUL:
 				smContext.SubGsmLog.Infoln("Didn't Implement container type PCSCFIPv6AddressRequestUL")
@@ -80,7 +80,8 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 			case nasMessage.IPv4AddressAllocationViaDHCPv4UL:
 				smContext.SubGsmLog.Infoln("Didn't Implement container type IPv4AddressAllocationViaDHCPv4UL")
 			case nasMessage.PCSCFIPv4AddressRequestUL:
-				smContext.SubGsmLog.Infoln("Didn't Implement container type PCSCFIPv4AddressRequestUL")
+				smContext.ProtocolConfigurationOptions.PCSCFIPv4Request = true
+				smContext.SubGsmLog.Infoln("PCSCFIPv4AddressRequestUL has been set true")
 			case nasMessage.DNSServerIPv4AddressRequestUL:
 				smContext.ProtocolConfigurationOptions.DNSIPv4Request = true
 			case nasMessage.MSISDNRequestUL:
@@ -129,6 +130,8 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 				smContext.SubGsmLog.Infoln("Didn't Implement container type ChallengeHandshakeAuthenticationProtocolUL")
 			case nasMessage.InternetProtocolControlProtocolUL:
 				smContext.SubGsmLog.Infoln("Didn't Implement container type InternetProtocolControlProtocolUL")
+			case nasMessage.IPv4LinkMTURequestUL:
+				smContext.SubGsmLog.Infoln("Container type IPv4LinkMTURequestUL set to true")
 			default:
 				smContext.SubGsmLog.Infof("Unknown Container ID [%d]", container.ProtocolOrContainerID)
 			}

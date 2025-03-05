@@ -20,13 +20,13 @@ import (
 
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/service"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 var SMF = &service.SMF{}
 
-var appLog *logrus.Entry
+var appLog *zap.SugaredLogger
 
 func init() {
 	appLog = logger.AppLog
@@ -35,8 +35,7 @@ func init() {
 func main() {
 	app := cli.NewApp()
 	app.Name = "smf"
-	fmt.Print(app.Name, "\n")
-	// appLog.Infoln("SMF version: ", version.GetVersion())
+	appLog.Infoln(app.Name)
 	app.Usage = "-cfg common configuration file -smfcfg smf_configuration_file"
 	app.Action = action
 	app.Flags = SMF.GetCliCmd()
@@ -49,7 +48,7 @@ func main() {
 func action(c *cli.Context) error {
 	if err := SMF.Initialize(c); err != nil {
 		logger.CfgLog.Errorf("%+v", err)
-		return fmt.Errorf("Failed to initialize !!")
+		return fmt.Errorf("failed to initialize")
 	}
 
 	SMF.Start()

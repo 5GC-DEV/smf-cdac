@@ -7,7 +7,6 @@ package qos
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -133,7 +132,7 @@ func BuildAddDefaultQosRule(defQFI uint8) *QosRule {
 	// New Rules to be added
 	if pccRulesUpdate != nil {
 		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
-			log.Printf("Building QoS Rule from PCC rule [%s]", pccRuleName)
+			logger.QosLog.Infof("building QoS Rule from PCC rule [%s]", pccRuleName)
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
 			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 			qosRules = append(qosRules, *qosRule)
@@ -596,7 +595,6 @@ func BuildPFCompProtocolId(val string) (*PacketFilterComponent, uint8) {
 		binary.BigEndian.PutUint32(bs, uint32(pfcVal))
 		pfc.ComponentValue = []byte{bs[3]}
 	} else {
-		// log TODO
 		return nil, 0
 	}
 

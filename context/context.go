@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -86,6 +87,9 @@ type SMFContext struct {
 
 	// For ULCL
 	ULCLSupport bool
+
+	// PCSCF Info
+	PCSCFInfo PCSCFInfo
 }
 
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
@@ -106,24 +110,31 @@ func RetrieveDnnInformation(Snssai models.Snssai, dnn string) *SnssaiSmfDnnInfo 
 }
 
 func AllocateLocalSEID() (uint64, error) {
-	if smfContext.DrsmCtxts.SeidPool == nil {
-		return 0, fmt.Errorf("SEID pool is not initialized")
-	}
-	seid32, err := smfContext.DrsmCtxts.SeidPool.AllocateInt32ID()
-	if err != nil {
-		logger.CtxLog.Errorf("allocate SEID error: %+v", err)
-		return 0, err
-	}
+	if factory.SmfConfig.Configuration.EnableDbStore {
+		if smfContext.DrsmCtxts.SeidPool == nil {
+			return 0, fmt.Errorf("SEID pool is not initialized")
+		}
+		seid32, err := smfContext.DrsmCtxts.SeidPool.AllocateInt32ID()
+		if err != nil {
+			logger.CtxLog.Errorf("allocate SEID error: %+v", err)
+			return 0, err
+		}
 
-	return uint64(seid32), nil
+		return uint64(seid32), nil
+	} else {
+		atomic.AddUint64(&smfContext.LocalSEIDCount, 1)
+		return smfContext.LocalSEIDCount, nil
+	}
 }
 
 func ReleaseLocalSEID(seid uint64) error {
-	seid32 := (int32)(seid)
-	err := smfContext.DrsmCtxts.SeidPool.ReleaseInt32ID(seid32)
-	if err != nil {
-		logger.CtxLog.Errorf("allocate SEID error: %+v", err)
-		return err
+	if factory.SmfConfig.Configuration.EnableDbStore {
+		seid32 := (int32)(seid)
+		err := smfContext.DrsmCtxts.SeidPool.ReleaseInt32ID(seid32)
+		if err != nil {
+			logger.CtxLog.Errorf("allocate SEID error: %+v", err)
+			return err
+		}
 	}
 	return nil
 }
@@ -256,6 +267,11 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 			smfContext.NrfCacheEvictionInterval = time.Duration(configuration.NrfCacheEvictionInterval)
 		}
 	}
+
+	smfContext.PCSCFInfo = PCSCFInfo(configuration.PCSCFInfo)
+
+	logger.CtxLog.Infof("Configuration PCSCF Info: %v", configuration.PCSCFInfo)
+	logger.CtxLog.Infof("SMF Context PCSCF Info: %v", smfContext.PCSCFInfo)
 
 	smfContext.PodIp = os.Getenv("POD_IP")
 	SetupNFProfile(config)
