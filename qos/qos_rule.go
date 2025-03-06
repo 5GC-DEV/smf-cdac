@@ -7,6 +7,7 @@ package qos
 import (
 	"bytes"
 	"encoding/binary"
+	"log"
 	"net"
 	"strconv"
 	"strings"

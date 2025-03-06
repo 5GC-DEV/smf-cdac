@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Build
         run: go build
@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Build
         run: go build
@@ -55,7 +55,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6.1.0
@@ -104,7 +104,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Unit tests
         run: go test ./...

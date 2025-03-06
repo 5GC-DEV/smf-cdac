@@ -13,7 +13,6 @@ on:
       - iosmcnmaster
 
 jobs:
-
   build-upfadapter:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'ios-mcn-core'
@@ -25,11 +24,10 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Build
         run: go build
-
 
   lint:
     runs-on: ubuntu-latest
@@ -39,7 +37,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6.1.0
@@ -70,7 +68,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: reuse lint
-        uses: fsfe/reuse-action@v3
+        uses: fsfe/reuse-action@v4
 
   fossa-check:
     runs-on: ubuntu-latest
@@ -91,7 +89,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Unit tests
         run: go test ./...
@@ -100,18 +98,18 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'ios-mcn-core'
     needs: unit-tests
-   
+
     env:
       REGISTRY: ghcr.io
       DOCKER_REGISTRY: ghcr.io/
       DOCKER_REPOSITORY: ios-mcn-core/
-      
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - run: echo GIT_SHA_SHORT=$(git rev-parse --short HEAD) >> $GITHUB_ENV
 
