@@ -121,7 +121,7 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 
 		// IPv4 P-CSCF
 		if smContext.ProtocolConfigurationOptions.PCSCFIPv4Request {
-			pcsfIpStr := "192.168.45.47"
+			pcsfIpStr := "172.22.0.21"
 
 			smContext.SubGsmLog.Infof("PCSCF Info: ", smfContext.PCSCFInfo)
 

@@ -228,6 +228,8 @@ func (smf *SMF) setLogLevel() {
 		}
 	}
 
+	utilLogger.SetLogLevel(zap.WarnLevel)
+
 	// Initialise Statistics
 	go metrics.InitMetrics()
 }

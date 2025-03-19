@@ -601,16 +601,18 @@ func (smContext *SMContext) SelectedSessionRule() *models.SessionRule {
 		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
 	}
 
-	if smContext.SmPolicyUpdates[0] != nil {
-		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0]: %v", smContext.SmPolicyUpdates[0])
-	}
+	if len(smContext.SmPolicyUpdates) > 0 {
+		if smContext.SmPolicyUpdates[0] != nil {
+			logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0]: %v", smContext.SmPolicyUpdates[0])
+		}
 
-	if smContext.SmPolicyUpdates[0].SessRuleUpdate != nil {
-		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0].SessRuleUpdate: %v", smContext.SmPolicyUpdates[0].SessRuleUpdate)
-	}
+		if smContext.SmPolicyUpdates[0].SessRuleUpdate != nil {
+			logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0].SessRuleUpdate: %v", smContext.SmPolicyUpdates[0].SessRuleUpdate)
+		}
 
-	if smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil {
-		logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule: %v", smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule)
+		if smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil {
+			logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule: %v", smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule)
+		}
 	}
 
 	logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyData: %v", smContext.SmPolicyData)
