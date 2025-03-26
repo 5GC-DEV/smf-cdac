@@ -48,6 +48,8 @@ func InitConfigFactory(f string) error {
 			enableKafka := true
 			SmfConfig.Configuration.KafkaInfo.EnableKafka = &enableKafka
 		}
+
+		logger.CfgLog.Infof("PCSCF IPv4: %v", SmfConfig.Configuration.PCSCFInfo.IPv4Addr)
 	}
 	return nil
 }
