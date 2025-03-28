@@ -26,6 +26,9 @@ type SmfStats struct {
 	svcUdmMsg   *prometheus.CounterVec
 	sessions    *prometheus.GaugeVec
 	sessProfile *prometheus.GaugeVec
+	sessStats   *prometheus.CounterVec
+	sessRequest *prometheus.CounterVec
+	sessRelease *prometheus.CounterVec
 }
 
 var smfStats *SmfStats
@@ -66,6 +69,21 @@ func initSmfStats() *SmfStats {
 			Name: "smf_pdu_session_profile",
 			Help: "SMF PDU session Profile",
 		}, []string{"id", "ip", "state", "upf", "enterprise"}),
+
+		sessStats: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "smf_pdu_session_stats",
+			Help: "Counter of total session status",
+		}, []string{"smf_id", "msg_type", "result"}),
+
+		sessRequest: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "smf_pdu_session_requests",
+			Help: "Counter of total pdu session requests",
+		}, []string{"smf_id", "msg_type", "result"}),
+
+		sessRelease: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "smf_pdu_session_release",
+			Help: "Number of SMF PDU sessions release",
+		}, []string{"smf_id", "msg_type", "direction", "result"}),
 	}
 }
 
@@ -89,6 +107,15 @@ func (ps *SmfStats) register() error {
 		return err
 	}
 	if err := prometheus.Register(ps.sessProfile); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessStats); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessRequest); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessRelease); err != nil {
 		return err
 	}
 	return nil
@@ -144,4 +171,19 @@ func SetSessStats(nodeId string, count uint64) {
 // SetSessProfileStats maintains Session profile info
 func SetSessProfileStats(id, ip, state, upf, enterprise string, count uint64) {
 	smfStats.sessProfile.WithLabelValues(id, ip, state, upf, enterprise).Set(float64(count))
+}
+
+// IncrementNoOfSessions increments session level stats
+func IncrementNoOfSessions(smfID, msgType, result string) {
+	smfStats.sessStats.WithLabelValues(smfID, msgType, result).Inc()
+}
+
+// IncrementNoOfSessReq increments pdu session requests stats
+func IncrementNoOfSessReq(smfID, msgType, result string) {
+	smfStats.sessRequest.WithLabelValues(smfID, msgType, result).Inc()
+}
+
+// IncrementSessReleaseStats increments session release stats
+func IncrementSessReleaseStats(smfID, msgType, direction, result string) {
+	smfStats.sessRelease.WithLabelValues(smfID, msgType, direction, result).Inc()
 }
