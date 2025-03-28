@@ -211,10 +211,11 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 	return nil
 }
 
-func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSmContextResponse) error {
+func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction, pfcpParam *pfcpParam) error {
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
 	smContextUpdateData := body.JsonData
+	tunnel := smContext.Tunnel
 
 	switch smContextUpdateData.HoState {
 	case models.HoState_PREPARING:
@@ -281,8 +282,44 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive",
 				smContext.SMContextState.String())
 		}
-		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+
+		pdrList := []*context.PDR{}
+		farList := []*context.FAR{}
+
+		smContext.PendingUPF = make(context.PendingUPF)
+		for _, dataPath := range tunnel.DataPathPool {
+			if dataPath.Activated {
+				ANUPF := dataPath.FirstDPNode
+				for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
+					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
+						OuterHeaderCreation: DLPDR.FAR.ForwardingParameters.OuterHeaderCreation,
+						DestinationInterface: context.DestinationInterface{
+							InterfaceValue: context.DestinationInterfaceAccess,
+						},
+						NetworkInstance: []byte(smContext.Dnn),
+					}
+
+					DLPDR.State = context.RULE_UPDATE
+					DLPDR.FAR.State = context.RULE_UPDATE
+
+					pdrList = append(pdrList, DLPDR)
+					farList = append(farList, DLPDR.FAR)
+
+					if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+					}
+				}
+			}
+		}
+
+		pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
+		pfcpParam.farList = append(pfcpParam.farList, farList...)
+
+		pfcpAction.sendPfcpModify = true
+		smContext.ChangeState(context.SmStatePfcpModify)
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+
 		smContext.HoState = models.HoState_COMPLETED
 		response.JsonData.HoState = models.HoState_COMPLETED
 	}
