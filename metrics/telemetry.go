@@ -31,6 +31,7 @@ type SmfStats struct {
 var smfStats *SmfStats
 
 func initSmfStats() *SmfStats {
+	logger.KafkaLog.Info("---initsmfstats")
 	return &SmfStats{
 		n11Msg: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "n11_messages_total",
