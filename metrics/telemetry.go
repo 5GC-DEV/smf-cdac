@@ -26,7 +26,7 @@ type SmfStats struct {
 	svcUdmMsg   *prometheus.CounterVec
 	sessions    *prometheus.GaugeVec
 	sessProfile *prometheus.GaugeVec
-	sessRelease *prometheus.CounterVec
+	// sessRelease *prometheus.CounterVec
 }
 
 var smfStats *SmfStats
@@ -68,10 +68,10 @@ func initSmfStats() *SmfStats {
 			Help: "SMF PDU session Profile",
 		}, []string{"id", "ip", "state", "upf", "enterprise"}),
 
-		sessRelease: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "smf_pdu_session_profile",
-			Help: "Number of SMF PDU sessions release",
-		}, []string{"smf_id", "msg_type", "direction", "result"}),
+		// sessRelease: prometheus.NewCounterVec(prometheus.CounterOpts{
+		// 	Name: "smf_pdu_session_profile",
+		// 	Help: "Number of SMF PDU sessions release",
+		// }, []string{"smf_id", "msg_type", "direction", "result"}),
 	}
 }
 
@@ -97,9 +97,9 @@ func (ps *SmfStats) register() error {
 	if err := prometheus.Register(ps.sessProfile); err != nil {
 		return err
 	}
-	if err := prometheus.Register(ps.sessRelease); err != nil {
-		return err
-	}
+	// if err := prometheus.Register(ps.sessRelease); err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
@@ -155,7 +155,7 @@ func SetSessProfileStats(id, ip, state, upf, enterprise string, count uint64) {
 	smfStats.sessProfile.WithLabelValues(id, ip, state, upf, enterprise).Set(float64(count))
 }
 
-// IncrementSessReleaseStats increments session release stats
-func IncrementSessReleaseStats(smfID, msgType, direction, result string) {
-	smfStats.sessRelease.WithLabelValues(smfID, msgType, direction, result).Inc()
-}
+// // IncrementSessReleaseStats increments session release stats
+// func IncrementSessReleaseStats(smfID, msgType, direction, result string) {
+// 	smfStats.sessRelease.WithLabelValues(smfID, msgType, direction, result).Inc()
+// }
