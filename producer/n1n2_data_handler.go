@@ -13,10 +13,6 @@ import (
 	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/smf/consumer"
 	"github.com/omec-project/smf/context"
-
-	// smf_context "github.com/omec-project/smf/context"
-	// "github.com/omec-project/smf/metrics"
-	// "github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/transaction"
 	"github.com/omec-project/util/httpwrapper"
 )
