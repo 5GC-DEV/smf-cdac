@@ -81,7 +81,7 @@ func initSmfStats() *SmfStats {
 		}, []string{"smf_id", "msg_type", "result"}),
 
 		sessRelease: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "smf_pdu_session_profile",
+			Name: "smf_pdu_session_release",
 			Help: "Number of SMF PDU sessions release",
 		}, []string{"smf_id", "msg_type", "direction", "result"}),
 	}
