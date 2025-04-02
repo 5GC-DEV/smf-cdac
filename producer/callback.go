@@ -50,9 +50,6 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
 	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 
-	// Update UPF
-	// TODO
-
 	httpResponse := httpwrapper.NewResponse(http.StatusNoContent, nil, nil)
 	txn.Rsp = httpResponse
 
@@ -65,44 +62,18 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		return err
 	}
 
-	pfcpParam := &pfcpParam{
-		pdrList: []*smf_context.PDR{},
-		farList: []*smf_context.FAR{},
-		barList: []*smf_context.BAR{},
-		qerList: []*smf_context.QER{},
-	}
+	// Update UPF
+	// TODO
 
-	// pfcpParam.qerList = append(pfcpParam.qerList, qerList...)
+	// Build `pfcpParam` using the dedicated function
+	pfcpParam := BuildPfcpParam(smContext)
 
-	smContext.SubPduSessLog.Infof("SMPolicyUpdateNotify, send PFCP Modification")
-	var err error
-
-	// Initiate PFCP Modify
-	if err = SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
-		// Modify failure
-		smContext.SubCtxLog.Errorf("pfcp session modify error: %v ", err.Error())
-
-		// Form Modify err rsp
-		httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
-
-		/*
-			// TODO: Add Ctxt cleanup if PFCP response is context not found,
-			// just initiating PFCP session release will not help
-				//PFCP Modify Err, initiate release
-				SendPfcpSessionReleaseReq(smContext)
-				//Change state to InactivePending
-				smContext.ChangeState(smf_context.SmStateInActivePending)
-				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-		*/
-	} else {
-		// Modify Success
-		httpResponse = &httpwrapper.Response{
-			Status: http.StatusOK,
-			Body:   httpResponse,
-		}
-
-		smContext.ChangeState(smf_context.SmStateActive)
-		smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
+	// Send PFCP Session Modification Request
+	if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+		logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
+		httpResponse.Status = http.StatusInternalServerError
+		txn.Err = err
+		return err
 	}
 
 	// N1N2 and UPF update Success
@@ -113,6 +84,55 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	// smContext.CommitSmPolicyDecision(true)
 	txn.Rsp = httpResponse
 	return nil
+}
+
+func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
+	pfcpParam := &pfcpParam{
+		pdrList: []*smf_context.PDR{},
+		farList: []*smf_context.FAR{},
+		barList: []*smf_context.BAR{},
+		qerList: []*smf_context.QER{},
+	}
+
+	smContext.PendingUPF = make(smfContext.PendingUPF)
+	var pdrList []*smf_context.PDR
+	var farList []*smf_context.FAR
+
+	// Iterate over the Data Path Pool
+	for _, dataPath := range smContext.Tunnel.DataPathPool {
+		if dataPath.Activated {
+			ANUPF := dataPath.FirstDPNode
+			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+				// Update FAR actions
+				DLPDR.FAR.ApplyAction = smfContext.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
+				DLPDR.FAR.ForwardingParameters = &smfContext.ForwardingParameters{
+					DestinationInterface: smfContext.DestinationInterface{
+						InterfaceValue: smfContext.DestinationInterfaceAccess,
+					},
+					NetworkInstance: []byte(smContext.Dnn),
+				}
+
+				// Mark rules as updated
+				DLPDR.State = smfContext.RULE_UPDATE
+				DLPDR.FAR.State = smfContext.RULE_UPDATE
+
+				// Append to lists
+				pdrList = append(pdrList, DLPDR)
+				farList = append(farList, DLPDR.FAR)
+
+				// Track UPF
+				if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+					smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+				}
+			}
+		}
+	}
+
+	// Append to pfcpParam
+	pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
+	pfcpParam.farList = append(pfcpParam.farList, farList...)
+
+	return pfcpParam
 }
 
 func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
