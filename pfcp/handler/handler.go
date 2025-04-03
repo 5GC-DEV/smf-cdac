@@ -51,7 +51,7 @@ func HandlePfcpHeartbeatRequest(msg *udp.Message) {
 		logger.PfcpLog.Errorln("invalid message type for heartbeat request")
 		return
 	}
-	logger.PfcpLog.Infof("handle PFCP Heartbeat Request")
+	logger.PfcpLog.Debugf("handle PFCP Heartbeat Request")
 	err := pfcp_message.SendHeartbeatResponse(msg.RemoteAddr, msg.PfcpMessage.Sequence())
 	if err != nil {
 		logger.PfcpLog.Errorf("failed to send PFCP Heartbeat Response: %+v", err)
@@ -64,7 +64,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 		logger.PfcpLog.Errorln("invalid message type for heartbeat response")
 		return
 	}
-	logger.PfcpLog.Infoln("handle PFCP Heartbeat Response")
+	logger.PfcpLog.Debugln("handle PFCP Heartbeat Response")
 
 	// Get NodeId from Seq:NodeId Map
 	seq := rsp.Sequence()

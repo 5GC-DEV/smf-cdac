@@ -98,6 +98,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	var pdrList []*smf_context.PDR
 	var farList []*smf_context.FAR
 
+	logger.PduSessLog.Infof("SMContext: %v", smContext)
+	logger.PduSessLog.Infof("SMContext SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
+
 	// Iterate over the Data Path Pool
 	for _, dataPath := range smContext.Tunnel.DataPathPool {
 		if dataPath.Activated {
@@ -106,6 +109,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				// Update FAR actions
 				DLPDR.FAR.ApplyAction = smfContext.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
 				DLPDR.FAR.ForwardingParameters = &smfContext.ForwardingParameters{
+					OuterHeaderCreation: DLPDR.FAR.ForwardingParameters.OuterHeaderCreation,
 					DestinationInterface: smfContext.DestinationInterface{
 						InterfaceValue: smfContext.DestinationInterfaceAccess,
 					},
