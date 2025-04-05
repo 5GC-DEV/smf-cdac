@@ -726,6 +726,7 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 			n1n2Request.JsonData.N2InfoContainer = &n2InfoContainer
 		}
 	} else {
+		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "success")
 		if smNasBuf, err := smf_context.BuildGSMPDUSessionEstablishmentReject(smContext,
 			nasMessage.Cause5GSMRequestRejectedUnspecified); err != nil {
 			logger.PduSessLog.Errorf("build GSM PDUSessionEstablishmentReject failed: %s", err)
