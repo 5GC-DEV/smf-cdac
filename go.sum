@@ -1,5 +1,7 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+github.com/5GC-DEV/config5g-cdac v1.4.2-0.20250430103952-0383bf5b24b8 h1:mhgUeuj4sb3RCGFyDx9DoAl3e3Xppe4ihkQQCJLsVhw=
+github.com/5GC-DEV/config5g-cdac v1.4.2-0.20250430103952-0383bf5b24b8/go.mod h1:lgBpYjPX/MKbjfjy9pvo2ErNCA+2EYDoKEIszJO93E0=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -13,8 +15,6 @@ github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuy
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk541a8SKzHPHnH3zbiI+7dagKZ0cgpgrD7Fyho=
-github.com/anaswarac-dac/config5g-cdac v0.1.2 h1:oKsOYqrpm1Ij7uZEJoVdPUpWwmyp7Iclyj2O+9L2XJY=
-github.com/anaswarac-dac/config5g-cdac v0.1.2/go.mod h1:sqagWfMZr4SI3DTcjcboPk7xAgnSOnmGcew8jEuBu9A=
 github.com/antihax/optional v1.0.0 h1:xK2lYat7ZLaVVcIuj82J8kIro4V6kDe0AUDFboUCwcg=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d h1:Byv0BzEl3/e6D5CLfI0j/7hiIEtvGVFPCZ7Ei2oq8iQ=
@@ -231,8 +231,6 @@ github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/omec-project/aper v1.2.2 h1:n3W4d5w8yYJlQB0jV5rr0GRAFy6k0raKOkMzNtHESlM=
 github.com/omec-project/aper v1.2.2/go.mod h1:WwFiQVcKa8MGeHoZnKjhwb4ECbOvxk4VyqzeEICrjdc=
-github.com/omec-project/config5g v1.5.5 h1:9ouNkogjNBPi4Qa0gz12Ab4pl8gp5XWvELTCDx2nLe4=
-github.com/omec-project/config5g v1.5.5/go.mod h1:r5K7D2jMigypWWcWJDUZlgpcH8gOAvPT6phtKESGzNs=
 github.com/omec-project/nas v1.4.3 h1:idLBL+/xnRSk3fJCaXddIioR4uhLYg/dOo3oNIsVrUU=
 github.com/omec-project/nas v1.4.3/go.mod h1:/p632Nl0CupVOHFhVnp+/vgQ11i6+g5ffY1kwtJSWf4=
 github.com/omec-project/ngap v1.3.1 h1:I4qdtCWcheJW2g2UH5C6zP4gVlzoZWDy7f5sJLuoMEQ=

@@ -92,7 +92,7 @@ require (
 )
 
 require (
-	github.com/anaswarac-dac/config5g-cdac v0.1.2
+	github.com/5GC-DEV/config5g-cdac v1.4.2-0.20250430103952-0383bf5b24b8 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -105,3 +105,4 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
 )
+

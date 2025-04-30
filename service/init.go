@@ -18,8 +18,8 @@ import (
 	"syscall"
 	"time"
 
-	grpcClient "github.com/anaswarac-dac/config5g-cdac/proto/client"
-	protos "github.com/anaswarac-dac/config5g-cdac/proto/sdcoreConfig"
+	grpcClient "github.com/5GC-DEV/config5g-cdac/proto/client"
+	protos "github.com/5GC-DEV/config5g-cdac/proto/sdcoreConfig"
 	aperLogger "github.com/omec-project/aper/logger"
 	nasLogger "github.com/omec-project/nas/logger"
 	ngapLogger "github.com/omec-project/ngap/logger"
