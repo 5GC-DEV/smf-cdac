@@ -13,7 +13,6 @@ import (
 	"net"
 	"reflect"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -91,9 +90,9 @@ type UPF struct {
 
 // UPFSelectionParams ... parameters for upf selection
 type UPFSelectionParams struct {
-	DnnList []string
-	SNssai  *SNssai
-	Dnai    string
+	Dnn    string
+	SNssai *SNssai
+	Dnai   string
 }
 
 // UPFInterfaceInfo store the UPF interface information
@@ -163,30 +162,17 @@ func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 }
 
 func (upfSelectionParams *UPFSelectionParams) String() string {
-	if upfSelectionParams == nil {
-		return "UPFSelectionParams is nil"
-	}
-
 	str := ""
-
-	// Handle the DnnList
-	if len(upfSelectionParams.DnnList) > 0 {
-		str += "Dnn List: "
-		for _, dnn := range upfSelectionParams.DnnList {
-			str += fmt.Sprintf("%s ", dnn)
-		}
-		str += "\n"
-	} else {
-		str += "Dnn List is empty\n"
+	Dnn := upfSelectionParams.Dnn
+	if Dnn != "" {
+		str += fmt.Sprintf("Dnn: %s\n", Dnn)
 	}
 
-	// Handle SNssai
 	SNssai := upfSelectionParams.SNssai
 	if SNssai != nil {
-		str += fmt.Sprintf("Sst: %d, Sd: %s\n", SNssai.Sst, SNssai.Sd)
+		str += fmt.Sprintf("Sst: %d, Sd: %s\n", int(SNssai.Sst), SNssai.Sd)
 	}
 
-	// Handle DNAI
 	Dnai := upfSelectionParams.Dnai
 	if Dnai != "" {
 		str += fmt.Sprintf("DNAI: %s\n", Dnai)
@@ -259,38 +245,20 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 // *** add unit test ***//
 // GetInterface return the UPFInterfaceInfo that match input cond
 func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
-	logger.CtxLog.Infof("DNN: %v", dnn)
-
 	switch interfaceType {
 	case models.UpInterfaceType_N3:
-		logger.CtxLog.Infof("Total UPF N3 Interfaces: %d", len(upf.N3Interfaces))
 		for i, iface := range upf.N3Interfaces {
-			logger.CtxLog.Infof("Checking UPF N3 Interface: %v", iface.NetworkInstance)
-
-			// Split multiple DNNs and check if dnn exists
-			dnnList := strings.Split(iface.NetworkInstance, ",")
-			for _, d := range dnnList {
-				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
-					return &upf.N3Interfaces[i]
-				}
+			if iface.NetworkInstance == dnn {
+				return &upf.N3Interfaces[i]
 			}
 		}
 	case models.UpInterfaceType_N9:
-		logger.CtxLog.Infof("Total UPF N9 Interfaces: %d", len(upf.N9Interfaces))
 		for i, iface := range upf.N9Interfaces {
-			logger.CtxLog.Infof("Checking UPF N9 Interface: %v", iface.NetworkInstance)
-
-			// Split multiple DNNs and check if dnn exists
-			dnnList := strings.Split(iface.NetworkInstance, ",")
-			for _, d := range dnnList {
-				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
-					return &upf.N9Interfaces[i]
-				}
+			if iface.NetworkInstance == dnn {
+				return &upf.N9Interfaces[i]
 			}
 		}
 	}
-
-	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
 	return nil
 }
 

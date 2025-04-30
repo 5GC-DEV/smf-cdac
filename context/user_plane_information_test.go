@@ -160,7 +160,7 @@ func TestGenerateDefaultPath(t *testing.T) {
 					Sst: 1,
 					Sd:  "112232",
 				},
-				DnnList: []string{"internet"}, // Updated to use DnnList
+				Dnn: "internet",
 			},
 			expected: true,
 		},
@@ -171,7 +171,7 @@ func TestGenerateDefaultPath(t *testing.T) {
 					Sst: 2,
 					Sd:  "112233",
 				},
-				DnnList: []string{"internet"}, // Updated to use DnnList
+				Dnn: "internet",
 			},
 			expected: true,
 		},
@@ -182,7 +182,7 @@ func TestGenerateDefaultPath(t *testing.T) {
 					Sst: 3,
 					Sd:  "112234",
 				},
-				DnnList: []string{"internet"}, // Updated to use DnnList
+				Dnn: "internet",
 			},
 			expected: true,
 		},
@@ -193,7 +193,7 @@ func TestGenerateDefaultPath(t *testing.T) {
 					Sst: 1,
 					Sd:  "112235",
 				},
-				DnnList: []string{"internet"}, // Updated to use DnnList
+				Dnn: "internet",
 			},
 			expected: true,
 		},
@@ -204,7 +204,7 @@ func TestGenerateDefaultPath(t *testing.T) {
 					Sst: 1,
 					Sd:  "010203",
 				},
-				DnnList: []string{"internet"}, // Updated to use DnnList
+				Dnn: "internet",
 			},
 			expected: false,
 		},
