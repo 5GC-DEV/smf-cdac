@@ -14,6 +14,7 @@ import (
 	nrfCache "github.com/omec-project/openapi/nrfcache"
 	"github.com/omec-project/smf/consumer"
 	smfContext "github.com/omec-project/smf/context"
+	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
@@ -49,9 +50,6 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
 	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 
-	// Update UPF
-	// TODO
-
 	httpResponse := httpwrapper.NewResponse(http.StatusNoContent, nil, nil)
 	txn.Rsp = httpResponse
 
@@ -64,13 +62,81 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		return err
 	}
 
+	// Update UPF
+	// TODO
+
+	// Build `pfcpParam` using the dedicated function
+	pfcpParam := BuildPfcpParam(smContext)
+
+	// Send PFCP Session Modification Request
+	if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+		logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
+		httpResponse.Status = http.StatusInternalServerError
+		txn.Err = err
+		return err
+	}
+
 	// N1N2 and UPF update Success
 	// Commit SM Policy Decision to SM Context
 	// TODO
 	// smContext.SMLock.Lock()
 	// defer smContext.SMLock.Unlock()
 	// smContext.CommitSmPolicyDecision(true)
+	txn.Rsp = httpResponse
 	return nil
+}
+
+func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
+	pfcpParam := &pfcpParam{
+		pdrList: []*smf_context.PDR{},
+		farList: []*smf_context.FAR{},
+		barList: []*smf_context.BAR{},
+		qerList: []*smf_context.QER{},
+	}
+
+	smContext.PendingUPF = make(smfContext.PendingUPF)
+	var pdrList []*smf_context.PDR
+	var farList []*smf_context.FAR
+
+	logger.PduSessLog.Infof("SMContext: %v", smContext)
+	logger.PduSessLog.Infof("SMContext SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
+
+	// Iterate over the Data Path Pool
+	for _, dataPath := range smContext.Tunnel.DataPathPool {
+		if dataPath.Activated {
+			ANUPF := dataPath.FirstDPNode
+			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+				// Update FAR actions
+				DLPDR.FAR.ApplyAction = smfContext.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
+				DLPDR.FAR.ForwardingParameters = &smfContext.ForwardingParameters{
+					OuterHeaderCreation: DLPDR.FAR.ForwardingParameters.OuterHeaderCreation,
+					DestinationInterface: smfContext.DestinationInterface{
+						InterfaceValue: smfContext.DestinationInterfaceAccess,
+					},
+					NetworkInstance: []byte(smContext.Dnn),
+				}
+
+				// Mark rules as updated
+				DLPDR.State = smfContext.RULE_UPDATE
+				DLPDR.FAR.State = smfContext.RULE_UPDATE
+
+				// Append to lists
+				pdrList = append(pdrList, DLPDR)
+				farList = append(farList, DLPDR.FAR)
+
+				// Track UPF
+				if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+					smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+				}
+			}
+		}
+	}
+
+	// Append to pfcpParam
+	pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
+	pfcpParam.farList = append(pfcpParam.farList, farList...)
+
+	return pfcpParam
 }
 
 func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
