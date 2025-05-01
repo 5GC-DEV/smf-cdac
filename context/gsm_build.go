@@ -14,6 +14,7 @@ import (
 	"github.com/omec-project/nas/nasConvert"
 	"github.com/omec-project/nas/nasMessage"
 	"github.com/omec-project/nas/nasType"
+	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/qos"
 	errors "github.com/omec-project/smf/smferrors"
 )
@@ -123,16 +124,15 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 		// IPv4 P-CSCF
 		if smContext.ProtocolConfigurationOptions.PCSCFIPv4Request {
 
-			pcscfInfo := PCSCFInfo{}
-			pcsfIpStr := pcscfInfo.IPv4Addr
+			pcsfIpStr := factory.SmfConfig.Configuration.PCSCFInfo.IPv4Addr
 
-			smContext.SubGsmLog.Infof("PCSCF Info from configuration : ", pcsfIpStr)
+			smContext.SubGsmLog.Infof("PCSCF Info from configuration: %s", pcsfIpStr)
 			smContext.SubGsmLog.Infof("PCSCF Info: ", smfContext.PCSCFInfo)
 
 			if smfContext.PCSCFInfo.IPv4Addr != "" {
 				pcsfIpStr = smfContext.PCSCFInfo.IPv4Addr
 			} else {
-				smContext.SubGsmLog.Warnf("PCSCF config info is nil")
+				smContext.SubGsmLog.Warn("PCSCFInfo.IPv4Addr is empty in smfContext, using config fallback")
 			}
 
 			smContext.SubGsmLog.Infof("PCSCF Ip: ", pcsfIpStr)
