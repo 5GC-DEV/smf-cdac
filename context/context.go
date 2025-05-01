@@ -85,6 +85,9 @@ type SMFContext struct {
 
 	// For ULCL
 	ULCLSupport bool
+
+	// PCSCF Info
+	PCSCFInfo PCSCFInfo
 }
 
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
@@ -253,6 +256,11 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 			smfContext.NrfCacheEvictionInterval = time.Duration(configuration.NrfCacheEvictionInterval)
 		}
 	}
+
+	smfContext.PCSCFInfo = PCSCFInfo(configuration.PCSCFInfo)
+
+	logger.CtxLog.Infof("Configuration PCSCF Info: %v", configuration.PCSCFInfo)
+	logger.CtxLog.Infof("SMF Context PCSCF Info: %v", smfContext.PCSCFInfo)
 
 	smfContext.PodIp = os.Getenv("POD_IP")
 	SetupNFProfile(config)

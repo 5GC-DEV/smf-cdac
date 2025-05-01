@@ -93,6 +93,7 @@ type Configuration struct {
 	EnableDbStore            bool                 `yaml:"enableDBStore,omitempty"`
 	EnableUpfAdapter         bool                 `yaml:"enableUPFAdapter,omitempty"`
 	ULCL                     bool                 `yaml:"ulcl,omitempty"`
+	PCSCFInfo                PCSCFInfo            `yaml:"pcscfInfos,omitempty"`
 }
 
 type StaticIpInfo struct {
@@ -218,6 +219,11 @@ type UPLink struct {
 	B string `yaml:"B"`
 }
 
+type PCSCFInfo struct {
+	IPv4Addr string `yaml:"ipv4,omitempty"`
+	IPv6Addr string `yaml:"ipv6,omitempty"`
+}
+
 var ConfigPodTrigger chan bool
 
 func init() {
@@ -260,6 +266,9 @@ func (c *Config) UpdateConfig(commChannel chan *protos.NetworkSliceResponse) boo
 		c.Configuration.SNssaiInfo = cfgNew.SNssaiInfo
 		c.Configuration.UserPlaneInformation = cfgNew.UserPlaneInformation
 		SmfConfigSyncLock.Unlock()
+
+		logger.GrpcLog.Infof("PCSCF Configurations: %v", c.Configuration.PCSCFInfo)
+
 		// Send trigger to update SMF Context
 		ConfigPodTrigger <- true
 	}
@@ -325,16 +334,14 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 		// make DNN Info structure
 		sNssaiInfoItem.DnnInfos = make([]SnssaiDnnInfoItem, 0)
 		for _, devGrp := range ns.DeviceGroup {
-			for _, ipDomain := range devGrp.IpDomainDetails { // Iterate over IpDomainDetails slice
-				var dnnInfo SnssaiDnnInfoItem
-				dnnInfo.Dnn = ipDomain.DnnName
-				dnnInfo.DNS.IPv4Addr = ipDomain.DnsPrimary
-				dnnInfo.UESubnet = ipDomain.UePool
-				dnnInfo.MTU = uint16(ipDomain.Mtu)
+			var dnnInfo SnssaiDnnInfoItem
+			dnnInfo.Dnn = devGrp.IpDomainDetails.DnnName
+			dnnInfo.DNS.IPv4Addr = devGrp.IpDomainDetails.DnsPrimary
+			dnnInfo.UESubnet = devGrp.IpDomainDetails.UePool
+			dnnInfo.MTU = uint16(devGrp.IpDomainDetails.Mtu)
 
-				// Update to Slice structure
-				sNssaiInfoItem.DnnInfos = append(sNssaiInfoItem.DnnInfos, dnnInfo)
-			}
+			// update to Slice structure
+			sNssaiInfoItem.DnnInfos = append(sNssaiInfoItem.DnnInfos, dnnInfo)
 		}
 
 		// Update to SMF config structure
@@ -378,21 +385,18 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 
 		// Popoulate DNN names per UPF slice Info
 		for _, devGrp := range ns.DeviceGroup {
-			for _, ipDomain := range devGrp.IpDomainDetails { // Iterate over IpDomainDetails slice
-				// DNN Info in UPF per Slice
-				var dnnUpfInfo models.DnnUpfInfoItem
-				dnnUpfInfo.Dnn = ipDomain.DnnName
-				snsUpfInfoItem.DnnUpfInfoList = append(snsUpfInfoItem.DnnUpfInfoList, dnnUpfInfo)
+			// DNN Info in UPF per Slice
+			var dnnUpfInfo models.DnnUpfInfoItem
+			dnnUpfInfo.Dnn = devGrp.IpDomainDetails.DnnName
+			snsUpfInfoItem.DnnUpfInfoList = append(snsUpfInfoItem.DnnUpfInfoList, dnnUpfInfo)
 
-				// Populate UPF Interface Info and DNN info in UPF per Interface
-				intfUpfInfoItem := InterfaceUpfInfoItem{
-					InterfaceType:   models.UpInterfaceType_N3,
-					Endpoints:       make([]string, 0),
-					NetworkInstance: ipDomain.DnnName,
-				}
-				intfUpfInfoItem.Endpoints = append(intfUpfInfoItem.Endpoints, ns.Site.Upf.UpfName)
-				upf.InterfaceUpfInfoList = append(upf.InterfaceUpfInfoList, intfUpfInfoItem)
+			// Populate UPF Interface Info and DNN info in UPF per Interface
+			intfUpfInfoItem := InterfaceUpfInfoItem{
+				InterfaceType: models.UpInterfaceType_N3,
+				Endpoints:     make([]string, 0), NetworkInstance: devGrp.IpDomainDetails.DnnName,
 			}
+			intfUpfInfoItem.Endpoints = append(intfUpfInfoItem.Endpoints, ns.Site.Upf.UpfName)
+			upf.InterfaceUpfInfoList = append(upf.InterfaceUpfInfoList, intfUpfInfoItem)
 		}
 		upf.SNssaiInfos = append(upf.SNssaiInfos, snsUpfInfoItem)
 
