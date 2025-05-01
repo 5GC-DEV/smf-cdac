@@ -1,6 +1,8 @@
 module github.com/omec-project/smf
 
-go 1.23
+go 1.24.0
+
+toolchain go1.24.2
 
 require (
 	github.com/5GC-DEV/config5g-cdac v1.4.2-0.20250430103952-0383bf5b24b8
@@ -72,14 +74,14 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.27.0
 	go4.org/intern v0.0.0-20220617035311-6925f38cc365 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/oauth2 v0.24.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/grpc v1.69.4 // indirect
-	google.golang.org/protobuf v1.36.3 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/oauth2 v0.25.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
+	google.golang.org/grpc v1.71.1 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/h2non/gock.v1 v1.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317 // indirect
@@ -101,6 +103,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20241015192408-796eee8c2d53 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250106144421-5f5ef82da422 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 )

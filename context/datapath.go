@@ -517,6 +517,11 @@ func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER,
 			nextULTunnel := nextULDest.UpLinkTunnel
 			iface := nextULTunnel.DestEndPoint.UPF.GetInterface(models.UpInterfaceType_N9, smContext.Dnn)
 
+			if iface == nil {
+				logger.CtxLog.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
+				return fmt.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
+			}
+
 			if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err != nil {
 				logger.CtxLog.Errorf("activate UpLink PDR[%v] failed %v", name, err)
 				return err
@@ -580,6 +585,11 @@ func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER,
 			}
 
 			iface = nextDLDest.UPF.GetInterface(models.UpInterfaceType_N9, smContext.Dnn)
+
+			if iface == nil {
+				logger.CtxLog.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
+				return fmt.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
+			}
 
 			if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err != nil {
 				logger.CtxLog.Errorf("activate Downlink PDR[%v] failed %v", name, err)

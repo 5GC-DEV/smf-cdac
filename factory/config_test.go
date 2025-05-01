@@ -50,7 +50,7 @@ func makeDummyConfig(sst, sd string) *protos.NetworkSliceResponse {
 
 	ns.DeviceGroup = make([]*protos.DeviceGroup, 0)
 	ipDomain := protos.IpDomain{DnnName: "internet", UePool: "60.60.0.0/16", DnsPrimary: "8.8.8.8", Mtu: 1400}
-	devGrp := protos.DeviceGroup{IpDomainDetails: &ipDomain}
+	devGrp := protos.DeviceGroup{IpDomainDetails: []*protos.IpDomain{&ipDomain}} // Wrap in a slice
 	ns.DeviceGroup = append(ns.DeviceGroup, &devGrp)
 
 	rsp.NetworkSlice = append(rsp.NetworkSlice, &ns)
