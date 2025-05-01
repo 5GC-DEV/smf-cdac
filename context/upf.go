@@ -282,7 +282,6 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 				}
 			}
 		}
-
 	}
 	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
 	return nil
