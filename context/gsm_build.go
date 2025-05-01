@@ -126,7 +126,7 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 
 			pcsfIpStr := factory.SmfConfig.Configuration.PCSCFInfo.IPv4Addr
 
-			smContext.SubGsmLog.Infof("PCSCF Info from configuration: %s", pcsfIpStr)
+			smContext.SubGsmLog.Infof("PCSCF Info from configuration: %v", pcsfIpStr)
 			smContext.SubGsmLog.Infof("PCSCF Info: ", smfContext.PCSCFInfo)
 
 			if smfContext.PCSCFInfo.IPv4Addr != "" {
