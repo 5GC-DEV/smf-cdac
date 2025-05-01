@@ -124,15 +124,13 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 		// IPv4 P-CSCF
 		if smContext.ProtocolConfigurationOptions.PCSCFIPv4Request {
 			pcsfIpStr := factory.SmfConfig.Configuration.PCSCFInfo.IPv4Addr
-			smContext.SubGsmLog.Infof("PCSCF Info from configuration: %v", pcsfIpStr)
+			smContext.SubGsmLog.Infof("PCSCF Info from configuration: ", pcsfIpStr)
 			smContext.SubGsmLog.Infof("PCSCF Info: ", smfContext.PCSCFInfo)
-
 			if smfContext.PCSCFInfo.IPv4Addr != "" {
 				pcsfIpStr = smfContext.PCSCFInfo.IPv4Addr
 			} else {
 				smContext.SubGsmLog.Warn("PCSCFInfo.IPv4Addr is empty in smfContext, using config fallback")
 			}
-
 			smContext.SubGsmLog.Infof("PCSCF Ip: ", pcsfIpStr)
 			pcscfIP := net.ParseIP(pcsfIpStr)
 			if pcscfIP == nil {
