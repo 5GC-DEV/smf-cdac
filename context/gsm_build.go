@@ -219,13 +219,20 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	pDUSessionModificationCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	pDUSessionModificationCommand.SetPTI(smContext.Pti)
 	pDUSessionModificationCommand.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
-	// pDUSessionModificationCommand.SetQosRule()
-	// pDUSessionModificationCommand.AuthorizedQosRules.SetLen()
-	// pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForDownlink([2]uint8{0x11, 0x11})
-	// pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForUplink([2]uint8{0x11, 0x11})
-	// pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForDownlink(10)
-	// pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForUplink(10)
-	// pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
+	qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
+
+	qosRulesBytes, err := qoSRules.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	/* C-DAC Added IEs */
+	pDUSessionModificationCommand.SetQosRule(qosRulesBytes)
+	pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
+	pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForDownlink([2]uint8{0x11, 0x11})
+	pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForUplink([2]uint8{0x11, 0x11})
+	pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForDownlink(10)
+	pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForUplink(10)
+	pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
 
 	return m.PlainNasEncode()
 }
