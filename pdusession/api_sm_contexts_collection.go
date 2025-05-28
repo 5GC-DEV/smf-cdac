@@ -14,6 +14,7 @@
 package pdusession
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -49,7 +50,14 @@ func HTTPPostSmContexts(c *gin.Context) {
 	case "application/json":
 		err = c.ShouldBindJSON(request.JsonData)
 	case "multipart/related":
-		err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
+		if c.Request.ContentLength == 0 {
+			err = fmt.Errorf("empty multipart body")
+		} else {
+			err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
+		}
+		// err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
+	default:
+		err = fmt.Errorf("unsupported Content-Type: %s", s[0])
 	}
 
 	if err != nil {
