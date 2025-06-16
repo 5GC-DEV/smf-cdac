@@ -26,7 +26,7 @@ var (
 	SendRemoveSubscription              = consumer.SendRemoveSubscription
 )
 
-func HandleSMPolicyUpdateNotify(eventData interface{}) error {
+/*func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	txn := eventData.(*transaction.Transaction)
 	request := txn.Req.(models.SmPolicyNotification)
 	smContext := txn.Ctxt.(*smfContext.SMContext)
@@ -84,6 +84,64 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	// smContext.CommitSmPolicyDecision(true)
 	txn.Rsp = httpResponse
 	return nil
+}*/
+
+func HandleSMPolicyUpdateNotify(eventData interface{}) error {
+	txn := eventData.(*transaction.Transaction)
+	request := txn.Req.(models.SmPolicyNotification)
+	smContext := txn.Ctxt.(*smfContext.SMContext)
+
+	logger.PduSessLog.Infoln("In HandleSMPolicyUpdateNotify")
+	logger.PduSessLog.Infof("Received SM Policy Notification for SUPI[%s], PDU Session ID[%d]", smContext.Supi, smContext.PDUSessionID)
+	logger.PduSessLog.Infof("Full SM Policy Notification: %+v", request)
+
+	pcfPolicyDecision := request.SmPolicyDecision
+	logger.PduSessLog.Infof("Extracted SM Policy Decision: %+v", pcfPolicyDecision)
+
+	if smContext.SMContextState != smfContext.SmStateActive {
+		logger.PduSessLog.Warnf("SMContext[%s-%02d] should be SmStateActive, but actual %s",
+			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
+		// Note: Decision pending state machine design if needed
+	}
+
+	// Derive QoS change (compare existing vs received Policy Decision)
+	policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
+	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
+
+	logger.PduSessLog.Infof("Derived SM Policy Updates for SMContext[%s-%02d]: %+v",
+		smContext.Supi, smContext.PDUSessionID, policyUpdates)
+
+	httpResponse := httpwrapper.NewResponse(http.StatusNoContent, nil, nil)
+	txn.Rsp = httpResponse
+
+	// Form N1/N2 Msg based on QoS Change and Trigger N1/N2 Msg
+	logger.PduSessLog.Infof("Triggering N1/N2 Transfer for SMContext[%s-%02d]", smContext.Supi, smContext.PDUSessionID)
+	if err := BuildAndSendQosN1N2TransferMsg(smContext); err != nil {
+		logger.PduSessLog.Errorf("Failed to send N1/N2 Transfer Message: %v", err)
+		httpResponse.Status = http.StatusBadRequest
+		txn.Err = err
+		return err
+	}
+	logger.PduSessLog.Infof("Successfully sent N1/N2 Transfer Message for SMContext[%s-%02d]", smContext.Supi, smContext.PDUSessionID)
+
+	// Build PFCP parameters
+	pfcpParam := BuildPfcpParam(smContext)
+	logger.PduSessLog.Infof("Built PFCP Parameters for SMContext[%s-%02d]: %+v", smContext.Supi, smContext.PDUSessionID, pfcpParam)
+
+	// Send PFCP Session Modification Request
+	logger.PduSessLog.Infof("Sending PFCP Session Modification Request for SMContext[%s-%02d]", smContext.Supi, smContext.PDUSessionID)
+	if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+		logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
+		httpResponse.Status = http.StatusInternalServerError
+		txn.Err = err
+		return err
+	}
+	logger.PduSessLog.Infof("Successfully sent PFCP Session Modification Request for SMContext[%s-%02d]", smContext.Supi, smContext.PDUSessionID)
+
+	// Finalize
+	logger.PduSessLog.Infof("SM Policy Update handled successfully for SMContext[%s-%02d]", smContext.Supi, smContext.PDUSessionID)
+	txn.Rsp = httpResponse
+	return nil
 }
 
 func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
@@ -139,8 +197,72 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	return pfcpParam
 }
 
+/*
+	func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
+		// N1N2 Request towards AMF
+		n1n2Request := models.N1N2MessageTransferRequest{}
+
+		// N2 Container Info
+		n2InfoContainer := models.N2InfoContainer{
+			N2InformationClass: models.N2InformationClass_SM,
+			SmInfo: &models.N2SmInformation{
+				PduSessionId: smContext.PDUSessionID,
+				N2InfoContent: &models.N2InfoContent{
+					NgapIeType: models.NgapIeType_PDU_RES_SETUP_REQ,
+					NgapData: &models.RefToBinaryData{
+						ContentId: "N2SmInformation",
+					},
+				},
+				SNssai: smContext.Snssai,
+			},
+		}
+
+		// N1 Container Info
+		n1MsgContainer := models.N1MessageContainer{
+			N1MessageClass:   "SM",
+			N1MessageContent: &models.RefToBinaryData{ContentId: "GSM_NAS"},
+		}
+
+		// N1N2 Json Data
+		n1n2Request.JsonData = &models.N1N2MessageTransferReqData{PduSessionId: smContext.PDUSessionID}
+
+		// N1 Msg
+		if smNasBuf, err := smfContext.BuildGSMPDUSessionModificationCommand(smContext); err != nil {
+			logger.PduSessLog.Errorf("build GSM BuildGSMPDUSessionModificationCommand failed: %s", err)
+		} else {
+			n1n2Request.BinaryDataN1Message = smNasBuf
+			n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer
+		}
+
+		// N2 Msg
+		n2Pdu, err := smfContext.BuildPDUSessionResourceModifyRequestTransfer(smContext)
+		if err != nil {
+			smContext.SubPduSessLog.Errorf("SMPolicyUpdate, build PDUSession Resource Modify Request Transfer Error(%s)", err.Error())
+		} else {
+			n1n2Request.BinaryDataN2Information = n2Pdu
+			n1n2Request.JsonData.N2InfoContainer = &n2InfoContainer
+		}
+
+		smContext.SubPduSessLog.Infoln("QoS N1N2 transfer initiated")
+		rspData, _, err := smContext.
+			CommunicationClient.
+			N1N2MessageCollectionDocumentApi.
+			N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
+		if err != nil {
+			smContext.SubPfcpLog.Warnf("send N1N2Transfer failed, %v", err.Error())
+			return err
+		}
+		if rspData.Cause == models.N1N2MessageTransferCause_N1_MSG_NOT_TRANSFERRED {
+			smContext.SubPfcpLog.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
+			return fmt.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
+		}
+		smContext.SubPduSessLog.Infoln("QoS N1N2 Transfer completed")
+		return nil
+	}
+*/
 func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
-	// N1N2 Request towards AMF
+	smContext.SubPduSessLog.Infof("Starting QoS N1N2 Transfer for SUPI[%s], PDU Session ID[%d]", smContext.Supi, smContext.PDUSessionID)
+
 	n1n2Request := models.N1N2MessageTransferRequest{}
 
 	// N2 Container Info
@@ -157,6 +279,7 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 			SNssai: smContext.Snssai,
 		},
 	}
+	smContext.SubPduSessLog.Infof("Built N2InfoContainer: %+v", n2InfoContainer)
 
 	// N1 Container Info
 	n1MsgContainer := models.N1MessageContainer{
@@ -165,39 +288,51 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	}
 
 	// N1N2 Json Data
-	n1n2Request.JsonData = &models.N1N2MessageTransferReqData{PduSessionId: smContext.PDUSessionID}
+	n1n2Request.JsonData = &models.N1N2MessageTransferReqData{
+		PduSessionId: smContext.PDUSessionID,
+	}
+	smContext.SubPduSessLog.Infof("Initialized N1N2MessageTransferReqData: %+v", n1n2Request.JsonData)
 
-	// N1 Msg
+	// N1 Message
+	smContext.SubPduSessLog.Infof("Building N1 GSM NAS message for SUPI[%s], PDU Session ID[%d]", smContext.Supi, smContext.PDUSessionID)
 	if smNasBuf, err := smfContext.BuildGSMPDUSessionModificationCommand(smContext); err != nil {
-		logger.PduSessLog.Errorf("build GSM BuildGSMPDUSessionModificationCommand failed: %s", err)
+		logger.PduSessLog.Errorf("BuildGSMPDUSessionModificationCommand failed: %s", err)
 	} else {
 		n1n2Request.BinaryDataN1Message = smNasBuf
 		n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer
+		smContext.SubPduSessLog.Info("GSM NAS message built and added to N1N2 request")
 	}
 
-	// N2 Msg
+	// N2 Message
+	smContext.SubPduSessLog.Infof("Building N2 PDU Session Resource Modify Request Transfer for SUPI[%s], PDU Session ID[%d]", smContext.Supi, smContext.PDUSessionID)
 	n2Pdu, err := smfContext.BuildPDUSessionResourceModifyRequestTransfer(smContext)
 	if err != nil {
-		smContext.SubPduSessLog.Errorf("SMPolicyUpdate, build PDUSession Resource Modify Request Transfer Error(%s)", err.Error())
+		smContext.SubPduSessLog.Errorf("BuildPDUSessionResourceModifyRequestTransfer failed: %s", err.Error())
 	} else {
 		n1n2Request.BinaryDataN2Information = n2Pdu
 		n1n2Request.JsonData.N2InfoContainer = &n2InfoContainer
+		smContext.SubPduSessLog.Info("N2 message built and added to N1N2 request")
 	}
 
-	smContext.SubPduSessLog.Infoln("QoS N1N2 transfer initiated")
-	rspData, _, err := smContext.
-		CommunicationClient.
+	// Send to AMF
+	smContext.SubPduSessLog.Infoln("Sending N1N2 Transfer message to AMF")
+	rspData, _, err := smContext.CommunicationClient.
 		N1N2MessageCollectionDocumentApi.
 		N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
+
 	if err != nil {
-		smContext.SubPfcpLog.Warnf("send N1N2Transfer failed, %v", err.Error())
+		smContext.SubPfcpLog.Warnf("N1N2 Transfer failed for SUPI[%s], PDU Session ID[%d]: %v", smContext.Supi, smContext.PDUSessionID, err)
 		return err
 	}
+
+	smContext.SubPduSessLog.Infof("Received N1N2 Transfer response: %+v", rspData)
+
 	if rspData.Cause == models.N1N2MessageTransferCause_N1_MSG_NOT_TRANSFERRED {
-		smContext.SubPfcpLog.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
-		return fmt.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
+		smContext.SubPfcpLog.Errorf("N1N2MessageTransfer failure for SUPI[%s], PDU Session ID[%d]: %v", smContext.Supi, smContext.PDUSessionID, rspData.Cause)
+		return fmt.Errorf("N1N2MessageTransfer failure: %v", rspData.Cause)
 	}
-	smContext.SubPduSessLog.Infoln("QoS N1N2 Transfer completed")
+
+	smContext.SubPduSessLog.Infof("QoS N1N2 Transfer completed successfully for SUPI[%s], PDU Session ID[%d]", smContext.Supi, smContext.PDUSessionID)
 	return nil
 }
 

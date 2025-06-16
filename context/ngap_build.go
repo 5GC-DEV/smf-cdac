@@ -219,7 +219,7 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	}
 }
 
-func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error) {
+/*func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error) {
 	resourceModifyRequestTransfer := ngapType.PDUSessionResourceModifyRequestTransfer{}
 
 	// PDU Session Aggregate Maximum Bit Rate
@@ -306,6 +306,110 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	if buf, err := aper.MarshalWithParams(resourceModifyRequestTransfer, "valueExt"); err != nil {
 		return nil, fmt.Errorf("encode resourceModifyRequestTransfer failed: %s", err)
 	} else {
+		return buf, nil
+	}
+}*/
+
+func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error) {
+	ctx.SubPduSessLog.Infof("Building PDUSessionResourceModifyRequestTransfer for SUPI[%s], PDU Session ID[%d]", ctx.Supi, ctx.PDUSessionID)
+
+	resourceModifyRequestTransfer := ngapType.PDUSessionResourceModifyRequestTransfer{}
+
+	// Step 1: PDU Session AMBR
+	sessRule := ctx.SelectedSessionRule()
+	if sessRule == nil {
+		ctx.SubPduSessLog.Error("SelectedSessionRule is nil")
+		return nil, fmt.Errorf("sessRule is nil")
+	}
+
+	if sessRule.AuthSessAmbr == nil {
+		ctx.SubPduSessLog.Error("AuthSessAmbr is nil")
+		return nil, fmt.Errorf("no PDU Session AMBR")
+	}
+
+	downlink := ngapConvert.UEAmbrToInt64(sessRule.AuthSessAmbr.Downlink)
+	uplink := ngapConvert.UEAmbrToInt64(sessRule.AuthSessAmbr.Uplink)
+
+	ctx.SubPduSessLog.Infof("Using AMBR: DL = %d bps, UL = %d bps", downlink, uplink)
+
+	ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
+		Id: ngapType.ProtocolIEID{
+			Value: ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate,
+		},
+		Criticality: ngapType.Criticality{
+			Value: ngapType.CriticalityPresentReject,
+		},
+		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
+			Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentPDUSessionAggregateMaximumBitRate,
+			PDUSessionAggregateMaximumBitRate: &ngapType.PDUSessionAggregateMaximumBitRate{
+				PDUSessionAggregateMaximumBitRateDL: ngapType.BitRate{Value: downlink},
+				PDUSessionAggregateMaximumBitRateUL: ngapType.BitRate{Value: uplink},
+			},
+		},
+	}
+	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
+
+	// Step 2: QoS Flow Add or Modify Request List
+	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
+	if sessRule.AuthDefQos.Arp.PreemptCap == models.PreemptionCapability_NOT_PREEMPT {
+		arpPreemptCap = ngapType.PreEmptionCapabilityPresentShallNotTriggerPreEmption
+	}
+
+	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
+	if sessRule.AuthDefQos.Arp.PreemptVuln == models.PreemptionVulnerability_PREEMPTABLE {
+		arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
+	}
+
+	qfi := sessRule.AuthDefQos.Var5qi
+	priority := sessRule.AuthDefQos.Arp.PriorityLevel
+
+	ctx.SubPduSessLog.Infof("QoS Flow: QFI = %d, Priority = %d, PreemptCap = %d, PreemptVul = %d",
+		qfi, priority, arpPreemptCap, arpPreemptVul)
+
+	ie = ngapType.PDUSessionResourceModifyRequestTransferIEs{
+		Id: ngapType.ProtocolIEID{
+			Value: ngapType.ProtocolIEIDQosFlowAddOrModifyRequestList,
+		},
+		Criticality: ngapType.Criticality{
+			Value: ngapType.CriticalityPresentReject,
+		},
+		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
+			Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentQosFlowAddOrModifyRequestList,
+			QosFlowAddOrModifyRequestList: &ngapType.QosFlowAddOrModifyRequestList{
+				List: []ngapType.QosFlowAddOrModifyRequestItem{
+					{
+						QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
+						QosFlowLevelQosParameters: &ngapType.QosFlowLevelQosParameters{
+							QosCharacteristics: ngapType.QosCharacteristics{
+								Present: ngapType.QosCharacteristicsPresentNonDynamic5QI,
+								NonDynamic5QI: &ngapType.NonDynamic5QIDescriptor{
+									FiveQI: ngapType.FiveQI{Value: int64(qfi)},
+								},
+							},
+							AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{
+								PriorityLevelARP: ngapType.PriorityLevelARP{Value: int64(priority)},
+								PreEmptionCapability: ngapType.PreEmptionCapability{
+									Value: arpPreemptCap,
+								},
+								PreEmptionVulnerability: ngapType.PreEmptionVulnerability{
+									Value: arpPreemptVul,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
+
+	// Step 3: Encoding
+	ctx.SubPduSessLog.Info("Encoding PDUSessionResourceModifyRequestTransfer structure")
+	if buf, err := aper.MarshalWithParams(resourceModifyRequestTransfer, "valueExt"); err != nil {
+		ctx.SubPduSessLog.Errorf("Failed to encode PDUSessionResourceModifyRequestTransfer: %v", err)
+		return nil, fmt.Errorf("encode resourceModifyRequestTransfer failed: %w", err)
+	} else {
+		ctx.SubPduSessLog.Infof("Successfully built and encoded PDUSessionResourceModifyRequestTransfer")
 		return buf, nil
 	}
 }
