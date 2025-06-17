@@ -219,6 +219,9 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	pDUSessionModificationCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	pDUSessionModificationCommand.SetPTI(smContext.Pti)
 	pDUSessionModificationCommand.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
+	if pDUSessionModificationCommand.AuthorizedQosRules == nil {
+		pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
+	}
 	// pDUSessionModificationCommand.SetQosRule()
 	// pDUSessionModificationCommand.AuthorizedQosRules.SetLen()
 	// pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForDownlink([2]uint8{0x11, 0x11})

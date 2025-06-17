@@ -155,14 +155,36 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	return qosRules
 }
 
+/*
+	func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+		qRule := QosRule{
+			Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
+			DQR:           btou(qosData.DefQosFlowIndication),
+			OperationCode: pccRuleOpCode,
+			Precedence:    uint8(pccRule.Precedence),
+			QFI:           GetQosFlowIdFromQosId(qosData.QosId),
+		}
+
+		qRule.BuildPacketFilterListFromPccRule(pccRule)
+
+		return &qRule
+	}
+*/
 func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+	logger.CtxLog.Infof("Building QoS Rule from PccRuleId: [%s], QosId: [%s]", pccRule.PccRuleId, qosData.QosId)
+
+	qfi := GetQosFlowIdFromQosId(qosData.QosId)
+
 	qRule := QosRule{
 		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
 		DQR:           btou(qosData.DefQosFlowIndication),
 		OperationCode: pccRuleOpCode,
 		Precedence:    uint8(pccRule.Precedence),
-		QFI:           GetQosFlowIdFromQosId(qosData.QosId),
+		QFI:           qfi,
 	}
+
+	logger.CtxLog.Infof("Constructed QosRule: Identifier=[%d], Precedence=[%d], QFI=[%d], DQR=[%t], OperationCode=[%d]",
+		qRule.Identifier, qRule.Precedence, qRule.QFI, qRule.DQR, qRule.OperationCode)
 
 	qRule.BuildPacketFilterListFromPccRule(pccRule)
 

@@ -82,13 +82,16 @@ type QosFlowsUpdate struct {
 }
 
 func GetQosFlowIdFromQosId(qosId string) uint8 {
+	logger.CtxLog.Infof("Received QosId: [%s]", qosId)
+
 	id, err := strconv.Atoi(qosId)
 	if err != nil {
-		logger.CtxLog.Errorf("string can not be converted to integer: %+v", err)
+		logger.CtxLog.Errorf("Failed to convert QosId [%s] to integer: %v", qosId, err)
 		return 0
-	} else {
-		return uint8(id)
 	}
+
+	logger.CtxLog.Infof("Successfully converted QosId [%s] to integer: %d", qosId, id)
+	return uint8(id)
 }
 
 // Build Qos Flow Description to be sent to UE
