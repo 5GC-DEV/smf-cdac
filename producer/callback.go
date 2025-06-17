@@ -319,7 +319,6 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	rspData, _, err := smContext.CommunicationClient.
 		N1N2MessageCollectionDocumentApi.
 		N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
-
 	if err != nil {
 		smContext.SubPfcpLog.Warnf("N1N2 Transfer failed for SUPI[%s], PDU Session ID[%d]: %v", smContext.Supi, smContext.PDUSessionID, err)
 		return err

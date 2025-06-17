@@ -310,17 +310,22 @@ func GetQosFlowDescUpdate(pcfQosData, ctxtQosData map[string]*models.QosData) *Q
 
 	// Iterate through pcf qos data to identify find add/mod/del qos flows
 	for name, pcfQF := range pcfQosData {
+		logger.CtxLog.Infof("[QoS Update] Checking PCF QoS ID: %s", name)
+		logger.CtxLog.Infof("[QoS Update] PCF QoS Data: %+v", pcfQF)
 		// if pcfQF is null then rule is deleted
 		if pcfQF == nil {
 			update.del[name] = pcfQF // nil
+			logger.CtxLog.Infof("[QoS Update] Marking QoS ID %s for deletion (pcfQF is nil)", name)
 			continue
 		}
 
 		// Flows to add
 		if ctxtQF := ctxtQosData[name]; ctxtQF == nil {
 			update.add[name] = pcfQF
+			logger.CtxLog.Infof("[QoS Update] Marking QoS ID %s as new (not present in context)", name)
 		} else if GetQosDataChanges(pcfQF, ctxtQF) {
 			update.mod[name] = pcfQF
+			logger.CtxLog.Infof("[QoS Update] Marking QoS ID %s as modified", name)
 		}
 	}
 
@@ -348,9 +353,42 @@ func CommitQosFlowDescUpdate(smCtxtPolData *SmCtxtPolicyData, update *QosFlowsUp
 	}
 }
 
-// Compare if any change in QoS Data
 func GetQosDataChanges(qf1, qf2 *models.QosData) bool {
-	// TODO
+	if qf1 == nil || qf2 == nil {
+		return true
+	}
+
+	if qf1.QosId != qf2.QosId ||
+		qf1.Var5qi != qf2.Var5qi ||
+		qf1.MaxbrUl != qf2.MaxbrUl ||
+		qf1.MaxbrDl != qf2.MaxbrDl ||
+		qf1.GbrUl != qf2.GbrUl ||
+		qf1.GbrDl != qf2.GbrDl ||
+		qf1.Qnc != qf2.Qnc ||
+		qf1.PriorityLevel != qf2.PriorityLevel ||
+		qf1.AverWindow != qf2.AverWindow ||
+		qf1.MaxDataBurstVol != qf2.MaxDataBurstVol ||
+		qf1.ReflectiveQos != qf2.ReflectiveQos ||
+		qf1.SharingKeyDl != qf2.SharingKeyDl ||
+		qf1.SharingKeyUl != qf2.SharingKeyUl ||
+		qf1.MaxPacketLossRateDl != qf2.MaxPacketLossRateDl ||
+		qf1.MaxPacketLossRateUl != qf2.MaxPacketLossRateUl ||
+		qf1.DefQosFlowIndication != qf2.DefQosFlowIndication {
+		return true
+	}
+
+	// Compare ARP separately
+	if (qf1.Arp == nil) != (qf2.Arp == nil) {
+		return true
+	}
+	if qf1.Arp != nil && qf2.Arp != nil {
+		if qf1.Arp.PriorityLevel != qf2.Arp.PriorityLevel ||
+			qf1.Arp.PreemptCap != qf2.Arp.PreemptCap ||
+			qf1.Arp.PreemptVuln != qf2.Arp.PreemptVuln {
+			return true
+		}
+	}
+
 	return false
 }
 
