@@ -271,7 +271,7 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 		SmInfo: &models.N2SmInformation{
 			PduSessionId: smContext.PDUSessionID,
 			N2InfoContent: &models.N2InfoContent{
-				NgapIeType: models.NgapIeType_PDU_RES_SETUP_REQ,
+				NgapIeType: models.NgapIeType_PDU_RES_MOD_REQ,
 				NgapData: &models.RefToBinaryData{
 					ContentId: "N2SmInformation",
 				},
