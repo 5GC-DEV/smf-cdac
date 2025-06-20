@@ -55,6 +55,7 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
 	logger.CtxLog.Infof("UPF Node: %+v", UpNode)
 	logger.CtxLog.Infof("N3Interfaces count: %d", len(UpNode.N3Interfaces))
+	// Possible cause: N3Interfaces is empty or nil, leading to nil pointer dereference when accessing its elements.
 	if len(UpNode.N3Interfaces) == 0 {
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}
