@@ -12,6 +12,7 @@ import (
 	"github.com/omec-project/ngap/ngapConvert"
 	"github.com/omec-project/ngap/ngapType"
 	"github.com/omec-project/openapi/models"
+	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/qos"
 )
 
@@ -52,6 +53,12 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	ie = ngapType.PDUSessionResourceSetupRequestTransferIEs{}
 	ie.Id.Value = ngapType.ProtocolIEIDULNGUUPTNLInformation
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
+	logger.CtxLog.Infof("UPF Node: %+v", UpNode)
+	logger.CtxLog.Infof("N3Interfaces count: %d", len(UpNode.N3Interfaces))
+	// Possible cause: Physical interface connecting to UPF may be down
+	if len(UpNode.N3Interfaces) == 0 {
+		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
+	}
 	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
 		return nil, err
 	} else {
