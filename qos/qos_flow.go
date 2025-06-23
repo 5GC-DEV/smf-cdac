@@ -120,6 +120,29 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	return &QFDescriptions
 }
 
+// Add these getter methods to your QosFlowsUpdate struct
+
+func (q *QosFlowsUpdate) GetModified() map[string]*models.QosData {
+	if q == nil {
+		return nil
+	}
+	return q.mod
+}
+
+func (q *QosFlowsUpdate) GetAdded() map[string]*models.QosData {
+	if q == nil {
+		return nil
+	}
+	return q.add
+}
+
+func (q *QosFlowsUpdate) GetDeleted() map[string]*models.QosData {
+	if q == nil {
+		return nil
+	}
+	return q.del
+}
+
 func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDesc(qosData *models.QosData) {
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
 
