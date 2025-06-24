@@ -207,6 +207,7 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	return m.PlainNasEncode()
 }
 
+/*
 func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error) {
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
@@ -238,14 +239,65 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	/* C-DAC Added IEs */
-	pDUSessionModificationCommand.SetQosRule(qosRulesBytes)
-	pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
-	pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForDownlink([2]uint8{0x11, 0x11})
-	pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForUplink([2]uint8{0x11, 0x11})
-	pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForDownlink(10)
-	pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForUplink(10)
+	smContext.SubGsmLog.Infof("QoS Rules Length: %d\n", len(qosRulesBytes))
+	smContext.SubGsmLog.Infof("QoS Rules Bytes: %x\n", qosRulesBytes)
+	modAmbr := nasConvert.ModelsToSessionAMBR(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr)
+	pDUSessionModificationCommand.SessionAMBR = &modAmbr
 	pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
+
+	/* C-DAC Added IEs */
+/*pDUSessionModificationCommand.SetQosRule(qosRulesBytes)
+	pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
+	// pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForDownlink([2]uint8{0x11, 0x11})
+	// pDUSessionModificationCommand.SessionAMBR.SetSessionAMBRForUplink([2]uint8{0x11, 0x11})
+	// pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForDownlink(10)
+	// pDUSessionModificationCommand.SessionAMBR.SetUnitForSessionAMBRForUplink(10)
+	// pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
+
+	return m.PlainNasEncode()
+} */
+func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error) {
+	m := nas.NewMessage()
+	m.GsmMessage = nas.NewGsmMessage()
+	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
+	m.GsmHeader.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+	m.PDUSessionModificationCommand = nasMessage.NewPDUSessionModificationCommand(0x0)
+	pDUSessionModificationCommand := m.PDUSessionModificationCommand
+
+	pDUSessionModificationCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+	pDUSessionModificationCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
+	pDUSessionModificationCommand.SetPTI(smContext.Pti)
+	pDUSessionModificationCommand.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
+
+	// Only set Session-AMBR for PDU Session Modification Command
+	if len(smContext.SmPolicyUpdates) > 0 {
+		if smContext.SmPolicyUpdates[0].SessRuleUpdate != nil &&
+			smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil &&
+			smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr != nil {
+
+			modAmbr := nasConvert.ModelsToSessionAMBR(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr)
+			pDUSessionModificationCommand.SessionAMBR = &modAmbr
+			pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
+
+			smContext.SubGsmLog.Infof("Session-AMBR set for PDU Session Modification Command")
+		}
+	}
+
+	// QoS Flow modifications are handled at NGAP level, not in NAS PDU Session Modification Command
+	// The QoS rules can be logged but should not be included in this message
+	if len(smContext.SmPolicyUpdates) > 0 {
+		qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
+		qosRulesBytes, err := qoSRules.MarshalBinary()
+		if err != nil {
+			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
+		} else {
+			smContext.SubGsmLog.Infof("QoS Rules Length: %d", len(qosRulesBytes))
+			smContext.SubGsmLog.Infof("QoS Rules Bytes: %x", qosRulesBytes)
+			smContext.SubGsmLog.Infof("QoS rules available but not included in PDU Session Modification Command")
+		}
+	}
+
+	smContext.SubGsmLog.Infof("PDU Session Modification Command built successfully for Session ID: %d", smContext.PDUSessionID)
 
 	return m.PlainNasEncode()
 }
