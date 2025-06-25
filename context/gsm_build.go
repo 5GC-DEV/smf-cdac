@@ -267,7 +267,13 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 
 	pDUSessionModificationCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionModificationCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
-	pDUSessionModificationCommand.SetPTI(smContext.Pti)
+	// Method 1: Simple increment with wraparound
+	pti := smContext.Pti + 1
+	if pti == 0 || pti > 254 {
+		pti = 1 // PTI valid range is 1-254, avoid 0 and 255
+	}
+	smContext.Pti = pti
+	pDUSessionModificationCommand.SetPTI(pti)
 	pDUSessionModificationCommand.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
 
 	// Only set Session-AMBR for PDU Session Modification Command
@@ -303,9 +309,15 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
 			return nil, fmt.Errorf("failed to marshal QoS rules: %w", err)
 		} else if len(qosRulesBytes) > 0 {
-			// Set the QoS rules in the PDU Session Modification Command
+			// Initialize AuthorizedQosRules if nil
+			if pDUSessionModificationCommand.AuthorizedQosRules == nil {
+				pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
+			}
+
+			// Now safely set length and rules
 			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
 			pDUSessionModificationCommand.AuthorizedQosRules.SetQosRule(qosRulesBytes)
+
 			smContext.SubGsmLog.Infof("QoS Rules included in PDU Session Modification Command, Length: %d", len(qosRulesBytes))
 		}
 	}
