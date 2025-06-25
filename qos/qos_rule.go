@@ -123,35 +123,83 @@ func BuildAddDefaultQosRule(defQFI uint8) *QosRule {
 	return defQosRule
 }
 
+/*func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
+qosRules := QoSRules{}
+
+smPolicyDecision := smPolicyUpdates.SmPolicyDecision
+pccRulesUpdate := smPolicyUpdates.PccRuleUpdate
+
+// New Rules to be added
+if pccRulesUpdate != nil {
+	for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
+		logger.QosLog.Infof("building QoS Rule from PCC rule [%s]", pccRuleName)
+		refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+		qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+		qosRules = append(qosRules, *qosRule)
+	}
+}
+
+//Add default Matchall QosRule as well
+/*
+	if smPolicyUpdates.SessRuleUpdate != nil {
+		defQosRule := BuildAddDefaultQosRule(uint8(smPolicyUpdates.SessRuleUpdate.ActiveSessRule.AuthDefQos.Var5qi))
+		qosRules = append(qosRules, *defQosRule)
+	}
+*/
+
+// Rules to be modified
+// TODO
+
+// Rules to be deleted
+// TODO
+/*return qosRules
+}*/
+
 func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	qosRules := QoSRules{}
-
 	smPolicyDecision := smPolicyUpdates.SmPolicyDecision
 	pccRulesUpdate := smPolicyUpdates.PccRuleUpdate
 
-	// New Rules to be added
 	if pccRulesUpdate != nil {
-		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
-			logger.QosLog.Infof("building QoS Rule from PCC rule [%s]", pccRuleName)
-			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
-			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
-			qosRules = append(qosRules, *qosRule)
+		// Process NEW rules to be added
+		if pccRulesUpdate.add != nil {
+			for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
+				logger.QosLog.Infof("building NEW QoS Rule from PCC rule [%s]", pccRuleName)
+				refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+				if refQosData != nil {
+					qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+					qosRules = append(qosRules, *qosRule)
+				}
+			}
+		}
+
+		// Process MODIFIED rules
+		if pccRulesUpdate.mod != nil {
+			for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
+				logger.QosLog.Infof("building MODIFIED QoS Rule from PCC rule [%s]", pccRuleName)
+				refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+				if refQosData != nil {
+					qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeModifyExistingQoSRuleAndAddPacketFilters)
+					qosRules = append(qosRules, *qosRule)
+				}
+			}
+		}
+
+		// Process REMOVED rules
+		if pccRulesUpdate.del != nil {
+			for _, pccRuleName := range pccRulesUpdate.del {
+				logger.QosLog.Infof("building DELETE QoS Rule for PCC rule [%s]", pccRuleName)
+				qosRule := &QosRule{
+					Identifier:    GetQosRuleIdFromPccRuleId(pccRuleName.PccRuleId),
+					OperationCode: OperationCodeDeleteExistingQoSRule,
+					// For delete operations, other fields may not be needed
+				}
+				qosRules = append(qosRules, *qosRule)
+			}
 		}
 	}
 
-	//Add default Matchall QosRule as well
-	/*
-		if smPolicyUpdates.SessRuleUpdate != nil {
-			defQosRule := BuildAddDefaultQosRule(uint8(smPolicyUpdates.SessRuleUpdate.ActiveSessRule.AuthDefQos.Var5qi))
-			qosRules = append(qosRules, *defQosRule)
-		}
-	*/
-
-	// Rules to be modified
-	// TODO
-
-	// Rules to be deleted
-	// TODO
+	logger.QosLog.Infof("Total QoS rules built: %d", len(qosRules))
 	return qosRules
 }
 

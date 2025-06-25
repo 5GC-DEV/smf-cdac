@@ -8,6 +8,7 @@ package context
 
 import (
 	"encoding/hex"
+	"fmt"
 	"net"
 
 	"github.com/omec-project/nas"
@@ -274,7 +275,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		if smContext.SmPolicyUpdates[0].SessRuleUpdate != nil &&
 			smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil &&
 			smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr != nil {
-
 			modAmbr := nasConvert.ModelsToSessionAMBR(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr)
 			pDUSessionModificationCommand.SessionAMBR = &modAmbr
 			pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
@@ -285,7 +285,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 
 	// QoS Flow modifications are handled at NGAP level, not in NAS PDU Session Modification Command
 	// The QoS rules can be logged but should not be included in this message
-	if len(smContext.SmPolicyUpdates) > 0 {
+	/*if len(smContext.SmPolicyUpdates) > 0 {
 		qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
 		qosRulesBytes, err := qoSRules.MarshalBinary()
 		if err != nil {
@@ -294,6 +294,19 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("QoS Rules Length: %d", len(qosRulesBytes))
 			smContext.SubGsmLog.Infof("QoS Rules Bytes: %x", qosRulesBytes)
 			smContext.SubGsmLog.Infof("QoS rules available but not included in PDU Session Modification Command")
+		}
+	}*/
+	if len(smContext.SmPolicyUpdates) > 0 {
+		qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
+		qosRulesBytes, err := qoSRules.MarshalBinary()
+		if err != nil {
+			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
+			return nil, fmt.Errorf("failed to marshal QoS rules: %w", err)
+		} else if len(qosRulesBytes) > 0 {
+			// Set the QoS rules in the PDU Session Modification Command
+			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
+			pDUSessionModificationCommand.AuthorizedQosRules.SetQosRule(qosRulesBytes)
+			smContext.SubGsmLog.Infof("QoS Rules included in PDU Session Modification Command, Length: %d", len(qosRulesBytes))
 		}
 	}
 
