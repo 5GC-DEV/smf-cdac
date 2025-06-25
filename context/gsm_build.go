@@ -268,12 +268,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	pDUSessionModificationCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionModificationCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	// Method 1: Simple increment with wraparound
-	pti := smContext.Pti + 1
-	if pti == 0 || pti > 254 {
-		pti = 1 // PTI valid range is 1-254, avoid 0 and 255
-	}
-	smContext.Pti = pti
-	pDUSessionModificationCommand.SetPTI(pti)
+	pDUSessionModificationCommand.SetPTI(0)
 	pDUSessionModificationCommand.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
 
 	// Only set Session-AMBR for PDU Session Modification Command
@@ -288,20 +283,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("Session-AMBR set for PDU Session Modification Command")
 		}
 	}
-
-	// QoS Flow modifications are handled at NGAP level, not in NAS PDU Session Modification Command
-	// The QoS rules can be logged but should not be included in this message
-	/*if len(smContext.SmPolicyUpdates) > 0 {
-		qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
-		qosRulesBytes, err := qoSRules.MarshalBinary()
-		if err != nil {
-			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
-		} else {
-			smContext.SubGsmLog.Infof("QoS Rules Length: %d", len(qosRulesBytes))
-			smContext.SubGsmLog.Infof("QoS Rules Bytes: %x", qosRulesBytes)
-			smContext.SubGsmLog.Infof("QoS rules available but not included in PDU Session Modification Command")
-		}
-	}*/
 	if len(smContext.SmPolicyUpdates) > 0 {
 		qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
 		qosRulesBytes, err := qoSRules.MarshalBinary()
@@ -313,17 +294,17 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			if pDUSessionModificationCommand.AuthorizedQosRules == nil {
 				pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
 			}
-
+			// IMPORTANT: Explicitly set the IEI (this might be missing!)
+			pDUSessionModificationCommand.AuthorizedQosRules.SetIei(0x7A)
 			// Now safely set length and rules
 			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
 			pDUSessionModificationCommand.AuthorizedQosRules.SetQosRule(qosRulesBytes)
 
 			smContext.SubGsmLog.Infof("QoS Rules included in PDU Session Modification Command, Length: %d", len(qosRulesBytes))
+			smContext.SubGsmLog.Infof("QoS Rules raw hex: %x", qosRulesBytes)
 		}
 	}
-
 	smContext.SubGsmLog.Infof("PDU Session Modification Command built successfully for Session ID: %d", smContext.PDUSessionID)
-
 	return m.PlainNasEncode()
 }
 
