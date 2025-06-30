@@ -347,7 +347,7 @@ func debugPDUSessionModificationCommand(m *nas.Message, smContext *SMContext) {
 }
 
 // Modified version of your function with debug calls
-func BuildGSMPDUSessionModificationCommandWithDebug(smContext *SMContext) ([]byte, error) {
+func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error) {
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
 	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
