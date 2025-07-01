@@ -298,10 +298,20 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	if smNasBuf, err := smfContext.BuildGSMPDUSessionModificationCommand(smContext); err != nil {
 		logger.PduSessLog.Errorf("BuildGSMPDUSessionModificationCommand failed: %s", err)
 	} else {
+		smContext.SubPduSessLog.Infof("BuildGSMPDUSessionModificationCommand SUCCESS:")
+		smContext.SubPduSessLog.Infof("  - smNasBuf length: %d", len(smNasBuf))
+		smContext.SubPduSessLog.Infof("  - smNasBuf hex: %x", smNasBuf)
 		n1n2Request.BinaryDataN1Message = smNasBuf
+		smContext.SubPduSessLog.Infof("  - Set BinaryDataN1Message, length: %d", len(n1n2Request.BinaryDataN1Message))
 		n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer
+		smContext.SubPduSessLog.Infof("  - Set N1MessageContainer: %+v", n1n2Request.JsonData.N1MessageContainer)
 		smContext.SubPduSessLog.Info("GSM NAS message built and added to N1N2 request")
 	}
+	smContext.SubPduSessLog.Infof("Final N1N2 Request verification:")
+	smContext.SubPduSessLog.Infof("  - JsonData.N1MessageContainer != nil: %t", n1n2Request.JsonData.N1MessageContainer != nil)
+	smContext.SubPduSessLog.Infof("  - JsonData.N2InfoContainer != nil: %t", n1n2Request.JsonData.N2InfoContainer != nil)
+	smContext.SubPduSessLog.Infof("  - BinaryDataN1Message length: %d", len(n1n2Request.BinaryDataN1Message))
+	smContext.SubPduSessLog.Infof("  - PDU Session ID: %d", n1n2Request.JsonData.PduSessionId)
 
 	// N2 Message
 	smContext.SubPduSessLog.Infof("Building N2 PDU Session Resource Modify Request Transfer for SUPI[%s], PDU Session ID[%d]", smContext.Supi, smContext.PDUSessionID)
