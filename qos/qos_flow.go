@@ -51,8 +51,24 @@ const (
 	QFDQfiBitmask    uint8 = 0x3f // bits 6 to 1 of octet
 	QFDOpCodeBitmask uint8 = 0xe0 // bits 8 to 6 of octet
 	QFDEbit          uint8 = 0x40 // 7th bit of param length octet
+
 )
 
+/*
+const (
+
+	// Operation Code (bits 8–6)
+	QFDOpCreate uint8 = 0x00 // 000 << 5
+	QFDOpModify uint8 = 0x20 // 001 << 5
+	QFDOpDelete uint8 = 0x40 // 010 << 5
+
+	// Bitmasks
+	QFDQfiBitmask    uint8 = 0x3f // bits 6 to 1 of QFI field
+	QFDOpCodeBitmask uint8 = 0xe0 // bits 8 to 6
+	QFDEbit          uint8 = 0x80 // bit 7 of parameter length octet
+
+)
+*/
 const (
 	QFDFixLen uint8 = 0x03
 )
@@ -260,6 +276,7 @@ func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDesc(qosData *
 	// Add QFD to Authorised QFD IE
 	d.AddQFD(&qfd)
 }
+
 func (d *QosFlowDescriptionsAuthorized) BuildModQosFlowDescFromQoSDesc(qosData *models.QosData) {
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
 
@@ -296,7 +313,7 @@ func (d *QosFlowDescriptionsAuthorized) BuildModQosFlowDescFromQoSDesc(qosData *
 	}
 
 	// Set E-Bit of QFD for the "modify existing QoS flow description" operation
-	qfd.SetQFDEBitModExtendParamQFD()
+	qfd.SetQFDEBitModReplaceAllParamQFD()
 
 	// Add QFD to Authorised QFD IE
 	d.AddQFD(&qfd)
