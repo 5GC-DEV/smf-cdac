@@ -313,7 +313,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		pDUSessionModificationCommand.AuthorizedQosFlowDescriptions = nasType.NewAuthorizedQosFlowDescriptions(nasMessage.PDUSessionModificationCommandAuthorizedQosFlowDescriptionsType)
 	}
 	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetLen(authQfd.IeLen)
-	pDUSessionModificationCommand.SetQoSFlowDescriptions(authQfd.Content)
+	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetQoSFlowDescriptions(authQfd.Content)
 	smContext.SubGsmLog.Infof("PDU Session Modification Command built successfully for Session ID: %d", smContext.PDUSessionID)
 	smContext.SubGsmLog.Infof("Before encoding:")
 	debugPDUSessionModificationCommand(m, smContext)
@@ -363,6 +363,13 @@ func debugPDUSessionModificationCommand(m *nas.Message, smContext *SMContext) {
 		smContext.SubGsmLog.Infof("Authorized QoS Rules not present")
 	}
 
+	if cmd.AuthorizedQosFlowDescriptions != nil {
+		smContext.SubGsmLog.Infof("Authorized QoS Flow Description present")
+		smContext.SubGsmLog.Infof("QoS Rules IEI: 0x%02x", cmd.AuthorizedQosFlowDescriptions.GetIei())
+		smContext.SubGsmLog.Infof("QoS Rules Length: %d", cmd.AuthorizedQosFlowDescriptions.GetLen())
+	} else {
+		smContext.SubConsumerLog.Infof("Authorized qos flow description not present")
+	}
 	smContext.SubGsmLog.Infof("=== End Debug ===")
 }
 
