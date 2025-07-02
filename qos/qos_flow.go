@@ -41,6 +41,7 @@ const (
 	QFBitRate1Gbps uint8 = 0x0B
 )
 
+/*
 const (
 	QFDOpCreate uint8 = 0x20
 	QFDOpModify uint8 = 0x40
@@ -52,9 +53,8 @@ const (
 	QFDOpCodeBitmask uint8 = 0xe0 // bits 8 to 6 of octet
 	QFDEbit          uint8 = 0x40 // 7th bit of param length octet
 
-)
+) */
 
-/*
 const (
 
 	// Operation Code (bits 8–6)
@@ -68,7 +68,7 @@ const (
 	QFDEbit          uint8 = 0x80 // bit 7 of parameter length octet
 
 )
-*/
+
 const (
 	QFDFixLen uint8 = 0x03
 )
