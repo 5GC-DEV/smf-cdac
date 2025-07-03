@@ -390,13 +390,10 @@ func (p *QosFlowParameter) SetQosFlowParamBitRate(rateType, rateUnit uint8, rate
 // Encode QoSFlowDescriptions IE
 func (d *QosFlowDescriptionsAuthorized) AddQFD(qfd *QoSFlowDescription) {
 	// Add QFI byte
-	// d.Content = append(d.Content, qfd.Qfi)
+	d.Content = append(d.Content, qfd.Qfi)
 
 	// Add Operation Code byte
-	// d.Content = append(d.Content, qfd.OpCode)
-
-	qfiOpCodeByte := (qfd.OpCode & QFDOpCodeBitmask) | (qfd.Qfi & QFDQfiBitmask)
-	d.Content = append(d.Content, qfiOpCodeByte)
+	d.Content = append(d.Content, qfd.OpCode)
 
 	// Add Num of Param byte
 	d.Content = append(d.Content, qfd.NumOfParam)
