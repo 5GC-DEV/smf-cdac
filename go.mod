@@ -3,7 +3,7 @@ module github.com/omec-project/smf
 go 1.24.0
 
 require (
-	github.com/5GC-DEV/config5g-cdac v1.4.2-0.20250430103952-0383bf5b24b8
+	github.com/5GC-DEV/config5g-cdac v0.2.1
 	github.com/antihax/optional v1.0.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
