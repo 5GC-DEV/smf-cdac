@@ -41,7 +41,7 @@ import (
 	"github.com/omec-project/smf/pfcp/upf"
 	"github.com/omec-project/util/http2_util"
 	utilLogger "github.com/omec-project/util/logger"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v3"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -61,12 +61,12 @@ var refreshNrfRegistration bool
 var config Config
 
 var smfCLi = []cli.Flag{
-	cli.StringFlag{
+	&cli.StringFlag{
 		Name:     "cfg",
 		Usage:    "smf config file",
 		Required: true,
 	},
-	cli.StringFlag{
+	&cli.StringFlag{
 		Name:     "uerouting",
 		Usage:    "uerouting config file",
 		Required: true,
@@ -93,7 +93,7 @@ func (*SMF) GetCliCmd() (flags []cli.Flag) {
 	return smfCLi
 }
 
-func (smf *SMF) Initialize(c *cli.Context) error {
+func (smf *SMF) Initialize(c *cli.Command) error {
 	config = Config{
 		cfg:       c.String("cfg"),
 		uerouting: c.String("uerouting"),
@@ -155,7 +155,7 @@ func manageGrpcClient(webuiUri string) {
 	count := 0
 	for {
 		if client != nil {
-			if client.CheckGrpcConnectivity() != "ready" {
+			if client.CheckGrpcConnectivity() != "READY" {
 				time.Sleep(time.Second * 30)
 				count++
 				if count > 5 {
@@ -184,6 +184,8 @@ func manageGrpcClient(webuiUri string) {
 				go factory.SmfConfig.UpdateConfig(configChannel)
 				logger.InitLog.Infoln("SMF updateConfig is triggered")
 			}
+
+			time.Sleep(time.Second * 5) // Fixes (avoids) 100% CPU utilization
 		} else {
 			client, err = grpcClient.ConnectToConfigServer(webuiUri)
 			stream = nil
@@ -298,9 +300,9 @@ func (smf *SMF) setLogLevel() {
 	go metrics.InitMetrics()
 }
 
-func (smf *SMF) FilterCli(c *cli.Context) (args []string) {
+func (smf *SMF) FilterCli(c *cli.Command) (args []string) {
 	for _, flag := range smf.GetCliCmd() {
-		name := flag.GetName()
+		name := flag.Names()[0]
 		value := fmt.Sprint(c.Generic(name))
 		if value == "" {
 			continue
@@ -433,10 +435,14 @@ func (smf *SMF) Start() {
 	}
 
 	serverScheme := factory.SmfConfig.Configuration.Sbi.Scheme
-	if serverScheme == "http" {
+	switch serverScheme {
+	case "http":
 		err = server.ListenAndServe()
-	} else if serverScheme == "https" {
+	case "https":
 		err = server.ListenAndServeTLS(context.SMF_Self().PEM, context.SMF_Self().Key)
+	default:
+		logger.InitLog.Fatalf("HTTP server setup failed: invalid server scheme %+v", serverScheme)
+		return
 	}
 
 	if err != nil {
@@ -457,7 +463,7 @@ func (smf *SMF) Terminate() {
 	}
 }
 
-func (smf *SMF) Exec(c *cli.Context) error {
+func (smf *SMF) Exec(c *cli.Command) error {
 	return nil
 }
 

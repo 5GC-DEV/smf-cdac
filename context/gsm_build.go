@@ -36,7 +36,7 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 
 	if v := smContext.EstAcceptCause5gSMValue; v != 0 {
 		pDUSessionEstablishmentAccept.Cause5GSM = nasType.NewCause5GSM(nasMessage.PDUSessionEstablishmentAcceptCause5GSMType)
-		pDUSessionEstablishmentAccept.Cause5GSM.SetCauseValue(v)
+		pDUSessionEstablishmentAccept.SetCauseValue(v)
 	}
 	pDUSessionEstablishmentAccept.SetPDUSessionType(smContext.SelectedPDUSessionType)
 
@@ -52,14 +52,14 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 	}
 
 	pDUSessionEstablishmentAccept.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
-	pDUSessionEstablishmentAccept.AuthorizedQosRules.SetQosRule(qosRulesBytes)
+	pDUSessionEstablishmentAccept.SetQosRule(qosRulesBytes)
 
 	if smContext.PDUAddress.Ip != nil {
 		addr, addrLen := smContext.PDUAddressToNAS()
 		pDUSessionEstablishmentAccept.PDUAddress = nasType.NewPDUAddress(nasMessage.PDUSessionEstablishmentAcceptPDUAddressType)
 		pDUSessionEstablishmentAccept.PDUAddress.SetLen(addrLen)
-		pDUSessionEstablishmentAccept.PDUAddress.SetPDUSessionTypeValue(smContext.SelectedPDUSessionType)
-		pDUSessionEstablishmentAccept.PDUAddress.SetPDUAddressInformation(addr)
+		pDUSessionEstablishmentAccept.SetPDUSessionTypeValue(smContext.SelectedPDUSessionType)
+		pDUSessionEstablishmentAccept.SetPDUAddressInformation(addr)
 	}
 
 	// Get Authorized QoS Flow Descriptions
@@ -83,13 +83,13 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 
 	pDUSessionEstablishmentAccept.SNSSAI = nasType.NewSNSSAI(nasMessage.ULNASTransportSNSSAIType)
 	pDUSessionEstablishmentAccept.SNSSAI.SetLen(4)
-	pDUSessionEstablishmentAccept.SNSSAI.SetSST(uint8(smContext.Snssai.Sst))
-	pDUSessionEstablishmentAccept.SNSSAI.SetSD(sd)
+	pDUSessionEstablishmentAccept.SetSST(uint8(smContext.Snssai.Sst))
+	pDUSessionEstablishmentAccept.SetSD(sd)
 
 	dnn := []byte(smContext.Dnn)
 	pDUSessionEstablishmentAccept.DNN = nasType.NewDNN(nasMessage.ULNASTransportDNNType)
 	pDUSessionEstablishmentAccept.DNN.SetLen(uint8(len(dnn)))
-	pDUSessionEstablishmentAccept.DNN.SetDNN(dnn)
+	pDUSessionEstablishmentAccept.SetDNN(dnn)
 
 	if smContext.ProtocolConfigurationOptions.DNSIPv4Request || smContext.ProtocolConfigurationOptions.DNSIPv6Request || smContext.ProtocolConfigurationOptions.IPv4LinkMTURequest {
 		pDUSessionEstablishmentAccept.ExtendedProtocolConfigurationOptions = nasType.NewExtendedProtocolConfigurationOptions(
@@ -148,9 +148,7 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 		pDUSessionEstablishmentAccept.
 			ExtendedProtocolConfigurationOptions.
 			SetLen(uint16(pcoContentsLength))
-		pDUSessionEstablishmentAccept.
-			ExtendedProtocolConfigurationOptions.
-			SetExtendedProtocolConfigurationOptionsContents(pcoContents)
+		pDUSessionEstablishmentAccept.SetExtendedProtocolConfigurationOptionsContents(pcoContents)
 	}
 	return m.PlainNasEncode()
 }
