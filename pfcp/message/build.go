@@ -285,7 +285,6 @@ func BuildPfcpSessionEstablishmentRequest(
 	farList []*context.FAR,
 	qerList []*context.QER,
 ) (*message.SessionEstablishmentRequest, error) {
-
 	logger.PfcpLog.Infof("Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d nodeID=%s PDRs=%d FARs=%d QERs=%d",
 		sequenceNumber, localSeid, nodeID, len(pdrList), len(farList), len(qerList))
 	ies := make([]*ie.IE, 0)
