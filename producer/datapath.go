@@ -20,7 +20,7 @@ type PFCPState struct {
 
 // SendPFCPRule send one datapath to UPF
 func SendPFCPRule(smContext *context.SMContext, dataPath *context.DataPath) {
-	logger.PduSessLog.Infoln("Send PFCP Rule")
+	logger.PduSessLog.Infoln("===Send PFCP Rule===")
 	logger.PduSessLog.Infoln("DataPath: ", dataPath)
 	for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
 		pdrList := make([]*context.PDR, 0, 2)
@@ -30,22 +30,41 @@ func SendPFCPRule(smContext *context.SMContext, dataPath *context.DataPath) {
 		if curDataPathNode.UpLinkTunnel != nil && curDataPathNode.UpLinkTunnel.PDR != nil {
 			for _, pdr := range curDataPathNode.UpLinkTunnel.PDR {
 				pdrList = append(pdrList, pdr)
+				logger.PduSessLog.Infof("[UL] Appended PDR to list: PDR ID = %v", pdr.PDRID)
 				farList = append(farList, pdr.FAR)
-				if pdr.QER != nil {
+				if pdr.QER == nil {
+					logger.PduSessLog.Warnf("[UL] PDR ID %v has no QER assigned", pdr.PDRID)
+				} else {
+					logger.PduSessLog.Infof("[UL] PDR ID %v has %d QER(s)", pdr.PDRID, len(pdr.QER))
 					qerList = append(qerList, pdr.QER...)
 				}
+				//if pdr.QER != nil {
+				//	qerList = append(qerList, pdr.QER...)
+				//}
 			}
+		} else {
+			logger.PduSessLog.Warnf("[UL] No uplink tunnel or PDRs for node %v", curDataPathNode.GetNodeIP())
 		}
 		if curDataPathNode.DownLinkTunnel != nil && curDataPathNode.DownLinkTunnel.PDR != nil {
 			for _, pdr := range curDataPathNode.DownLinkTunnel.PDR {
 				pdrList = append(pdrList, pdr)
+				logger.PduSessLog.Infof("[DL] Appended PDR to list: PDR ID = %v", pdr.PDRID)
 				farList = append(farList, pdr.FAR)
-				if pdr.QER != nil {
+				if pdr.QER == nil {
+					logger.PduSessLog.Warnf("[DL] PDR ID %v has no QER assigned", pdr.PDRID)
+				} else {
+					logger.PduSessLog.Infof("[DL] PDR ID %v has %d QER(s)", pdr.PDRID, len(pdr.QER))
 					qerList = append(qerList, pdr.QER...)
 				}
+				//if pdr.QER != nil {
+				//	qerList = append(qerList, pdr.QER...)
+				//}
 			}
+		} else {
+			logger.PduSessLog.Warnf("[DL] No downlink tunnel or PDRs for node %v", curDataPathNode.GetNodeIP())
 		}
-
+		// Log final counts
+		logger.PduSessLog.Infof("PDR count: %d, FAR count: %d, QER count: %d for node %v", len(pdrList), len(farList), len(qerList), curDataPathNode.GetNodeIP())
 		sessionContext, exist := smContext.PFCPContext[curDataPathNode.GetNodeIP()]
 		if !exist || sessionContext.RemoteSEID == 0 {
 			err := message.SendPfcpSessionEstablishmentRequest(
