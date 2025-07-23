@@ -437,17 +437,24 @@ func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData strin
 
 func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error) {
 	var flowQER *QER
-
+	logger.PduSessLog.Infoln("[QER Create] Starting QER creation for node:", dpNode.UPF.NodeID)
 	sessionRule := smContext.SelectedSessionRule()
-
+	if sessionRule == nil {
+		logger.PduSessLog.Warnln("[QER Create] No session rule found in SMContext")
+		return nil, fmt.Errorf("no session rule")
+	}
+	logger.PduSessLog.Infof("[QER Create] SessionRule found: UL-AMBR=%s, DL-AMBR=%s",
+		sessionRule.AuthSessAmbr.Uplink, sessionRule.AuthSessAmbr.Downlink)
 	// Get Default Qos-Data for the session
 	smPolicyDec := smContext.SmPolicyUpdates[0].SmPolicyDecision
-
+	logger.PduSessLog.Infof("[QER Create] SM Policy Decision QosData count: %d", len(smPolicyDec.QosDecs))
 	defQosData := qos.GetDefaultQoSDataFromPolicyDecision(smPolicyDec)
+	logger.PduSessLog.Infof("[QER Create] Default QFI selected from QoS ID=%s", defQosData.QosId)
 	if newQER, err := dpNode.UPF.AddQER(); err != nil {
 		logger.PduSessLog.Errorln("new QER failed")
 		return nil, err
 	} else {
+		logger.PduSessLog.Infof("[QER Create] QER ID allocated: %d", newQER.QERID)
 		newQER.QFI.QFI = qos.GetQosFlowIdFromQosId(defQosData.QosId)
 		newQER.GateStatus = &GateStatus{
 			ULGate: GateOpen,
@@ -457,10 +464,11 @@ func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error
 			ULMBR: util.BitRateTokbps(sessionRule.AuthSessAmbr.Uplink),
 			DLMBR: util.BitRateTokbps(sessionRule.AuthSessAmbr.Downlink),
 		}
-
+		logger.PduSessLog.Infof("[QER Create] Final QER setup: QFI=%d, ULMBR=%d kbps, DLMBR=%d kbps", newQER.QFI.QFI, newQER.MBR.ULMBR, newQER.MBR.DLMBR)
 		flowQER = newQER
 	}
-
+	logger.PduSessLog.Infoln("[QER Create] QER creation complete")
+	logger.PduSessLog.Infof("[QER Create] flowQER: %+v", flowQER)
 	return flowQER, nil
 }
 
