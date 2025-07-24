@@ -92,13 +92,20 @@ func RetrieveSmContext(c *gin.Context) {
 }
 
 // HTTPUpdateSmContext - Update SM Context
+// HTTPUpdateSmContext - Update SM Context
 func HTTPUpdateSmContext(c *gin.Context) {
 	var err error
-	logger.PduSessLog.Infoln("receive Update SM Context Request")
+	logger.PduSessLog.Infoln("[UpdateSMContext] Received Update SM Context Request")
+
+	// Log headers
+	for k, v := range c.Request.Header {
+		logger.PduSessLog.Infof("[UpdateSMContext] Header: %s = %v", k, v)
+	}
+
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "In", "", "")
 	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_req)
 	if err != nil {
-		logger.PduSessLog.Errorf("error: %v", err)
+		logger.PduSessLog.Errorf("[UpdateSMContext] Error in PublishMsgEvent: %v", err)
 		return
 	}
 
@@ -106,14 +113,19 @@ func HTTPUpdateSmContext(c *gin.Context) {
 	request.JsonData = new(models.SmContextUpdateData)
 
 	s := strings.Split(c.GetHeader("Content-Type"), ";")
+	logger.PduSessLog.Infof("[UpdateSMContext] Content-Type = %v", s[0])
+
 	switch s[0] {
 	case applicationJson:
 		err = c.ShouldBindJSON(request.JsonData)
 	case multipartRelated:
 		err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
+	default:
+		logger.PduSessLog.Errorf("[UpdateSMContext] Unsupported Content-Type: %s", s[0])
 	}
+
 	if err != nil {
-		problemDetail := "[Request Body] " + err.Error()
+		problemDetail := "[UpdateSMContext] Malformed request body: " + err.Error()
 		rsp := models.ProblemDetails{
 			Title:  "Malformed request syntax",
 			Status: http.StatusBadRequest,
@@ -123,28 +135,33 @@ func HTTPUpdateSmContext(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, rsp)
 
 		stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "Out", http.StatusText(http.StatusBadRequest), "Malformed")
-		logger.PduSessLog.Errorln(err)
 		return
 	}
 
+	logger.PduSessLog.Infof("[UpdateSMContext] Parsed Request: %+v", request)
+
 	req := httpwrapper.NewRequest(c.Request, request)
 	req.Params["smContextRef"] = c.Params.ByName("smContextRef")
-
 	smContextRef := req.Params["smContextRef"]
+	logger.PduSessLog.Infof("[UpdateSMContext] smContextRef = %s", smContextRef)
 
 	txn := transaction.NewTransaction(req.Body.(models.UpdateSmContextRequest), nil, svcmsgtypes.UpdateSmContext)
 	txn.CtxtKey = smContextRef
+
+	logger.PduSessLog.Infof("[UpdateSMContext] Starting transaction for SM Context Ref: %s", smContextRef)
 	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
 	<-txn.Status
+
 	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
-	// HTTPResponse := producer.HandlePDUSessionSMContextUpdate(
-	//	smContextRef, req.Body.(models.UpdateSmContextRequest))
+	logger.PduSessLog.Infof("[UpdateSMContext] Transaction complete with status: %d", HTTPResponse.Status)
 
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "Out", http.StatusText(HTTPResponse.Status), "")
 
 	if HTTPResponse.Status < 300 {
+		logger.PduSessLog.Infoln("[UpdateSMContext] Sending successful response")
 		c.Render(HTTPResponse.Status, openapi.MultipartRelatedRender{Data: HTTPResponse.Body})
 	} else {
+		logger.PduSessLog.Errorf("[UpdateSMContext] Sending error response: %+v", HTTPResponse.Body)
 		c.JSON(HTTPResponse.Status, HTTPResponse.Body)
 	}
 }

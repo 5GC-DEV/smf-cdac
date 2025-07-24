@@ -175,7 +175,7 @@ func (t *Transaction) StartTxnLifeCycle(fsm txnFsm) {
 
 	for {
 		currEvent := nextEvent
-		t.TxnFsmLog.Debugf("processing event[%v]", currEvent.String())
+		t.TxnFsmLog.Infof("processing event[%v]", currEvent.String())
 		if nextEvent, err = TxnFsmHandler[currEvent](t); err != nil {
 			t.TxnFsmLog.Errorf("TxnFsm Error, Stage[%s] Err[%v]", currEvent.String(), err.Error())
 		}
