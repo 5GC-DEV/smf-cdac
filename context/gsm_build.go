@@ -217,8 +217,8 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	pDUSessionModificationCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionModificationCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
 	// Method 1: Simple increment with wraparound
-	//pti := uint8(1)
-	pDUSessionModificationCommand.SetPTI(0)
+	pti := uint8(0)
+	pDUSessionModificationCommand.SetPTI(pti)
 	// pDUSessionModificationCommand.SetPTI(0)
 	pDUSessionModificationCommand.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
 
