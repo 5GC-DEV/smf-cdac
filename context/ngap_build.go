@@ -270,10 +270,76 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
 	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
 
+	/*if len(ctx.SmPolicyUpdates) > 0 &&
+	   len(ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules) > 0 &&
+	   ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules[0].PccRuleId != nil {
+
+		/*qosFlowToReleaseList := ngapType.Qos
+
+		for qosId, qosData := range policyUpdate.QosFlowUpdate.GetDeleted() {
+			qfi, err := strconv.Atoi(qosId)
+			if err != nil {
+				ctx.SubPduSessLog.Warnf("Invalid QFI key in deleted list: %s", qosId)
+				continue
+			}
+			ctx.SubPduSessLog.Infof("Adding QFI[%d] to QosFlowToReleaseList due to deletion", qfi)
+
+			qosFlowToReleaseList.List = append(qosFlowToReleaseList.List, ngapType.QosFlowWithCauseItem{
+				QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
+				Cause: ngapType.Cause{
+					Present: ngapType.CausePresentNas,
+					Nas:     &ngapType.CauseNas{Value: ngapType.CauseNasPresentNormalRelease},
+				},
+			})
+		}
+
+		if len(qosFlowToReleaseList.List) > 0 {
+			ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
+				Id: ngapType.ProtocolIEID{
+					Value: ngapType.ProtocolIEIDQosFlowToReleaseList,
+				},
+				Criticality: ngapType.Criticality{
+					Value: ngapType.CriticalityPresentReject,
+				},
+				Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
+					Present:                 ngapType.PDUSessionResourceModifyRequestTransferIEsPresentQosFlowToReleaseList,
+					QosFlowToReleaseList: &qosFlowToReleaseList,
+				},
+			}
+			resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
+			ctx.SubPduSessLog.Infof("Appended QosFlowToReleaseList with %d entries", len(qosFlowToReleaseList.List))
+		}*/
+	// }
+
 	// Check for updated QoS data in policy updates
 	if len(ctx.SmPolicyUpdates) > 0 {
 		policyUpdate := ctx.SmPolicyUpdates[0]
-		if policyUpdate != nil && policyUpdate.QosFlowUpdate != nil {
+		// Check for added QoS data if no modifications found
+		qosDataProcessed := false
+		if len(policyUpdate.QosFlowUpdate.GetAdded()) > 0 {
+			for qosId, qosData := range policyUpdate.QosFlowUpdate.GetAdded() {
+				if qosData != nil {
+					ctx.SubPduSessLog.Infof("Found added QoS data for QosId[%s]: Var5QI=%d", qosId, qosData.Var5qi)
+					qfi = qosData.Var5qi
+					if qosData.PriorityLevel > 0 {
+						priority = qosData.PriorityLevel
+					}
+					if qosData.Arp != nil {
+						priority = qosData.Arp.PriorityLevel
+						if qosData.Arp.PreemptCap == models.PreemptionCapability_NOT_PREEMPT {
+							arpPreemptCap = ngapType.PreEmptionCapabilityPresentShallNotTriggerPreEmption
+						}
+						if qosData.Arp.PreemptVuln == models.PreemptionVulnerability_PREEMPTABLE {
+							arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
+						}
+					}
+					qosDataProcessed = true
+					break // Use the first added QoS data found
+				}
+			}
+		}
+
+		if !qosDataProcessed && len(policyUpdate.QosFlowUpdate.GetModified()) > 0 {
 			ctx.SubPduSessLog.Infof("Found QoS flow updates in policy updates")
 
 			// Check for modified QoS data first
@@ -298,12 +364,16 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 					}
 				}
 			}
+		}
 
-			// Check for added QoS data if no modifications found
-			if len(policyUpdate.QosFlowUpdate.GetAdded()) > 0 {
-				for qosId, qosData := range policyUpdate.QosFlowUpdate.GetAdded() {
+		if !qosDataProcessed && len(policyUpdate.QosFlowUpdate.GetDeleted()) > 0 {
+			ctx.SubPduSessLog.Infof("Found QoS flow updates in policy updates")
+
+			// Check for modified QoS data first
+			if len(policyUpdate.QosFlowUpdate.GetModified()) > 0 {
+				for qosId, qosData := range policyUpdate.QosFlowUpdate.GetModified() {
 					if qosData != nil {
-						ctx.SubPduSessLog.Infof("Found added QoS data for QosId[%s]: Var5QI=%d", qosId, qosData.Var5qi)
+						ctx.SubPduSessLog.Infof("Found modified QoS data for QosId[%s]: Var5QI=%d", qosId, qosData.Var5qi)
 						qfi = qosData.Var5qi
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
@@ -317,11 +387,12 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 								arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
 							}
 						}
-						break // Use the first added QoS data found
+						break // Use the first modified QoS data found
 					}
 				}
 			}
 		}
+
 	}
 
 	// Apply ARP settings based on session rule if not overridden above

@@ -130,7 +130,7 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	pccRulesUpdate := smPolicyUpdates.PccRuleUpdate
 
 	// New Rules to be added
-	if pccRulesUpdate != nil {
+	if pccRulesUpdate != nil && pccRulesUpdate.add != nil {
 		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
 			logger.QosLog.Infof("building QoS Rule from PCC rule [%s]", pccRuleName)
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
@@ -148,14 +148,41 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	*/
 
 	// Rules to be modified
-	// TODO
+	if pccRulesUpdate != nil && pccRulesUpdate.mod != nil {
+		for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
+			logger.QosLog.Infof("building modified QoS Rule from PCC rule [%s]", pccRuleName)
+
+			// Check if RefQosData has elements
+			if len(pccRuleVal.RefQosData) == 0 {
+				logger.QosLog.Warnf("Modified PCC rule [%s] has no RefQosData", pccRuleName)
+				continue
+			}
+
+			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+			operationCode := OperationCodeModifyExistingQoSRuleWithoutModifyingPacketFilters
+
+			qosRule := BuildModifyQosRuleFromPccRule(pccRuleVal, refQosData, operationCode)
+			if qosRule != nil {
+				qosRules = append(qosRules, *qosRule)
+			}
+		}
+	}
 
 	// Rules to be deleted
-	// TODO
+	if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
+		for _, pccRuleName := range pccRulesUpdate.del {
+			logger.QosLog.Infof("building delete QoS Rule for PCC rule [%s]", pccRuleName)
+
+			qosRule := BuildDeleteQosRuleFromPccRule(pccRuleName)
+			if qosRule != nil {
+				qosRules = append(qosRules, *qosRule)
+			}
+		}
+	}
 	return qosRules
 }
 
-func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+/*func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
 	qRule := QosRule{
 		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
 		DQR:           btou(qosData.DefQosFlowIndication),
@@ -175,6 +202,57 @@ func BuildModifyQosRuleFromPccRule(pccRule *models.PccRule) *QosRule {
 
 func BuildDeleteQosRuleFromPccRule(pccRule *models.PccRule) *QosRule {
 	return nil
+}*/
+
+func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+	qRule := QosRule{
+		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
+		DQR:           btou(qosData.DefQosFlowIndication),
+		OperationCode: pccRuleOpCode,
+		Precedence:    uint8(pccRule.Precedence),
+		QFI:           GetQosFlowIdFromQosId(qosData.QosId),
+	}
+
+	qRule.BuildPacketFilterListFromPccRule(pccRule)
+
+	return &qRule
+}
+
+func BuildModifyQosRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+	qRule := QosRule{
+		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
+		DQR:           btou(qosData.DefQosFlowIndication),
+		OperationCode: pccRuleOpCode,
+		Precedence:    uint8(pccRule.Precedence),
+		QFI:           GetQosFlowIdFromQosId(qosData.QosId),
+	}
+
+	// Only build packet filter list if the operation involves packet filter changes
+	switch pccRuleOpCode {
+	case OperationCodeModifyExistingQoSRuleAndAddPacketFilters,
+		OperationCodeModifyExistingQoSRuleAndReplaceAllPacketFilters,
+		OperationCodeModifyExistingQoSRuleAndDeletePacketFilters:
+		qRule.BuildPacketFilterListFromPccRule(pccRule)
+	case OperationCodeModifyExistingQoSRuleWithoutModifyingPacketFilters:
+		// No packet filter changes needed
+	}
+
+	return &qRule
+}
+
+func BuildDeleteQosRuleFromPccRule(pccRule *models.PccRule) *QosRule {
+	qRule := QosRule{
+		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
+		OperationCode: OperationCodeDeleteExistingQoSRule,
+		// For delete operations, other fields may not be needed
+		// but setting them for completeness
+		DQR:        0, // Default value for delete
+		Precedence: 0, // Default value for delete
+		QFI:        0, // Default value for delete
+	}
+
+	// No packet filters needed for delete operation
+	return &qRule
 }
 
 func btou(b bool) uint8 {
