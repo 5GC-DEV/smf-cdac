@@ -55,7 +55,7 @@ func SendPFCPRule(smContext *context.SMContext, dataPath *context.DataPath) {
 			}
 		} else {
 			err := message.SendPfcpSessionModificationRequest(
-				curDataPathNode.UPF.NodeID, smContext, pdrList, farList, nil, qerList, curDataPathNode.UPF.Port)
+				curDataPathNode.UPF.NodeID, smContext, pdrList, farList, nil, qerList, nil, nil, nil, curDataPathNode.UPF.Port)
 			if err != nil {
 				logger.PduSessLog.Errorf("send pfcp session modification request failed: %v for UPF[%v, %v]: ", err, curDataPathNode.UPF.NodeID, curDataPathNode.UPF.NodeID.ResolveNodeIdToIp())
 			}
@@ -121,7 +121,7 @@ func SendPFCPRules(smContext *context.SMContext) {
 			}
 		} else {
 			err := message.SendPfcpSessionModificationRequest(
-				pfcp.nodeID, smContext, pfcp.pdrList, pfcp.farList, nil, pfcp.qerList, pfcp.port)
+				pfcp.nodeID, smContext, pfcp.pdrList, pfcp.farList, nil, pfcp.qerList, nil, nil, nil, pfcp.port)
 			if err != nil {
 				logger.PduSessLog.Errorf("send pfcp session modification request failed: %v for UPF[%v, %v]: ", err, pfcp.nodeID, pfcp.nodeID.ResolveNodeIdToIp())
 			}

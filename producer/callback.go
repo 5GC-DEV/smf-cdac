@@ -83,7 +83,7 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	return nil
 }
 
-func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
+/*func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	pfcpParam := &pfcpParam{
 		pdrList: []*smf_context.PDR{},
 		farList: []*smf_context.FAR{},
@@ -132,6 +132,87 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	// Append to pfcpParam
 	pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
 	pfcpParam.farList = append(pfcpParam.farList, farList...)
+
+	return pfcpParam
+} */
+
+func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
+	pfcpParam := &pfcpParam{
+		pdrList:   []*smf_context.PDR{},
+		farList:   []*smf_context.FAR{},
+		barList:   []*smf_context.BAR{},
+		qerList:   []*smf_context.QER{},
+		removePDR: []*smf_context.PDR{}, // Add for teardown
+		removeFAR: []*smf_context.FAR{},
+		removeQER: []*smf_context.QER{},
+	}
+
+	smContext.PendingUPF = make(smfContext.PendingUPF)
+
+	logger.PduSessLog.Infof("SMContext: %v", smContext)
+	logger.PduSessLog.Infof("SMContext SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
+
+	shouldSendReleaseOnly := false
+	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
+		// Check if PccRules map is empty or contains nil/empty rule IDs
+		if len(smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
+			shouldSendReleaseOnly = true
+		} else {
+			// Check if any PCC rule has nil or empty ID
+			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
+				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
+					shouldSendReleaseOnly = true
+					break
+				}
+			}
+		}
+	}
+
+	for _, dataPath := range smContext.Tunnel.DataPathPool {
+		if !dataPath.Activated {
+			continue
+		}
+
+		ANUPF := dataPath.FirstDPNode
+		for _, dlPDR := range ANUPF.DownLinkTunnel.PDR {
+
+			// If PCC rule is nil, this is a signal to remove rules
+			if shouldSendReleaseOnly == true {
+				logger.PduSessLog.Infof("Removing PDR ID: %v", dlPDR.PDRID)
+
+				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
+				if dlPDR.FAR != nil {
+					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
+				}
+				if dlPDR.QER != nil {
+					pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
+				}
+				continue
+			}
+
+			// Otherwise, treat it as update (existing logic)
+			dlPDR.FAR.ApplyAction = smfContext.ApplyAction{
+				Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false,
+			}
+			dlPDR.FAR.ForwardingParameters = &smfContext.ForwardingParameters{
+				OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
+				DestinationInterface: smfContext.DestinationInterface{
+					InterfaceValue: smfContext.DestinationInterfaceAccess,
+				},
+				NetworkInstance: []byte(smContext.Dnn),
+			}
+
+			dlPDR.State = smfContext.RULE_UPDATE
+			dlPDR.FAR.State = smfContext.RULE_UPDATE
+
+			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
+			pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
+
+			if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+				smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+			}
+		}
+	}
 
 	return pfcpParam
 }
