@@ -146,7 +146,8 @@ func SendPfcpAssociationSetupRequest(upNodeID smf_context.NodeID, upfPort uint16
 
 	pfcpMsg := BuildPfcpAssociationSetupRequest(getSeqNumber(), udp.ServerStartTime, smf_context.SMF_Self().CPNodeID.ResolveNodeIdToIp().String())
 	addr := &net.UDPAddr{
-		IP:   upNodeID.ResolveNodeIdToIp(),
+		// IP:   upNodeID.ResolveNodeIdToIp(),
+		IP:   net.ParseIP("10.176.27.73"),
 		Port: int(upfPort),
 	}
 	logger.PfcpLog.Infof("sent PFCP Association Request to NodeID[%s]", upNodeID.ResolveNodeIdToIp().String())
