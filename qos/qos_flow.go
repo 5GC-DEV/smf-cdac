@@ -120,14 +120,14 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	}
 
 	// QoS Flow Description to be Modified
-	if len(qosFlowUpdate.mod) > 0 {
+	/*if len(qosFlowUpdate.mod) > 0 {
 		logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
 		for name, qosFlow := range qosFlowUpdate.mod {
 			logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
 			QFDescriptions.BuildModQosFlowDescFromQoSDesc(qosFlow)
 			hasUpdates = true
 		}
-	}
+	} */
 
 	// QoS Flow Description to be Deleted
 	if len(qosFlowUpdate.del) > 0 {

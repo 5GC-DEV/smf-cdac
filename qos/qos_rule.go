@@ -148,7 +148,7 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 	*/
 
 	// Rules to be modified
-	if pccRulesUpdate != nil && pccRulesUpdate.mod != nil {
+	/*if pccRulesUpdate != nil && pccRulesUpdate.mod != nil {
 		for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
 			logger.QosLog.Infof("building modified QoS Rule from PCC rule [%s]", pccRuleName)
 
@@ -166,7 +166,7 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 				qosRules = append(qosRules, *qosRule)
 			}
 		}
-	}
+	}*/
 
 	// Rules to be deleted
 	if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
