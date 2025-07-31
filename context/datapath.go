@@ -476,6 +476,7 @@ func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error
 func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER, defPrecedence uint32) error {
 	logger.PduSessLog.Infof("[UL][Enter] ActivateUpLinkPdr node=%s defQER_ptr=%p", dpNode.UPF.NodeID, defQER)
 	logger.PduSessLog.Infof("[UL][QER] ptr=%p value=%+v", defQER, defQER)
+	logger.PduSessLog.Infof("ActivateUpLinkPdr Supi: ========= [%v]", smContext.Supi)
 	ueIpAddr := UEIPAddress{}
 	if dpNode.UPF.IsUpfSupportUeIpAddrAlloc() {
 		ueIpAddr.CHV4 = true
@@ -484,6 +485,7 @@ func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER,
 		ueIpAddr.Ipv4Address = smContext.PDUAddress.Ip.To4()
 	}
 	curULTunnel := dpNode.UpLinkTunnel
+	logger.PduSessLog.Infof("[UL][PDR] curULTunnel: %+v", curULTunnel)
 	for name, ULPDR := range curULTunnel.PDR {
 		logger.CtxLog.Infof("[UL][PDR] BEFORE attach name=%s PDRID=%d QERs=%d precedence=%d ptr=%p", name, ULPDR.PDRID, len(ULPDR.QER), ULPDR.Precedence, ULPDR)
 		prevLen := len(ULPDR.QER)
@@ -559,9 +561,10 @@ func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER,
 func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER, defPrecedence uint32, dataPath *DataPath) error {
 	logger.PduSessLog.Infof("[DL][Enter] ActivateDlLinkPdr node=%s defQER_ptr=%p", dpNode.UPF.NodeID, defQER)
 	logger.PduSessLog.Infof("[DL][QER] ptr=%p value=%+v", defQER, defQER)
+	logger.PduSessLog.Infof("ActivateDlLinkPdr Supi: ========= [%v]", smContext.Supi)
 	var iface *UPFInterfaceInfo
 	curDLTunnel := dpNode.DownLinkTunnel
-
+	logger.PduSessLog.Infof("[DL][PDR] curULTunnel: %+v", curDLTunnel)
 	// UPF provided UE ip-addr
 	ueIpAddr := UEIPAddress{}
 	if dpNode.UPF.IsUpfSupportUeIpAddrAlloc() {
