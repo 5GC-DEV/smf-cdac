@@ -14,6 +14,8 @@ import (
 	"github.com/omec-project/util/util_3gpp"
 )
 
+var pdrLocks sync.Map
+
 const (
 	RULE_INITIAL RuleState = 0
 	RULE_CREATE  RuleState = 1
@@ -35,7 +37,6 @@ type PDR struct {
 	State      RuleState
 	PDRID      uint16
 	Precedence uint32
-	qerLock    sync.Mutex
 }
 
 type SDFFilter struct {
