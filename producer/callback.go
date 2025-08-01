@@ -31,6 +31,13 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	request := txn.Req.(models.SmPolicyNotification)
 	smContext := txn.Ctxt.(*smfContext.SMContext)
 
+	smContext.SMLock.Lock()
+	defer smContext.SMLock.Unlock()
+
+	//smContext.ChangeState(smf_context.SmStatePfcpModify)
+	smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
+	smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send PFCP Modification")
+
 	logger.PduSessLog.Infoln("In HandleSMPolicyUpdateNotify")
 	pcfPolicyDecision := request.SmPolicyDecision
 
@@ -72,6 +79,18 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		txn.Err = err
 		return err
 	}
+	// Success
+	httpResponse = &httpwrapper.Response{
+		Status: http.StatusOK,
+		Body:   nil, // ensure 'response' is defined correctly
+	}
+	txn.Rsp = httpResponse
+
+	// Update state
+	smContext.ChangeState(smf_context.SmStateActive)
+	smContext.SubCtxLog.Debugln("PFCP Modify success, new state:", smContext.SMContextState.String())
+
+	return nil
 
 	// N1N2 and UPF update Success
 	// Commit SM Policy Decision to SM Context
@@ -79,8 +98,8 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	// smContext.SMLock.Lock()
 	// defer smContext.SMLock.Unlock()
 	// smContext.CommitSmPolicyDecision(true)
-	txn.Rsp = httpResponse
-	return nil
+	// txn.Rsp = httpResponse
+	// return nil
 }
 
 /*func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {

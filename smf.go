@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	// "log"
-	// "net/http"
+	"log"
+	"net/http"
 	"os"
 
 	_ "net/http/pprof" // <-- Required for pprof to work
@@ -32,12 +32,12 @@ import (
 var SMF = &service.SMF{}
 
 func main() {
-	/*go func() {
+	go func() {
 		log.Println("[pprof] Starting pprof server on :6060")
 		if err := http.ListenAndServe("0.0.0.0:6060", nil); err != nil {
 			log.Fatalf("pprof server failed: %v", err)
 		}
-	}() */
+	}()
 	app := &cli.Command{}
 	app.Name = "smf"
 	logger.AppLog.Infoln(app.Name)
