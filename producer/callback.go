@@ -26,6 +26,83 @@ var (
 	SendRemoveSubscription              = consumer.SendRemoveSubscription
 )
 
+/*
+	func HandleSMPolicyUpdateNotify(eventData interface{}) error {
+		txn := eventData.(*transaction.Transaction)
+		request := txn.Req.(models.SmPolicyNotification)
+		smContext := txn.Ctxt.(*smfContext.SMContext)
+
+		smContext.SMLock.Lock()
+		defer smContext.SMLock.Unlock()
+
+		//smContext.ChangeState(smf_context.SmStatePfcpModify)
+		smContext.SubCtxLog.Infof("SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send PFCP Modification")
+
+		logger.PduSessLog.Infoln("In HandleSMPolicyUpdateNotify")
+		pcfPolicyDecision := request.SmPolicyDecision
+
+		if smContext.SMContextState != smfContext.SmStateActive {
+			// Wait till the state becomes SmStateActive again
+			// TODO: implement waiting in concurrent architecture
+			logger.PduSessLog.Warnf("SMContext[%s-%02d] should be SmStateActive, but actual %s",
+				smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
+		}
+
+		//TODO: Response data type -
+		//[200 OK] UeCampingRep
+		//[200 OK] array(PartialSuccessReport)
+		//[400 Bad Request] ErrorReport
+
+		// Derive QoS change(compare existing vs received Policy Decision)
+		policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
+		smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
+
+		httpResponse := httpwrapper.NewResponse(http.StatusNoContent, nil, nil)
+		txn.Rsp = httpResponse
+
+		// Form N1/N2 Msg based on QoS Change and Trigger N1/N2 Msg
+		if err := BuildAndSendQosN1N2TransferMsg(smContext); err != nil {
+			// smContext.CommitSmPolicyDecision(false)
+			// Send error rsp to PCF
+			httpResponse.Status = http.StatusBadRequest
+			txn.Err = err
+			return err
+		}
+
+		// Build `pfcpParam` using the dedicated function
+		pfcpParam := BuildPfcpParam(smContext)
+
+		// Send PFCP Session Modification Request
+		if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+			logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
+			httpResponse.Status = http.StatusInternalServerError
+			txn.Err = err
+			return err
+		} else {
+			httpResponse = &httpwrapper.Response{
+				Status: http.StatusOK,
+				Body:   nil,
+			}
+		}
+		txn.Rsp = httpResponse
+
+		// Update state
+		smContext.ChangeState(smf_context.SmStateActive)
+		smContext.SubCtxLog.Info("PFCP Modify success, new state:", smContext.SMContextState.String())
+
+		return nil
+
+		// N1N2 and UPF update Success
+		// Commit SM Policy Decision to SM Context
+		// TODO
+		//smContext.SMLock.Lock()
+		//defer smContext.SMLock.Unlock()
+		//smContext.CommitSmPolicyDecision(true)
+		//txn.Rsp = httpResponse
+		// return nil
+	}
+*/
 func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	txn := eventData.(*transaction.Transaction)
 	request := txn.Req.(models.SmPolicyNotification)
@@ -34,72 +111,48 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	smContext.SMLock.Lock()
 	defer smContext.SMLock.Unlock()
 
-	//smContext.ChangeState(smf_context.SmStatePfcpModify)
-	smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
-	smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send PFCP Modification")
-
 	logger.PduSessLog.Infoln("In HandleSMPolicyUpdateNotify")
 	pcfPolicyDecision := request.SmPolicyDecision
 
-	if smContext.SMContextState != smfContext.SmStateActive {
-		// Wait till the state becomes SmStateActive again
-		// TODO: implement waiting in concurrent architecture
+	if smContext.SMContextState != smf_context.SmStateActive {
 		logger.PduSessLog.Warnf("SMContext[%s-%02d] should be SmStateActive, but actual %s",
 			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
 	}
 
-	//TODO: Response data type -
-	//[200 OK] UeCampingRep
-	//[200 OK] array(PartialSuccessReport)
-	//[400 Bad Request] ErrorReport
-
-	// Derive QoS change(compare existing vs received Policy Decision)
+	// Derive QoS change
 	policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
 	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 
-	httpResponse := httpwrapper.NewResponse(http.StatusNoContent, nil, nil)
-	txn.Rsp = httpResponse
+	// Set state to PFCP Modify before sending PFCP request
+	smContext.ChangeState(smf_context.SmStatePfcpModify)
 
-	// Form N1/N2 Msg based on QoS Change and Trigger N1/N2 Msg
-	if err := BuildAndSendQosN1N2TransferMsg(smContext); err != nil {
-		// smContext.CommitSmPolicyDecision(false)
-		// Send error rsp to PCF
-		httpResponse.Status = http.StatusBadRequest
-		txn.Err = err
-		return err
-	}
-
-	// Build `pfcpParam` using the dedicated function
+	// Build PFCP parameters
 	pfcpParam := BuildPfcpParam(smContext)
 
 	// Send PFCP Session Modification Request
 	if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
 		logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
-		httpResponse.Status = http.StatusInternalServerError
 		txn.Err = err
 		return err
 	}
-	// Success
-	httpResponse = &httpwrapper.Response{
+
+	// Now send N1/N2 Msg after PFCP success
+	if err := BuildAndSendQosN1N2TransferMsg(smContext); err != nil {
+		txn.Err = err
+		return err
+	}
+
+	// Set response and change state to active
+	smContext.ChangeState(smf_context.SmStateActive)
+	smContext.SubCtxLog.Info("PFCP Modify success and N1N2 Msg sent, new state:", smContext.SMContextState.String())
+
+	httpResponse := &httpwrapper.Response{
 		Status: http.StatusOK,
-		Body:   nil, // ensure 'response' is defined correctly
+		Body:   nil,
 	}
 	txn.Rsp = httpResponse
 
-	// Update state
-	smContext.ChangeState(smf_context.SmStateActive)
-	smContext.SubCtxLog.Debugln("PFCP Modify success, new state:", smContext.SMContextState.String())
-
 	return nil
-
-	// N1N2 and UPF update Success
-	// Commit SM Policy Decision to SM Context
-	// TODO
-	// smContext.SMLock.Lock()
-	// defer smContext.SMLock.Unlock()
-	// smContext.CommitSmPolicyDecision(true)
-	// txn.Rsp = httpResponse
-	// return nil
 }
 
 /*func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {

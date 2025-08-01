@@ -25,13 +25,13 @@ func SendPfcpSessionModifyReq(smContext *smf_context.SMContext, pfcpParam *pfcpP
 
 	switch PFCPResponseStatus {
 	case smf_context.SessionUpdateSuccess:
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, PFCP Session Update Success")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, PFCP Session Update Success")
 
 	case smf_context.SessionUpdateFailed:
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, PFCP Session Update Failed")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, PFCP Session Update Failed")
 		fallthrough
 	case smf_context.SessionUpdateTimeout:
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, PFCP Session Modification Timeout")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, PFCP Session Modification Timeout")
 
 		err := fmt.Errorf("pfcp modification failure")
 		return err
