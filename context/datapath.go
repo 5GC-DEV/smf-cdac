@@ -473,7 +473,7 @@ func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error
 }
 
 // ActivateUpLinkPdr
-func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER, defPrecedence uint32) error {
+func (dpNode *DataPathNode) ActivateUpLinkPdr(pdr *PDR, smContext *SMContext, defQER *QER, defPrecedence uint32) error {
 	logger.PduSessLog.Infof("[UL][Enter] ActivateUpLinkPdr node=%s defQER_ptr=%p", dpNode.UPF.NodeID, defQER)
 	logger.PduSessLog.Infof("[UL][QER] ptr=%p value=%+v", defQER, defQER)
 	logger.PduSessLog.Infof("ActivateUpLinkPdr Supi: ========= [%v]", smContext.Supi)
@@ -562,7 +562,7 @@ func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER,
 	return nil
 }
 
-func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER, defPrecedence uint32, dataPath *DataPath) error {
+func (dpNode *DataPathNode) ActivateDlLinkPdr(pdr *PDR, smContext *SMContext, defQER *QER, defPrecedence uint32, dataPath *DataPath) error {
 	logger.PduSessLog.Infof("[DL][Enter] ActivateDlLinkPdr node=%s defQER_ptr=%p", dpNode.UPF.NodeID, defQER)
 	logger.PduSessLog.Infof("[DL][QER] ptr=%p value=%+v", defQER, defQER)
 	logger.PduSessLog.Infof("ActivateDlLinkPdr Supi: ========= [%v]", smContext.Supi)
