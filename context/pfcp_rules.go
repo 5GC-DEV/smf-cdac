@@ -8,6 +8,7 @@ package context
 import (
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/omec-project/util/util_3gpp"
@@ -34,6 +35,7 @@ type PDR struct {
 	State      RuleState
 	PDRID      uint16
 	Precedence uint32
+	qerLock    sync.Mutex
 }
 
 type SDFFilter struct {

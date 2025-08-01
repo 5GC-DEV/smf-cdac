@@ -489,7 +489,11 @@ func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER,
 	for name, ULPDR := range curULTunnel.PDR {
 		logger.CtxLog.Infof("[UL][PDR] BEFORE attach name=%s PDRID=%d QERs=%d precedence=%d ptr=%p", name, ULPDR.PDRID, len(ULPDR.QER), ULPDR.Precedence, ULPDR)
 		prevLen := len(ULPDR.QER)
+		//  Mutex protection begins
+		ULPDR.qerLock.Lock()
 		ULPDR.QER = append(ULPDR.QER, defQER)
+		ULPDR.qerLock.Unlock()
+		//  Mutex protection ends
 		logger.CtxLog.Infof("[UL][PDR] QER attach: PDRID=%d %d -> %d (addedQERID=%d)", ULPDR.PDRID, prevLen, len(ULPDR.QER),
 			func() uint32 {
 				if defQER != nil {
@@ -578,7 +582,11 @@ func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER,
 		logger.CtxLog.Infof("[DL][PDR] BEFORE attach name=%s PDRID=%d QERs=%d precedence=%d ptr=%p", name, DLPDR.PDRID, len(DLPDR.QER), DLPDR.Precedence, DLPDR)
 		logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", name, DLPDR)
 		prevLen := len(DLPDR.QER)
+		//  Mutex protection begins
+		DLPDR.qerLock.Lock()
 		DLPDR.QER = append(DLPDR.QER, defQER)
+		DLPDR.qerLock.Unlock()
+		//  Mutex protection ends
 		logger.CtxLog.Infof("[DL][PDR] QER attach: PDRID=%d %d -> %d (addedQERID=%d)", DLPDR.PDRID, prevLen, len(DLPDR.QER), func() uint32 {
 			if defQER != nil {
 				return defQER.QERID
