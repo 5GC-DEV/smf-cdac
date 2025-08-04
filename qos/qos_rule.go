@@ -301,12 +301,18 @@ func GetPfId(pfID string) uint8 {
 		fmt.Println("Warning: PackFiltId is empty, defaulting to 0")
 		return 0
 	}
-	id, err := strconv.Atoi(pfID)
-	if err != nil {
-		fmt.Printf("Error converting PackFiltId [%s] to int: %v. Defaulting to 0\n", pfID, err)
-		return 0
+	// Extract number from suffix after "-"
+	parts := strings.Split(pfID, "-")
+	if len(parts) == 2 {
+		if id, err := strconv.Atoi(parts[1]); err == nil {
+			return uint8(id)
+		} else {
+			fmt.Printf("Error converting PackFiltId [%s] to int: %v. Defaulting to 0\n", pfID, err)
+			return 0
+		}
 	}
-	return uint8(id)
+	fmt.Printf("Unexpected PackFiltId format [%s], defaulting to 0\n", pfID)
+	return 0
 }
 
 // Get Packet Filter Directions
