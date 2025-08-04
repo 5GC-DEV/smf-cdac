@@ -248,7 +248,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	}
 
 	if shouldSendReleaseOnly {
-
 		ctx.SubPduSessLog.Info("PCC rule ID is nil, sending only QosFlowToReleaseList")
 
 		// Get QFI from session rule for release

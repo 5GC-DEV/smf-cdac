@@ -247,7 +247,6 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 		ANUPF := dataPath.FirstDPNode
 		for _, dlPDR := range ANUPF.DownLinkTunnel.PDR {
-
 			// If PCC rule is nil, this is a signal to remove rules
 			if shouldSendReleaseOnly == true {
 				logger.PduSessLog.Infof("Removing PDR ID: %v", dlPDR.PDRID)

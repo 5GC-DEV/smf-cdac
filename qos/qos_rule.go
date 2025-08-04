@@ -7,6 +7,7 @@ package qos
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -283,6 +284,7 @@ func (q *QosRule) BuildPacketFilterListFromPccRule(pccRule *models.PccRule) {
 }
 
 func GetPacketFilterFromFlowInfo(flowInfo *models.FlowInformation) PacketFilter {
+	fmt.Printf("PackFiltId received: %v\n", flowInfo.PackFiltId)
 	pf := &PacketFilter{
 		Identifier: GetPfId(flowInfo.PackFiltId),
 		Direction:  GetPfDirectionFromPccFlowInfo(flowInfo.FlowDirection),
@@ -294,13 +296,17 @@ func GetPacketFilterFromFlowInfo(flowInfo *models.FlowInformation) PacketFilter 
 	return *pf
 }
 
-func GetPfId(ids string) uint8 {
-	if id, err := strconv.Atoi(ids); err != nil {
-		// TODO: Error Log
+func GetPfId(pfID string) uint8 {
+	if pfID == "" {
+		fmt.Println("Warning: PackFiltId is empty, defaulting to 0")
 		return 0
-	} else {
-		return (uint8(id) & PacketFilterIdBitmask)
 	}
+	id, err := strconv.Atoi(pfID)
+	if err != nil {
+		fmt.Printf("Error converting PackFiltId [%s] to int: %v. Defaulting to 0\n", pfID, err)
+		return 0
+	}
+	return uint8(id)
 }
 
 // Get Packet Filter Directions
