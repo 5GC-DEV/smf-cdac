@@ -236,6 +236,12 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	}
 	if len(smContext.SmPolicyUpdates) > 0 {
 		qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
+		for _, r := range qoSRules {
+			smContext.SubGsmLog.Infof("Built QoS Rule ID: %d, QFI: %d, PF Count: %d", r.Identifier, r.QFI, len(r.PacketFilterList))
+			for _, pf := range r.PacketFilterList {
+				smContext.SubGsmLog.Infof("PF ID: %d, Dir: %d, Content: %s", pf.Identifier, pf.Direction, pf.Content)
+			}
+		}
 		qosRulesBytes, err := qoSRules.MarshalBinary()
 		if err != nil {
 			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)

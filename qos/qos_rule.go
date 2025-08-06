@@ -124,53 +124,53 @@ func BuildAddDefaultQosRule(defQFI uint8) *QosRule {
 	return defQosRule
 }
 
-func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
-	qosRules := QoSRules{}
+/*func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
+qosRules := QoSRules{}
 
-	smPolicyDecision := smPolicyUpdates.SmPolicyDecision
-	pccRulesUpdate := smPolicyUpdates.PccRuleUpdate
+smPolicyDecision := smPolicyUpdates.SmPolicyDecision
+pccRulesUpdate := smPolicyUpdates.PccRuleUpdate
 
-	// New Rules to be added
-	if pccRulesUpdate != nil && pccRulesUpdate.add != nil {
-		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
-			logger.QosLog.Infof("building QoS Rule from PCC rule [%s]", pccRuleName)
-			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
-			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+// New Rules to be added
+if pccRulesUpdate != nil && pccRulesUpdate.add != nil {
+	for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
+		logger.QosLog.Infof("building QoS Rule from PCC rule [%s]", pccRuleName)
+		refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+		qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+		qosRules = append(qosRules, *qosRule)
+	}
+}
+
+//Add default Matchall QosRule as well
+/*
+	if smPolicyUpdates.SessRuleUpdate != nil {
+		defQosRule := BuildAddDefaultQosRule(uint8(smPolicyUpdates.SessRuleUpdate.ActiveSessRule.AuthDefQos.Var5qi))
+		qosRules = append(qosRules, *defQosRule)
+	}
+*/
+
+// Rules to be modified
+/*if pccRulesUpdate != nil && pccRulesUpdate.mod != nil {
+	for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
+		logger.QosLog.Infof("building modified QoS Rule from PCC rule [%s]", pccRuleName)
+
+		// Check if RefQosData has elements
+		if len(pccRuleVal.RefQosData) == 0 {
+			logger.QosLog.Warnf("Modified PCC rule [%s] has no RefQosData", pccRuleName)
+			continue
+		}
+
+		refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+		operationCode := OperationCodeModifyExistingQoSRuleWithoutModifyingPacketFilters
+
+		qosRule := BuildModifyQosRuleFromPccRule(pccRuleVal, refQosData, operationCode)
+		if qosRule != nil {
 			qosRules = append(qosRules, *qosRule)
 		}
 	}
+}*/
 
-	//Add default Matchall QosRule as well
-	/*
-		if smPolicyUpdates.SessRuleUpdate != nil {
-			defQosRule := BuildAddDefaultQosRule(uint8(smPolicyUpdates.SessRuleUpdate.ActiveSessRule.AuthDefQos.Var5qi))
-			qosRules = append(qosRules, *defQosRule)
-		}
-	*/
-
-	// Rules to be modified
-	/*if pccRulesUpdate != nil && pccRulesUpdate.mod != nil {
-		for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
-			logger.QosLog.Infof("building modified QoS Rule from PCC rule [%s]", pccRuleName)
-
-			// Check if RefQosData has elements
-			if len(pccRuleVal.RefQosData) == 0 {
-				logger.QosLog.Warnf("Modified PCC rule [%s] has no RefQosData", pccRuleName)
-				continue
-			}
-
-			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
-			operationCode := OperationCodeModifyExistingQoSRuleWithoutModifyingPacketFilters
-
-			qosRule := BuildModifyQosRuleFromPccRule(pccRuleVal, refQosData, operationCode)
-			if qosRule != nil {
-				qosRules = append(qosRules, *qosRule)
-			}
-		}
-	}*/
-
-	// Rules to be deleted
-	if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
+// Rules to be deleted
+/*if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
 		for _, pccRuleName := range pccRulesUpdate.del {
 			logger.QosLog.Infof("building delete QoS Rule for PCC rule [%s]", pccRuleName)
 
@@ -180,6 +180,44 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 			}
 		}
 	}
+	return qosRules
+} */
+
+func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
+	qosRules := QoSRules{}
+	smPolicyDecision := smPolicyUpdates.SmPolicyDecision
+
+	// Process all PCC Rules from the full decision, not just "add"
+	for pccRuleName, pccRuleVal := range smPolicyDecision.PccRules {
+		logger.QosLog.Infof("Building QoS Rule from PCC rule [%s]", pccRuleName)
+
+		// Defensive check: must have RefQosData
+		if len(pccRuleVal.RefQosData) == 0 {
+			logger.QosLog.Warnf("No RefQosData in PCC rule [%s], skipping", pccRuleName)
+			continue
+		}
+
+		refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+		if refQosData == nil {
+			logger.QosLog.Warnf("RefQoSData [%s] not found for PCC rule [%s], skipping", pccRuleVal.RefQosData[0], pccRuleName)
+			continue
+		}
+
+		qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+		qosRules = append(qosRules, *qosRule)
+	}
+
+	// Process delete rules
+	if smPolicyUpdates.PccRuleUpdate != nil && smPolicyUpdates.PccRuleUpdate.del != nil {
+		for _, pccRuleName := range smPolicyUpdates.PccRuleUpdate.del {
+			logger.QosLog.Infof("Building delete QoS Rule for PCC rule [%s]", pccRuleName)
+			qosRule := BuildDeleteQosRuleFromPccRule(pccRuleName)
+			if qosRule != nil {
+				qosRules = append(qosRules, *qosRule)
+			}
+		}
+	}
+
 	return qosRules
 }
 
@@ -281,6 +319,7 @@ func (q *QosRule) BuildPacketFilterListFromPccRule(pccRule *models.PccRule) {
 		pfList = append(pfList, pf)
 	}
 	q.PacketFilterList = pfList
+
 }
 
 func GetPacketFilterFromFlowInfo(flowInfo *models.FlowInformation) PacketFilter {
@@ -301,18 +340,12 @@ func GetPfId(pfID string) uint8 {
 		fmt.Println("Warning: PackFiltId is empty, defaulting to 0")
 		return 0
 	}
-	// Extract number from suffix after "-"
-	parts := strings.Split(pfID, "-")
-	if len(parts) == 2 {
-		if id, err := strconv.Atoi(parts[1]); err == nil {
-			return uint8(id)
-		} else {
-			fmt.Printf("Error converting PackFiltId [%s] to int: %v. Defaulting to 0\n", pfID, err)
-			return 0
-		}
+	id, err := strconv.Atoi(pfID)
+	if err != nil {
+		fmt.Printf("Error converting PackFiltId [%s] to int: %v. Defaulting to 0\n", pfID, err)
+		return 0
 	}
-	fmt.Printf("Unexpected PackFiltId format [%s], defaulting to 0\n", pfID)
-	return 0
+	return uint8(id)
 }
 
 // Get Packet Filter Directions
