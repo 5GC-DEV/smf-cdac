@@ -17,12 +17,10 @@ package main
 import (
 	"context"
 	"fmt"
-
 	"log"
 	"net/http"
-	"os"
-
 	_ "net/http/pprof" // <-- Required for pprof to work
+	"os"
 
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/service"

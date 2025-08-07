@@ -336,11 +336,9 @@ func BuildPfcpSessionModificationRequest(
 	removePDR []*context.PDR,
 	removeFAR []*context.FAR,
 	removeQER []*context.QER,
-
 ) (*message.SessionModificationRequest, error) {
 	ies := make([]*ie.IE, 0)
 	ies = append(ies, ie.NewFSEID(localSEID, fseidIPv4Address, nil))
-
 	for _, pdr := range pdrList {
 		switch pdr.State {
 		case context.RULE_INITIAL:
