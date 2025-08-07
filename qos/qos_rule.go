@@ -169,6 +169,15 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 		}
 	}*/
 
+	if pccRulesUpdate != nil && pccRulesUpdate.mod != nil {
+		for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
+			logger.QosLog.Infof("building QoS Rule from modified PCC rule [%s]", pccRuleName)
+			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
+			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+			qosRules = append(qosRules, *qosRule)
+		}
+	}
+
 	// Rules to be deleted
 	if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
 		for _, pccRuleName := range pccRulesUpdate.del {
