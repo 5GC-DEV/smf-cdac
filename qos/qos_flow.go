@@ -124,7 +124,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 		logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
 		for name, qosFlow := range qosFlowUpdate.mod {
 			logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
-			QFDescriptions.BuildModQosFlowDescFromQoSDesc(qosFlow)
+			QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
 			hasUpdates = true
 		}
 	}
