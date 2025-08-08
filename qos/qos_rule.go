@@ -241,7 +241,7 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 		for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
 			logger.QosLog.Infof("building QoS Rule from modified PCC rule [%s]", pccRuleName)
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
-			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+			qosRule := BuildAddQoSRuleFromPccRulepdumod(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 			qosRules = append(qosRules, *qosRule)
 		}
 	}
