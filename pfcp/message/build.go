@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/omec-project/smf/context"
+	"github.com/omec-project/smf/logger"
 	"github.com/wmnsk/go-pfcp/ie"
 	"github.com/wmnsk/go-pfcp/message"
 )
@@ -284,18 +285,22 @@ func BuildPfcpSessionEstablishmentRequest(
 	farList []*context.FAR,
 	qerList []*context.QER,
 ) (*message.SessionEstablishmentRequest, error) {
+	logger.PfcpLog.Infof("Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d nodeID=%s PDRs=%d FARs=%d QERs=%d",
+		sequenceNumber, localSeid, nodeID, len(pdrList), len(farList), len(qerList))
 	ies := make([]*ie.IE, 0)
 	ies = append(ies, ie.NewNodeIDHeuristic(nodeID))
 	ies = append(ies, ie.NewFSEID(localSeid, fseidIpv4Address, nil))
 
 	for _, pdr := range pdrList {
 		if pdr.State == context.RULE_INITIAL {
+			logger.PfcpLog.Infof("Adding PDR: PDRID=%d Precedence=%d FAR=%v QERCount=%d", pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
 			ies = append(ies, pdrToCreatePDR(pdr))
 		}
 	}
 
 	for _, far := range farList {
 		if far.State == context.RULE_INITIAL {
+			logger.PfcpLog.Infof("Adding FAR: FARID=%d Action=%+v", far.FARID, far.ApplyAction)
 			ies = append(ies, farToCreateFAR(far))
 		}
 		far.State = context.RULE_CREATE
@@ -307,12 +312,15 @@ func BuildPfcpSessionEstablishmentRequest(
 	}
 	for _, filteredQER := range qerMap {
 		if filteredQER.State == context.RULE_INITIAL {
+			logger.PfcpLog.Infof("Adding QER: QERID=%d QFI=%d GateStatus=%+v", filteredQER.QERID, filteredQER.QFI.QFI, filteredQER.GateStatus)
 			ies = append(ies, qerToCreateQER(filteredQER))
 		}
 		filteredQER.State = context.RULE_CREATE
 	}
 
 	ies = append(ies, ie.NewPDNType(ie.PDNTypeIPv4))
+
+	logger.PfcpLog.Infof("PFCP Session Establishment Request assembled with %d IEs", len(ies))
 
 	return message.NewSessionEstablishmentRequest(
 		1,
@@ -334,16 +342,20 @@ func BuildPfcpSessionModificationRequest(
 	farList []*context.FAR,
 	qerList []*context.QER,
 ) (*message.SessionModificationRequest, error) {
+	logger.PfcpLog.Infof("Building PFCP Session Modification Request: sequenceNumber=%d localSEID=%d remoteSEID=%d, PDRs=%d FARs=%d QERs=%d", sequenceNumber, localSEID, remoteSEID, len(pdrList), len(farList), len(qerList))
 	ies := make([]*ie.IE, 0)
 	ies = append(ies, ie.NewFSEID(localSEID, fseidIPv4Address, nil))
 
 	for _, pdr := range pdrList {
 		switch pdr.State {
 		case context.RULE_INITIAL:
+			logger.PfcpLog.Infof("ModReq PDRID=%d [CREATE] Precedence=%d FAR=%v QERCount=%d", pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
 			ies = append(ies, pdrToCreatePDR(pdr))
 		case context.RULE_UPDATE:
+			logger.PfcpLog.Infof("ModReq PDRID=%d [UPDATE] Precedence=%d FAR=%v QERCount=%d", pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
 			ies = append(ies, pdrToUpdatePDR(pdr))
 		case context.RULE_REMOVE:
+			logger.PfcpLog.Infof("ModReq PDRID=%d [REMOVE]", pdr.PDRID)
 			ies = append(ies, ie.NewRemovePDR(ie.NewPDRID(pdr.PDRID)))
 		}
 		pdr.State = context.RULE_CREATE
@@ -352,10 +364,13 @@ func BuildPfcpSessionModificationRequest(
 	for _, far := range farList {
 		switch far.State {
 		case context.RULE_INITIAL:
+			logger.PfcpLog.Infof("ModReq FARID=%d [CREATE] ApplyAction=%+v", far.FARID, far.ApplyAction)
 			ies = append(ies, farToCreateFAR(far))
 		case context.RULE_UPDATE:
+			logger.PfcpLog.Infof("ModReq FARID=%d [UPDATE] ApplyAction=%+v", far.FARID, far.ApplyAction)
 			ies = append(ies, farToUpdateFAR(far))
 		case context.RULE_REMOVE:
+			logger.PfcpLog.Infof("ModReq FARID=%d [REMOVE]", far.FARID)
 			ies = append(ies, ie.NewRemoveFAR(ie.NewFARID(far.FARID)))
 		}
 		far.State = context.RULE_CREATE
@@ -364,10 +379,12 @@ func BuildPfcpSessionModificationRequest(
 	for _, qer := range qerList {
 		switch qer.State {
 		case context.RULE_INITIAL:
+			logger.PfcpLog.Infof("ModReq QERID=%d [CREATE] QFI=%d GateStatus=%+v", qer.QERID, qer.QFI.QFI, qer.GateStatus)
 			ies = append(ies, qerToCreateQER(qer))
 		}
 		qer.State = context.RULE_CREATE
 	}
+	logger.PfcpLog.Infof("PFCP Session Modification Request built with %d IEs", len(ies))
 	return message.NewSessionModificationRequest(
 		0,
 		0,
@@ -384,6 +401,7 @@ func BuildPfcpSessionDeletionRequest(
 	remoteSEID uint64,
 	fseidIPv4Address net.IP,
 ) *message.SessionDeletionRequest {
+	logger.PfcpLog.Infof("Building PFCP Session Deletion Request: sequenceNumber=%d localSEID=%d remoteSEID=%d fseidIPv4=%s", sequenceNumber, localSEID, remoteSEID, fseidIPv4Address.String())
 	return message.NewSessionDeletionRequest(
 		1,
 		0,
