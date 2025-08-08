@@ -235,7 +235,8 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		}
 	}
 	if len(smContext.SmPolicyUpdates) > 0 {
-		qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
+		// qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
+		qoSRules := qos.BuildQosRulespdumod(smContext.SmPolicyUpdates[0])
 		for _, r := range qoSRules {
 			smContext.SubGsmLog.Infof("Built QoS Rule ID: %d, QFI: %d, PF Count: %d", r.Identifier, r.QFI, len(r.PacketFilterList))
 			for _, pf := range r.PacketFilterList {
@@ -261,7 +262,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("QoS Rules raw hex: %x", qosRulesBytes)
 		}
 	}
-	//authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
+	// authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
 	authQfd := qos.BuildAuthorizedQosFlowDescriptionsmodcommand(smContext.SmPolicyUpdates[0])
 	// Add Default Qos Flow
 	// authQfd.AddDefaultQosFlowDescription(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule)
