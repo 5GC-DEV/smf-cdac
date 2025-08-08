@@ -92,6 +92,10 @@ func GetQosFlowIdFromQosId(qosId string) uint8 {
 	}
 }
 
+func GetQosFlowIdFromQosIdhardcode(qosId string) uint8 {
+	return 2
+}
+
 // Build Qos Flow Description to be sent to UE
 func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowDescriptionsAuthorized {
 	QFDescriptions := QosFlowDescriptionsAuthorized{
@@ -125,6 +129,64 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 		for name, qosFlow := range qosFlowUpdate.mod {
 			logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
 			QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
+			hasUpdates = true
+		}
+	}
+
+	// QoS Flow Description to be Deleted
+	if len(qosFlowUpdate.del) > 0 {
+		logger.QosLog.Infof("Processing %d QoS flows to delete", len(qosFlowUpdate.del))
+		for name, qosFlow := range qosFlowUpdate.del {
+			logger.QosLog.Infof("Deleting QoS Flow Description [%v]", name)
+			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qosFlow)
+			hasUpdates = true
+		}
+	}
+
+	// Set the length based on the content
+	QFDescriptions.IeLen = uint16(len(QFDescriptions.Content))
+
+	if !hasUpdates {
+		logger.QosLog.Warn("No valid QoS flow updates processed, returning empty QoS flow descriptions")
+	} else {
+		logger.QosLog.Infof("Built QoS flow descriptions with %d bytes of content", QFDescriptions.IeLen)
+	}
+
+	return &QFDescriptions
+}
+
+func BuildAuthorizedQosFlowDescriptionsmodcommand(smPolicyUpdates *PolicyUpdate) *QosFlowDescriptionsAuthorized {
+	QFDescriptions := QosFlowDescriptionsAuthorized{
+		IeType:  nasMessage.PDUSessionEstablishmentAcceptAuthorizedQosFlowDescriptionsType,
+		Content: make([]byte, 0),
+	}
+
+	// Check if there are any QoS flow updates
+	if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
+		logger.QosLog.Warn("No QoS flow updates provided, returning empty QoS flow descriptions")
+		QFDescriptions.IeLen = 0
+		return &QFDescriptions
+	}
+
+	qosFlowUpdate := smPolicyUpdates.QosFlowUpdate
+	hasUpdates := false
+
+	// QoS Flow Description to be Added
+	if len(qosFlowUpdate.add) > 0 {
+		logger.QosLog.Infof("Processing %d QoS flows to add", len(qosFlowUpdate.add))
+		for name, qosFlow := range qosFlowUpdate.add {
+			logger.QosLog.Infof("Adding QoS Flow Description [%v]", name)
+			QFDescriptions.BuildAddQosFlowDescFromQoSDeschardcode(qosFlow)
+			hasUpdates = true
+		}
+	}
+
+	// QoS Flow Description to be Modified
+	if len(qosFlowUpdate.mod) > 0 {
+		logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
+		for name, qosFlow := range qosFlowUpdate.mod {
+			logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
+			QFDescriptions.BuildAddQosFlowDescFromQoSDeschardcode(qosFlow)
 			hasUpdates = true
 		}
 	}
@@ -197,6 +259,46 @@ func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDesc(qosData *
 
 	// Set QFI
 	qfd.SetQoSFlowDescQfi(GetQosFlowIdFromQosId(qosData.QosId))
+
+	// Operation Code
+	qfd.SetQoSFlowDescOpCode(QFDOpCreate)
+
+	// Create Params
+	// 5QI
+	qfd.AddQosFlowParam5Qi(uint8(qosData.Var5qi))
+
+	// MFBR uplink
+	if qosData.MaxbrUl != "" {
+		qfd.addQosFlowRateParam(qosData.MaxbrUl, QFDParameterIdMfbrUl)
+	}
+
+	// MFBR downlink
+	if qosData.MaxbrDl != "" {
+		qfd.addQosFlowRateParam(qosData.MaxbrDl, QFDParameterIdMfbrDl)
+	}
+
+	// GFBR uplink
+	if qosData.GbrUl != "" {
+		qfd.addQosFlowRateParam(qosData.GbrUl, QFDParameterIdGfbrUl)
+	}
+
+	// GFBR downlink
+	if qosData.GbrDl != "" {
+		qfd.addQosFlowRateParam(qosData.GbrDl, QFDParameterIdGfbrDl)
+	}
+
+	// Set E-Bit of QFD for the "create new QoS flow description" operation
+	qfd.SetQFDEBitCreateNewQFD()
+
+	// Add QFD to Authorised QFD IE
+	d.AddQFD(&qfd)
+}
+
+func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDeschardcode(qosData *models.QosData) {
+	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
+
+	// Set QFI
+	qfd.SetQoSFlowDescQfi(GetQosFlowIdFromQosIdhardcode(qosData.QosId))
 
 	// Operation Code
 	qfd.SetQoSFlowDescOpCode(QFDOpCreate)
