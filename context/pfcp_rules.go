@@ -8,13 +8,10 @@ package context
 import (
 	"fmt"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/omec-project/util/util_3gpp"
 )
-
-var pdrLocks sync.Map
 
 const (
 	RULE_INITIAL RuleState = 0
