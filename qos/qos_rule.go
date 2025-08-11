@@ -336,7 +336,7 @@ func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData
 
 func BuildAddQoSRuleFromPccRulepdumod(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
 	qRule := QosRule{
-		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
+		Identifier:    GetQosRuleIdFromPccRuleIdpdumod(pccRule.PccRuleId),
 		DQR:           btou(qosData.DefQosFlowIndication),
 		OperationCode: pccRuleOpCode,
 		Precedence:    uint8(pccRule.Precedence),
@@ -399,6 +399,10 @@ func GetQosRuleIdFromPccRuleId(pccRuleId string) uint8 {
 	} else {
 		return uint8(id)
 	}
+}
+
+func GetQosRuleIdFromPccRuleIdpdumod(pccRuleId string) uint8 {
+	return 2
 }
 
 func (q *QosRule) BuildPacketFilterListFromPccRule(pccRule *models.PccRule) {
