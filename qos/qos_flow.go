@@ -92,9 +92,9 @@ func GetQosFlowIdFromQosId(qosId string) uint8 {
 	}
 }
 
-func GetQosFlowIdFromQosIdhardcode(qosId string) uint8 {
+/*func GetQosFlowIdFromQosIdhardcode(qosId string) uint8 {
 	return 2
-}
+}*/
 
 // Build Qos Flow Description to be sent to UE
 func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowDescriptionsAuthorized {
@@ -155,7 +155,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	return &QFDescriptions
 }
 
-func BuildAuthorizedQosFlowDescriptionsmodcommand(smPolicyUpdates *PolicyUpdate) *QosFlowDescriptionsAuthorized {
+/*func BuildAuthorizedQosFlowDescriptionsmodcommand(smPolicyUpdates *PolicyUpdate) *QosFlowDescriptionsAuthorized {
 	QFDescriptions := QosFlowDescriptionsAuthorized{
 		IeType:  nasMessage.PDUSessionEstablishmentAcceptAuthorizedQosFlowDescriptionsType,
 		Content: make([]byte, 0),
@@ -211,7 +211,7 @@ func BuildAuthorizedQosFlowDescriptionsmodcommand(smPolicyUpdates *PolicyUpdate)
 	}
 
 	return &QFDescriptions
-}
+}*/
 
 // Helper function to validate QoS flow descriptions before sending
 func (qfd *QosFlowDescriptionsAuthorized) IsEmpty() bool {
@@ -294,7 +294,7 @@ func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDesc(qosData *
 	d.AddQFD(&qfd)
 }
 
-func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDeschardcode(qosData *models.QosData) {
+/*func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDeschardcode(qosData *models.QosData) {
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
 
 	// Set QFI
@@ -332,7 +332,7 @@ func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDeschardcode(q
 
 	// Add QFD to Authorised QFD IE
 	d.AddQFD(&qfd)
-}
+}*/
 
 func (d *QosFlowDescriptionsAuthorized) BuildModQosFlowDescFromQoSDesc(qosData *models.QosData) {
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}

@@ -203,7 +203,7 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
 			logger.QosLog.Infof("building QoS Rule from PCC rule [%s]", pccRuleName)
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
-			qosRule := BuildAddQoSRuleFromPccRulepdumod(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 			qosRules = append(qosRules, *qosRule)
 		}
 	}
@@ -241,7 +241,7 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 		for pccRuleName, pccRuleVal := range pccRulesUpdate.mod {
 			logger.QosLog.Infof("building QoS Rule from modified PCC rule [%s]", pccRuleName)
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
-			qosRule := BuildAddQoSRuleFromPccRulepdumod(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 			qosRules = append(qosRules, *qosRule)
 		}
 	}
@@ -334,7 +334,7 @@ func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData
 	return &qRule
 }
 
-func BuildAddQoSRuleFromPccRulepdumod(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+/*func BuildAddQoSRuleFromPccRulepdumod(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
 	qRule := QosRule{
 		Identifier:    GetQosRuleIdFromPccRuleIdpdumod(pccRule.PccRuleId),
 		DQR:           btou(qosData.DefQosFlowIndication),
@@ -346,7 +346,7 @@ func BuildAddQoSRuleFromPccRulepdumod(pccRule *models.PccRule, qosData *models.Q
 	qRule.BuildPacketFilterListFromPccRule(pccRule)
 
 	return &qRule
-}
+} */
 
 func BuildModifyQosRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
 	qRule := QosRule{
@@ -401,9 +401,9 @@ func GetQosRuleIdFromPccRuleId(pccRuleId string) uint8 {
 	}
 }
 
-func GetQosRuleIdFromPccRuleIdpdumod(pccRuleId string) uint8 {
+/*func GetQosRuleIdFromPccRuleIdpdumod(pccRuleId string) uint8 {
 	return 2
-}
+} */
 
 func (q *QosRule) BuildPacketFilterListFromPccRule(pccRule *models.PccRule) {
 	pfList := []PacketFilter{}

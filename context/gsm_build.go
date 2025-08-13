@@ -262,8 +262,8 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("QoS Rules raw hex: %x", qosRulesBytes)
 		}
 	}
-	// authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
-	authQfd := qos.BuildAuthorizedQosFlowDescriptionsmodcommand(smContext.SmPolicyUpdates[0])
+	authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
+	// authQfd := qos.BuildAuthorizedQosFlowDescriptionsmodcommand(smContext.SmPolicyUpdates[0])
 	// Add Default Qos Flow
 	// authQfd.AddDefaultQosFlowDescription(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule)
 	if pDUSessionModificationCommand.AuthorizedQosFlowDescriptions == nil {
