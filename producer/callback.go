@@ -344,8 +344,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 	// Check if only release should be sent
 	shouldSendReleaseOnly := false
-	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
-		if len(smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
+	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[1].SmPolicyDecision.PccRules != nil {
+		if len(smContext.SmPolicyUpdates[1].SmPolicyDecision.PccRules) == 0 {
 			shouldSendReleaseOnly = true
 		} else {
 			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {

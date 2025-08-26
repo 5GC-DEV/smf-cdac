@@ -458,13 +458,13 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 
 	// Check if SM policy decision has nil/empty PCC rule ID - if so, only send QosFlowToReleaseList
 	shouldSendReleaseOnly := false
-	if len(ctx.SmPolicyUpdates) > 0 && ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
+	if len(ctx.SmPolicyUpdates) > 0 && ctx.SmPolicyUpdates[1].SmPolicyDecision.PccRules != nil {
 		// Check if PccRules map is empty or contains nil/empty rule IDs
-		if len(ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
+		if len(ctx.SmPolicyUpdates[1].SmPolicyDecision.PccRules) == 0 {
 			shouldSendReleaseOnly = true
 		} else {
 			// Check if any PCC rule has nil or empty ID
-			for ruleId, rule := range ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
+			for ruleId, rule := range ctx.SmPolicyUpdates[1].SmPolicyDecision.PccRules {
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
 					shouldSendReleaseOnly = true
 					break
