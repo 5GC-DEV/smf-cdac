@@ -148,8 +148,17 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	} */
 
 	// Derive QoS change
+	logger.PduSessLog.Infof("Building SM Policy Update for UE [%s], PDU Session ID [%d]",
+		smContext.Supi, smContext.PDUSessionID)
+
 	policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
+
+	logger.PduSessLog.Infof("SM Policy Update built: %+v", policyUpdates)
+
 	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
+
+	logger.PduSessLog.Infof("Appended SM Policy Update, total updates count: %d",
+		len(smContext.SmPolicyUpdates))
 
 	// Set state to PFCP Modify before sending PFCP request
 	smContext.ChangeState(smf_context.SmStatePfcpModify)
