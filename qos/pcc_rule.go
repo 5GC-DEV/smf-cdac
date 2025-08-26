@@ -7,6 +7,7 @@ package qos
 
 import (
 	"github.com/omec-project/openapi/models"
+	"github.com/omec-project/smf/logger"
 )
 
 type PccRulesUpdate struct {
@@ -15,6 +16,7 @@ type PccRulesUpdate struct {
 
 func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *PccRulesUpdate {
 	if len(pcfPccRules) == 0 {
+		logger.PduSessLog.Infoln("[GetPccRulesUpdate] No PCF PCC rules received, returning nil")
 		return nil
 	}
 
@@ -24,21 +26,31 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 		del: make(map[string]*models.PccRule),
 	}
 
+	logger.PduSessLog.Infof("[GetPccRulesUpdate] Comparing PCC rules: PCF(%d) vs CTXT(%d)", len(pcfPccRules), len(ctxtPccRules))
+
 	// Compare against Ctxt rules to get added or modified rules
 	for name, pcfRule := range pcfPccRules {
 		// if pcfRule is nil then it need to be deleted
 		if pcfRule == nil {
+			logger.PduSessLog.Warnf("[GetPccRulesUpdate] PCC rule %q marked for deletion", name)
 			change.del[name] = pcfRule // nil
 			continue
 		}
 
 		// match against SM ctxt Rules for add/mod
 		if ctxtrule := ctxtPccRules[name]; ctxtrule == nil {
+			logger.PduSessLog.Infof("[GetPccRulesUpdate] PCC rule %q marked for addition", name)
 			change.add[name] = pcfRule
 		} else if GetPccRuleChanges(pcfRule, ctxtrule) {
+			logger.PduSessLog.Infof("[GetPccRulesUpdate] PCC rule %q marked for modification", name)
 			change.mod[name] = pcfRule
+		} else {
+			logger.PduSessLog.Debugf("[GetPccRulesUpdate] PCC rule %q unchanged", name)
 		}
 	}
+
+	logger.PduSessLog.Infof("[GetPccRulesUpdate] Summary: add=%d, mod=%d, del=%d",
+		len(change.add), len(change.mod), len(change.del))
 
 	return &change
 }

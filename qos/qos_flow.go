@@ -512,6 +512,7 @@ func (qfd *QoSFlowDescription) addQosFlowRateParam(rate string, rateType uint8) 
 
 func GetQosFlowDescUpdate(pcfQosData, ctxtQosData map[string]*models.QosData) *QosFlowsUpdate {
 	if len(pcfQosData) == 0 {
+		logger.PduSessLog.Infof("[QoS-Update] No PCF QoS data received, nothing to update")
 		return nil
 	}
 
@@ -521,21 +522,30 @@ func GetQosFlowDescUpdate(pcfQosData, ctxtQosData map[string]*models.QosData) *Q
 		del: make(map[string]*models.QosData),
 	}
 
-	// Iterate through pcf qos data to identify find add/mod/del qos flows
+	// Iterate through pcf qos data to identify add/mod/del qos flows
 	for name, pcfQF := range pcfQosData {
-		// if pcfQF is null then rule is deleted
+		// if pcfQF is nil then rule is deleted
 		if pcfQF == nil {
-			update.del[name] = pcfQF // nil
+			logger.PduSessLog.Infof("[QoS-Update] Marking QoS flow '%s' for deletion\n", name)
+			update.del[name] = nil
 			continue
 		}
 
 		// Flows to add
 		if ctxtQF := ctxtQosData[name]; ctxtQF == nil {
+			logger.PduSessLog.Infof("[QoS-Update] Adding new QoS flow '%s'\n", name)
 			update.add[name] = pcfQF
 		} else if GetQosDataChanges(pcfQF, ctxtQF) {
+			logger.PduSessLog.Infof("[QoS-Update] Modifying QoS flow '%s'\n", name)
 			update.mod[name] = pcfQF
+		} else {
+			logger.PduSessLog.Infof("[QoS-Update] QoS flow '%s' unchanged\n", name)
 		}
 	}
+
+	// Final summary logs
+	logger.PduSessLog.Infof("[QoS-Update] Summary -> Add: %d, Modify: %d, Delete: %d\n",
+		len(update.add), len(update.mod), len(update.del))
 
 	return &update
 }

@@ -119,6 +119,34 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
 	}
 
+	// isAppSessionDelete := false
+	for ruleID, rule := range pcfPolicyDecision.PccRules {
+		if rule == nil {
+			logger.PduSessLog.Infof("PCF requested deletion of PCC Rule %s", ruleID)
+			// isAppSessionDelete = true
+		}
+	}
+	for tcID, tc := range pcfPolicyDecision.TraffContDecs {
+		if tc == nil {
+			logger.PduSessLog.Infof("PCF requested deletion of Traffic Control Decision %s", tcID)
+			// isAppSessionDelete = true
+		}
+	}
+
+	/* if isAppSessionDelete {
+		// Handle PDU session release instead of PFCP modify
+		if err := HandleSmPolicyTermination(smContext); err != nil {
+			txn.Err = err
+			return err
+		}
+		httpResponse := &httpwrapper.Response{
+			Status: http.StatusOK,
+			Body:   nil,
+		}
+		txn.Rsp = httpResponse
+		return nil
+	} */
+
 	// Derive QoS change
 	policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
 	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
