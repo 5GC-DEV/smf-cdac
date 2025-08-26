@@ -307,13 +307,20 @@ func BuildPfcpSessionEstablishmentRequest(
 	}
 
 	qerMap := make(map[uint32]*context.QER)
+	logger.PfcpLog.Infof("[PFCP] Incoming QER list from SMF context: total=%d", len(qerList))
 	for _, qer := range qerList {
+		logger.PfcpLog.Infof("[PFCP] Candidate QER from context: QERID=%d, QFI=%d, State=%v, GateStatus=%+v",
+			qer.QERID, qer.QFI.QFI, qer.State, qer.GateStatus)
 		qerMap[qer.QERID] = qer
 	}
+	logger.PfcpLog.Infof("[PFCP] Deduplicated QER map count=%d", len(qerMap))
 	for _, filteredQER := range qerMap {
 		if filteredQER.State == context.RULE_INITIAL {
-			logger.PfcpLog.Infof("Adding QER: QERID=%d QFI=%d GateStatus=%+v", filteredQER.QERID, filteredQER.QFI.QFI, filteredQER.GateStatus)
+			logger.PfcpLog.Infof("[PFCP] Adding QER: QERID=%d QFI=%d GateStatus=%+v", filteredQER.QERID, filteredQER.QFI.QFI, filteredQER.GateStatus)
 			ies = append(ies, qerToCreateQER(filteredQER))
+		} else {
+			logger.PfcpLog.Infof("[PFCP] Skipping QERID=%d since State=%v (already created/installed)",
+				filteredQER.QERID, filteredQER.State)
 		}
 		filteredQER.State = context.RULE_CREATE
 	}
