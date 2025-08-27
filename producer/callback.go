@@ -155,8 +155,8 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 
 	logger.PduSessLog.Infof("SM Policy Update built: %+v", policyUpdates)
 
-	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
-
+	// smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
+	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates[:0], policyUpdates)
 	logger.PduSessLog.Infof("Appended SM Policy Update, total updates count: %d",
 		len(smContext.SmPolicyUpdates))
 
@@ -344,8 +344,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 	// Check if only release should be sent
 	shouldSendReleaseOnly := false
-	/*if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[1].SmPolicyDecision.PccRules != nil {
-		if len(smContext.SmPolicyUpdates[1].SmPolicyDecision.PccRules) == 0 {
+	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
+		if len(smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
 			shouldSendReleaseOnly = true
 		} else {
 			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
@@ -355,8 +355,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				}
 			}
 		}
-	}*/
-	if len(smContext.SmPolicyUpdates) > 1 && smContext.SmPolicyUpdates[1].SmPolicyDecision.PccRules != nil {
+	}
+	/*if len(smContext.SmPolicyUpdates) > 1 && smContext.SmPolicyUpdates[1].SmPolicyDecision.PccRules != nil {
 		// Case when there are at least 2 updates
 		if len(smContext.SmPolicyUpdates[1].SmPolicyDecision.PccRules) == 0 {
 			shouldSendReleaseOnly = true
@@ -368,39 +368,43 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				}
 			}
 		}
-	}
+	} */
 
 	// Iterate over datapaths
 	for _, dataPath := range smContext.Tunnel.DataPathPool {
 		if !dataPath.Activated {
+			logger.PduSessLog.Infof("Skipping inactive DataPath: %+v", dataPath)
 			continue
 		}
 
-		// ANUPF := dataPath.FirstDPNode
 		ANUPF := dataPath.FirstDPNode
+		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
+
 		for _, dlPDR := range ANUPF.DownLinkTunnel.PDR {
 			if shouldSendReleaseOnly {
 				// Mark PDR/FAR/QER for removal
-				logger.PduSessLog.Infof("Removing PDR ID: %v", dlPDR.PDRID)
-				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
+				logger.PduSessLog.Infof("[ReleaseOnly] Removing PDR ID: %v", dlPDR.PDRID)
 
+				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
 				if dlPDR.FAR != nil {
+					logger.PduSessLog.Infof("[ReleaseOnly] Removing FAR ID: %v", dlPDR.FAR.FARID)
 					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
 				}
 				if dlPDR.QER != nil {
+					for _, q := range dlPDR.QER {
+						logger.PduSessLog.Infof("[ReleaseOnly] Removing QER ID: %v", q.QERID)
+					}
 					pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
 				}
 				continue
 			}
 
-			// ✅ FAR updates from policy instead of hardcoded
-			applyAction := smfContext.ApplyAction{
-				Forw: true, // default forward, but can be extended based on SmPolicyDecision
-			}
+			// ✅ FAR updates
+			applyAction := smfContext.ApplyAction{Forw: true}
 			if smContext.SmPolicyUpdates != nil &&
 				len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision != nil {
-				// TODO: map SmPolicyDecision.Action to ApplyAction fields if needed
+				logger.PduSessLog.Debug("SmPolicyDecision present, mapping actions to FAR (TODO)")
 			}
 
 			dlPDR.FAR.ApplyAction = applyAction
@@ -411,58 +415,73 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				},
 				NetworkInstance: []byte(smContext.Dnn),
 			}
+			logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
+				dlPDR.PDRID, smContext.Dnn)
 
 			// ✅ Update states
+			oldPdrState := dlPDR.State
 			if dlPDR.State == smfContext.RULE_INITIAL {
 				dlPDR.State = smfContext.RULE_CREATE
 			} else {
 				dlPDR.State = smfContext.RULE_UPDATE
 			}
+			logger.PduSessLog.Infof("PDR ID [%d] state changed from %v → %v", dlPDR.PDRID, oldPdrState, dlPDR.State)
+
+			oldFarState := dlPDR.FAR.State
 			if dlPDR.FAR.State == smfContext.RULE_INITIAL {
 				dlPDR.FAR.State = smfContext.RULE_CREATE
 			} else {
 				dlPDR.FAR.State = smfContext.RULE_UPDATE
 			}
+			logger.PduSessLog.Infof("FAR ID [%d] state changed from %v → %v", dlPDR.FAR.FARID, oldFarState, dlPDR.FAR.State)
 
 			// Collect PDR/FAR
 			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
 
-			// ✅ Build QER(s) from policy QoS aligned with qerToCreateQER
+			// ✅ QER handling
 			if len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision.QosDecs != nil {
+
+				logger.PduSessLog.Infof("Applying QoS from PolicyDecision for PDR ID [%d]", dlPDR.PDRID)
 
 				pccRuleUpdate := smContext.SmPolicyUpdates[0].PccRuleUpdate
 				if pccRuleUpdate != nil {
 					addRules := pccRuleUpdate.GetAddPccRuleUpdate()
 					upf := ANUPF.UPF
 					for name, rule := range addRules {
-						// Assume ANUPF is the target UPF for rule installation
+						logger.PduSessLog.Infof("Installing PCC Rule [%s] on UPF [%s]", name, ANUPF.GetNodeIP())
+
 						if pdr, err := upf.BuildCreatePdrFromPccRule(rule); err == nil {
-							// Add QER from PCC Rule’s QoS + Traffic Control references
+							// QER from QoS
 							if flowQer, err := ANUPF.CreatePccRuleQer(smContext, rule.RefQosData[0], rule.RefTcData[0]); err == nil {
 								pdr.QER = append(pdr.QER, flowQer)
 								flowQer.State = smfContext.RULE_CREATE
 								pfcpParam.qerList = append(pfcpParam.qerList, flowQer)
+								logger.PduSessLog.Infof("Created QER ID [%d] for PCC Rule [%s]", flowQer.QERID, name)
+							} else {
+								logger.PduSessLog.Errorf("Failed to create QER for PCC Rule [%s]: %v", name, err)
 							}
 
 							// Track PDR in Tunnel
 							ANUPF.UpLinkTunnel.PDR[name] = pdr
-
-							// Collect in pfcpParam
 							pfcpParam.pdrList = append(pfcpParam.pdrList, pdr)
 							if pdr.FAR != nil {
 								pfcpParam.farList = append(pfcpParam.farList, pdr.FAR)
 							}
+							logger.PduSessLog.Infof("Created PDR ID [%d] for PCC Rule [%s]", pdr.PDRID, name)
+
 						} else {
-							logger.PduSessLog.Errorf("Failed to build PDR from PCC Rule %s: %v", name, err)
+							logger.PduSessLog.Errorf("Failed to build PDR from PCC Rule [%s]: %v", name, err)
 						}
 					}
 				}
 			}
+
 			// Track UPF pending update
 			if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
 				smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+				logger.PduSessLog.Infof("Marked UPF [%s] as pending update", ANUPF.GetNodeIP())
 			}
 		}
 	}
