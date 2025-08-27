@@ -14,6 +14,7 @@
 package pdusession
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -31,7 +32,7 @@ import (
 )
 
 // HTTPPostSmContexts - Create SM Context
-func HTTPPostSmContexts(c *gin.Context) {
+/*func HTTPPostSmContexts(c *gin.Context) {
 	logger.PduSessLog.Infoln("receive create SM Context Request")
 	var err error
 	var request models.PostSmContextsRequest
@@ -104,6 +105,111 @@ func HTTPPostSmContexts(c *gin.Context) {
 			go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
 			<-txn.Status
 		} else {
+			smf_context.RemoveSMContext(smContext.Ref)
+		}
+	}(smContext)
+} */
+
+func HTTPPostSmContexts(c *gin.Context) {
+	logger.PduSessLog.Infoln("=== [Nsmf_PDUSession] Received Create SM Context Request ===")
+
+	var err error
+	var request models.PostSmContextsRequest
+	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "In", "", "")
+	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_req)
+	if err != nil {
+		logger.PduSessLog.Errorf("Failed to publish SMF Msg Event: %v", err)
+		return
+	}
+
+	request.JsonData = new(models.SmContextCreateData)
+
+	// Detect Content-Type
+	contentType := c.GetHeader("Content-Type")
+	logger.PduSessLog.Infof("HTTP Content-Type: %s", contentType)
+
+	s := strings.Split(contentType, ";")
+	switch s[0] {
+	case "application/json":
+		logger.PduSessLog.Infoln("Binding request as application/json")
+		err = c.ShouldBindJSON(request.JsonData)
+	case "multipart/related":
+		logger.PduSessLog.Infoln("Binding request as multipart/related")
+		err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
+	default:
+		logger.PduSessLog.Warnf("Unsupported Content-Type: %s", s[0])
+		err = fmt.Errorf("unsupported Content-Type: %s", s[0])
+	}
+
+	if err != nil {
+		problemDetail := "[Request Body] " + err.Error()
+		rsp := models.ProblemDetails{
+			Title:  "Malformed request syntax",
+			Status: http.StatusBadRequest,
+			Detail: problemDetail,
+		}
+		stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "Out", http.StatusText(http.StatusBadRequest), "Malformed")
+		logger.PduSessLog.Errorf("Request binding failed: %v", problemDetail)
+		c.JSON(http.StatusBadRequest, rsp)
+		return
+	}
+
+	logger.PduSessLog.Infof("SM Context Create Request successfully parsed: %+v", request.JsonData)
+
+	req := httpwrapper.NewRequest(c.Request, request)
+	txn := transaction.NewTransaction(req.Body.(models.PostSmContextsRequest), nil, svcmsgtypes.CreateSmContext)
+	logger.PduSessLog.Infof("Created transaction for SUPI [%s]", request.JsonData.Supi)
+
+	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
+	<-txn.Status // wait for txn to complete at SMF
+	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
+	smContext := txn.Ctxt.(*smf_context.SMContext)
+	errStr := ""
+	if txn.Err != nil {
+		errStr = txn.Err.Error()
+		logger.PduSessLog.Errorf("Transaction failed: %v", errStr)
+	} else {
+		logger.PduSessLog.Infof("Transaction completed successfully for SUPI [%s], PDU Session ID [%d]",
+			smContext.Supi, smContext.PDUSessionID)
+	}
+
+	// Http Response to AMF
+	logger.PduSessLog.Infof("Sending HTTP Response to AMF with Status [%d]", HTTPResponse.Status)
+	for key, val := range HTTPResponse.Header {
+		c.Header(key, val[0])
+		logger.PduSessLog.Debugf("Response Header: %s = %s", key, val[0])
+	}
+
+	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "Out", http.StatusText(HTTPResponse.Status), errStr)
+
+	switch HTTPResponse.Status {
+	case http.StatusCreated,
+		http.StatusBadRequest,
+		http.StatusForbidden,
+		http.StatusNotFound,
+		http.StatusInternalServerError,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout:
+		logger.PduSessLog.Debugf("Rendering multipart response for Status [%d]", HTTPResponse.Status)
+		c.Render(HTTPResponse.Status, openapi.MultipartRelatedRender{Data: HTTPResponse.Body})
+	default:
+		logger.PduSessLog.Debugf("Rendering JSON response for Status [%d]", HTTPResponse.Status)
+		c.JSON(HTTPResponse.Status, HTTPResponse.Body)
+	}
+
+	// PFCP Session Create in background
+	go func(smContext *smf_context.SMContext) {
+		if HTTPResponse.Status == http.StatusCreated {
+			logger.PduSessLog.Infof("Triggering PFCP Session Create for SUPI [%s], PDU Session ID [%d]",
+				smContext.Supi, smContext.PDUSessionID)
+			txn := transaction.NewTransaction(nil, nil, svcmsgtypes.PfcpSessCreate)
+			txn.Ctxt = smContext
+			go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
+			<-txn.Status
+			logger.PduSessLog.Infof("PFCP Session Create Transaction finished for SUPI [%s], PDU Session ID [%d]",
+				smContext.Supi, smContext.PDUSessionID)
+		} else {
+			logger.PduSessLog.Warnf("SM Context Create failed, removing SMContext Ref [%s]", smContext.Ref)
 			smf_context.RemoveSMContext(smContext.Ref)
 		}
 	}(smContext)
