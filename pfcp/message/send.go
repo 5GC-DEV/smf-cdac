@@ -241,6 +241,8 @@ func SendPfcpSessionEstablishmentRequest(
 	if err != nil {
 		return err
 	}
+	logger.PfcpLog.Infof("Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d, PDRs=%d FARs=%d QERs=%d", getSeqNumber(), pfcpContext.LocalSEID,
+		len(pdrList), len(farList), len(qerList))
 	logger.PfcpLog.Debugf("in SendPfcpSessionEstablishmentRequest pfcpMsg.CPFSEID.Seid %v\n", pfcpMsg.SEID())
 	ip := upNodeID.ResolveNodeIdToIp()
 
@@ -250,6 +252,8 @@ func SendPfcpSessionEstablishmentRequest(
 	}
 	ctx.SubPduSessLog.Debugln("[SMF] Send SendPfcpSessionEstablishmentRequest")
 	ctx.SubPduSessLog.Debugln("send to addr", upaddr.String())
+	logger.PfcpLog.Infof("Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d, PDRs=%d FARs=%d QERs=%d", getSeqNumber(), pfcpContext.LocalSEID,
+		len(pdrList), len(farList), len(qerList))
 	logger.PfcpLog.Infof("in SendPfcpSessionEstablishmentRequest fseid %v", pfcpMsg.SEID())
 
 	if factory.SmfConfig.Configuration.EnableUpfAdapter {
