@@ -516,9 +516,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 			dlPDR.FAR.ApplyAction = applyAction
 			dlPDR.FAR.ForwardingParameters = &smfContext.ForwardingParameters{
-				OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
+				// OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
 				DestinationInterface: smfContext.DestinationInterface{
-					InterfaceValue: smfContext.DestinationInterfaceAccess,
+					InterfaceValue: smfContext.DestinationInterfaceCore,
 				},
 				NetworkInstance: []byte(smContext.Dnn),
 			}
