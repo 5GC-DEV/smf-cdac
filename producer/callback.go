@@ -404,7 +404,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			if smContext.SmPolicyUpdates != nil &&
 				len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision != nil {
-				logger.PduSessLog.Debug("SmPolicyDecision present, mapping actions to FAR (TODO)")
+				logger.PduSessLog.Info("SmPolicyDecision present, mapping actions to FAR (TODO)")
 			}
 
 			dlPDR.FAR.ApplyAction = applyAction
@@ -438,8 +438,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			logger.PduSessLog.Infof("FAR ID [%d] state changed from %v → %v", dlPDR.FAR.FARID, oldFarState, dlPDR.FAR.State)
 
 			// Collect PDR/FAR
-			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
-			pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
+			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
+			// pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
 
 			// ✅ QER handling
 			if len(smContext.SmPolicyUpdates) > 0 &&
@@ -545,8 +545,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			logger.PduSessLog.Infof("FAR ID [%d] state changed from %v → %v", dlPDR.FAR.FARID, oldFarState, dlPDR.FAR.State)
 
 			// Collect PDR/FAR
-			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
-			pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
+			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
+			// pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
 
 			// ✅ QER handling
 			if len(smContext.SmPolicyUpdates) > 0 &&
