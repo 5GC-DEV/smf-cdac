@@ -340,12 +340,43 @@ func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
 	return
 }
 
-func (smContext *SMContext) ReleaseUeIpAddr() error {
+/*func (smContext *SMContext) ReleaseUeIpAddr() error {
 	if ip := smContext.PDUAddress.Ip; ip != nil && !smContext.PDUAddress.UpfProvided {
 		smContext.SubPduSessLog.Infof("Release IP[%s]", smContext.PDUAddress.Ip.String())
 		smContext.DNNInfo.UeIPAllocator.Release(smContext.Supi, ip)
 		smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
 	}
+	return nil
+} */
+
+func (smContext *SMContext) ReleaseUeIpAddr() error {
+	if smContext.PDUAddress == nil {
+		smContext.SubPduSessLog.Infof("ReleaseUeIpAddr called but PDUAddress is nil for SUPI[%s], PDU ID[%d]",
+			smContext.Supi, smContext.PDUSessionID)
+		// return nil
+	}
+
+	if smContext.PDUAddress.Ip == nil {
+		smContext.SubPduSessLog.Infof("ReleaseUeIpAddr: no IP assigned (nil) for SUPI[%s], PDU ID[%d]",
+			smContext.Supi, smContext.PDUSessionID)
+		// return nil
+	}
+
+	if !smContext.PDUAddress.UpfProvided {
+		smContext.SubPduSessLog.Infof("ReleaseUeIpAddr: releasing IP[%s] for SUPI[%s], PDU ID[%d]",
+			smContext.PDUAddress.Ip.String(), smContext.Supi, smContext.PDUSessionID)
+
+		smContext.DNNInfo.UeIPAllocator.Release(smContext.Supi, smContext.PDUAddress.Ip)
+
+		smContext.SubPduSessLog.Infof("ReleaseUeIpAddr: IP released successfully, resetting to 0.0.0.0 for SUPI[%s], PDU ID[%d]",
+			smContext.Supi, smContext.PDUSessionID)
+
+		smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
+	} else {
+		smContext.SubPduSessLog.Infof("ReleaseUeIpAddr: skipping release since IP[%s] was UPF provided for SUPI[%s], PDU ID[%d]",
+			smContext.PDUAddress.Ip.String(), smContext.Supi, smContext.PDUSessionID)
+	}
+
 	return nil
 }
 
