@@ -131,7 +131,7 @@ func NewUPFInterfaceInfo(i *factory.InterfaceUpfInfoItem) *UPFInterfaceInfo {
 
 // *** add unit test ***//
 // IP returns the IP of the user plane IP information of the pduSessType
-func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
+/*func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 	if (pduSessType == nasMessage.PDUSessionTypeIPv4 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) && len(i.IPv4EndPointAddresses) != 0 {
 		return i.IPv4EndPointAddresses[0].To4(), nil
 	}
@@ -160,6 +160,64 @@ func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 		}
 	}
 
+	return nil, errors.New("not matched ip address")
+} */
+
+func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
+	if i == nil {
+		logger.CtxLog.Error("UPFInterfaceInfo.IP(): called on nil receiver")
+		// return nil, errors.New("nil UPFInterfaceInfo")
+	}
+
+	logger.CtxLog.Infof("UPFInterfaceInfo.IP(): pduSessType=%d, IPv4Addrs=%v, IPv6Addrs=%v, FQDN=%s",
+		pduSessType, i.IPv4EndPointAddresses, i.IPv6EndPointAddresses, i.EndpointFQDN)
+
+	// IPv4 case
+	if (pduSessType == nasMessage.PDUSessionTypeIPv4 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) &&
+		len(i.IPv4EndPointAddresses) != 0 {
+		ip := i.IPv4EndPointAddresses[0].To4()
+		logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv4 %s", ip)
+		return ip, nil
+	}
+
+	// IPv6 case
+	if (pduSessType == nasMessage.PDUSessionTypeIPv6 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) &&
+		len(i.IPv6EndPointAddresses) != 0 {
+		ip := i.IPv6EndPointAddresses[0]
+		logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv6 %s", ip)
+		return ip, nil
+	}
+
+	// FQDN case
+	if i.EndpointFQDN != "" {
+		logger.CtxLog.Infof("UPFInterfaceInfo.IP(): resolving FQDN=%s", i.EndpointFQDN)
+		if resolvedAddr, err := net.ResolveIPAddr("ip", i.EndpointFQDN); err != nil {
+			logger.CtxLog.Errorf("UPFInterfaceInfo.IP(): resolve FQDN [%s] failed: %v", i.EndpointFQDN, err)
+		} else {
+			logger.CtxLog.Infof("UPFInterfaceInfo.IP(): resolved FQDN %s -> %s", i.EndpointFQDN, resolvedAddr.IP)
+
+			switch pduSessType {
+			case nasMessage.PDUSessionTypeIPv4:
+				ip := resolvedAddr.IP.To4()
+				logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv4 from FQDN %s", ip)
+				return ip, nil
+			case nasMessage.PDUSessionTypeIPv6:
+				ip := resolvedAddr.IP.To16()
+				logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv6 from FQDN %s", ip)
+				return ip, nil
+			default:
+				if v4 := resolvedAddr.IP.To4(); v4 != nil {
+					logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv4 (default branch) %s", v4)
+					return v4, nil
+				}
+				ip := resolvedAddr.IP.To16()
+				logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv6 (default branch) %s", ip)
+				return ip, nil
+			}
+		}
+	}
+
+	logger.CtxLog.Warnf("UPFInterfaceInfo.IP(): no matching IP found for type=%d", pduSessType)
 	return nil, errors.New("not matched ip address")
 }
 
