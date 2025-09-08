@@ -136,7 +136,7 @@ func createPDIIE(pdi *context.PDI) *ie.IE {
 	return ie.NewPDI(createPDIIes...)
 }
 
-func pdrToCreatePDR(pdr *context.PDR) *ie.IE {
+func pdrToCreatePDR(pdr *context.PDR, localSEID uint64) *ie.IE {
 	ies := make([]*ie.IE, 0)
 	ies = append(ies, ie.NewPDRID(pdr.PDRID))
 	ies = append(ies, ie.NewPrecedence(pdr.Precedence))
@@ -152,6 +152,16 @@ func pdrToCreatePDR(pdr *context.PDR) *ie.IE {
 			ies = append(ies, ie.NewQERID(qer.QERID))
 		}
 	}
+	// --- Logging (LocalSEID only) ---
+	logger.PduSessLog.Infof("[LocalSEID=%d] Building CreatePDR: PDRID=%d, Precedence=%d, FARID=%v, QERCount=%d", localSEID, pdr.PDRID, pdr.Precedence,
+		func() interface{} {
+			if pdr.FAR != nil {
+				return pdr.FAR.FARID
+			}
+			return "nil"
+		}(),
+		len(pdr.QER),
+	)
 	return ie.NewCreatePDR(ies...)
 }
 
@@ -285,7 +295,7 @@ func BuildPfcpSessionEstablishmentRequest(
 	farList []*context.FAR,
 	qerList []*context.QER,
 ) (*message.SessionEstablishmentRequest, error) {
-	logger.PfcpLog.Infof("Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d nodeID=%s PDRs=%d FARs=%d QERs=%d",
+	logger.PfcpLog.Infof("3. Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d nodeID=%s PDRs=%d FARs=%d QERs=%d",
 		sequenceNumber, localSeid, nodeID, len(pdrList), len(farList), len(qerList))
 	ies := make([]*ie.IE, 0)
 	ies = append(ies, ie.NewNodeIDHeuristic(nodeID))
@@ -293,8 +303,9 @@ func BuildPfcpSessionEstablishmentRequest(
 
 	for _, pdr := range pdrList {
 		if pdr.State == context.RULE_INITIAL {
-			logger.PfcpLog.Infof("Adding PDR: PDRID=%d Precedence=%d FAR=%v QERCount=%d", pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
-			ies = append(ies, pdrToCreatePDR(pdr))
+			logger.PfcpLog.Infof(
+				"[LocalSEID=%d] Adding PDR: PDRID=%d, Precedence=%d, FAR=%v, QERCount=%d", localSeid, pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
+			ies = append(ies, pdrToCreatePDR(pdr, localSeid))
 		}
 	}
 
@@ -357,7 +368,7 @@ func BuildPfcpSessionModificationRequest(
 		switch pdr.State {
 		case context.RULE_INITIAL:
 			logger.PfcpLog.Infof("ModReq PDRID=%d [CREATE] Precedence=%d FAR=%v QERCount=%d", pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
-			ies = append(ies, pdrToCreatePDR(pdr))
+			ies = append(ies, pdrToCreatePDR(pdr, localSEID))
 		case context.RULE_UPDATE:
 			logger.PfcpLog.Infof("ModReq PDRID=%d [UPDATE] Precedence=%d FAR=%v QERCount=%d", pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
 			ies = append(ies, pdrToUpdatePDR(pdr))

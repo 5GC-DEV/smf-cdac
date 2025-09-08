@@ -116,10 +116,10 @@ func HandleStatePfcpCreatePendingEventPfcpSessCreate(event SmEvent, eventData *S
 	smCtxt := txn.Ctxt.(*smf_context.SMContext)
 
 	producer.SendPFCPRules(smCtxt)
-	smCtxt.SubFsmLog.Debug("waiting for pfcp session establish response")
+	smCtxt.SubFsmLog.Info("waiting for pfcp session establish response")
 	switch <-smCtxt.SBIPFCPCommunicationChan {
 	case smf_context.SessionEstablishSuccess:
-		smCtxt.SubFsmLog.Debug("pfcp session establish response success")
+		smCtxt.SubFsmLog.Info("pfcp session establish response success")
 		return smf_context.SmStateN1N2TransferPending, nil
 	case smf_context.SessionEstablishFailed:
 		fallthrough
