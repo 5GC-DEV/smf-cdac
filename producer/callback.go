@@ -399,7 +399,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				continue
 			}
 
-			// ✅ FAR updates
+			// FAR updates
 			applyAction := smfContext.ApplyAction{Forw: true}
 			if smContext.SmPolicyUpdates != nil &&
 				len(smContext.SmPolicyUpdates) > 0 &&
@@ -418,7 +418,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
 				dlPDR.PDRID, smContext.Dnn)
 
-			// ✅ Update states
+			// Update states
 			oldPdrState := dlPDR.State
 			/* if dlPDR.State == smfContext.RULE_INITIAL {
 				dlPDR.State = smfContext.RULE_CREATE
@@ -441,7 +441,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			// pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
 
-			// ✅ QER handling
+			// QER handling
 			if len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision.QosDecs != nil {
 
@@ -453,7 +453,10 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 					upf := ANUPF.UPF
 					for name, rule := range addRules {
 						logger.PduSessLog.Infof("Installing PCC Rule [%s] on UPF [%s]", name, ANUPF.GetNodeIP())
-
+						logger.PduSessLog.Infof(
+							"PCF PCC Rule triggered new PDR: RuleId=%s, RefQosData=%v, RefTcData=%v",
+							rule.PccRuleId, rule.RefQosData, rule.RefTcData,
+						)
 						if pdr, err := upf.BuildCreatePdrFromPccRule(rule); err == nil {
 							// QER from QoS
 							if flowQer, err := ANUPF.CreatePccRuleQer(smContext, rule.RefQosData[0], rule.RefTcData[0]); err == nil {
@@ -466,7 +469,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 							}
 
 							// Track PDR in Tunnel
-							ANUPF.UpLinkTunnel.PDR[name] = pdr
+							ANUPF.DownLinkTunnel.PDR[name] = pdr
 							pfcpParam.pdrList = append(pfcpParam.pdrList, pdr)
 							if pdr.FAR != nil {
 								pfcpParam.farList = append(pfcpParam.farList, pdr.FAR)
@@ -506,7 +509,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				continue
 			}
 
-			// ✅ FAR updates
+			// FAR updates
 			applyAction := smfContext.ApplyAction{Forw: true}
 			if smContext.SmPolicyUpdates != nil &&
 				len(smContext.SmPolicyUpdates) > 0 &&
@@ -525,7 +528,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
 				dlPDR.PDRID, smContext.Dnn)
 
-			// ✅ Update states
+			// Update states
 			oldPdrState := dlPDR.State
 			/* if dlPDR.State == smfContext.RULE_INITIAL {
 				dlPDR.State = smfContext.RULE_CREATE
