@@ -294,7 +294,7 @@ func (qfd *QoSFlowDescription) addQosFlowRateParam(rate string, rateType uint8) 
 	qfd.QFDLen += 5 //(Id-1 + len-1 + Content-3)
 }
 
-func GetQosFlowDescUpdate(pcfQosData, ctxtQosData map[string]*models.QosData) *QosFlowsUpdate {
+func GetQosFlowDescUpdate(pcfQosData, ctxtQosData map[string]*models.QosData, supi string) *QosFlowsUpdate {
 	if len(pcfQosData) == 0 {
 		return nil
 	}
@@ -320,7 +320,7 @@ func GetQosFlowDescUpdate(pcfQosData, ctxtQosData map[string]*models.QosData) *Q
 			update.mod[name] = pcfQF
 		}
 	}
-
+	logger.PduSessLog.Info("[SUPI=%s] QoS Flow Update Summary: add=%d, mod=%d, del=%d", supi, len(update.add), len(update.mod), len(update.del))
 	return &update
 }
 

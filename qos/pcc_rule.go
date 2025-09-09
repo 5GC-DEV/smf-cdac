@@ -7,13 +7,14 @@ package qos
 
 import (
 	"github.com/omec-project/openapi/models"
+	"github.com/omec-project/smf/logger"
 )
 
 type PccRulesUpdate struct {
 	add, mod, del map[string]*models.PccRule
 }
 
-func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *PccRulesUpdate {
+func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule, supi string) *PccRulesUpdate {
 	if len(pcfPccRules) == 0 {
 		return nil
 	}
@@ -39,7 +40,7 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 			change.mod[name] = pcfRule
 		}
 	}
-
+	logger.PduSessLog.Info("[SUPI=%s] PCCRule-QoS Flow Update Summary: add=%d, mod=%d, del=%d", supi, len(change.add), len(change.mod), len(change.del))
 	return &change
 }
 

@@ -4,13 +4,16 @@
 
 package qos
 
-import "github.com/omec-project/openapi/models"
+import (
+	"github.com/omec-project/openapi/models"
+	"github.com/omec-project/smf/logger"
+)
 
 type TrafficControlUpdate struct {
 	add, mod, del map[string]*models.TrafficControlData
 }
 
-func GetTrafficControlUpdate(tcData, ctxtTcData map[string]*models.TrafficControlData) *TrafficControlUpdate {
+func GetTrafficControlUpdate(tcData, ctxtTcData map[string]*models.TrafficControlData, supi string) *TrafficControlUpdate {
 	if len(tcData) == 0 {
 		return nil
 	}
@@ -36,7 +39,7 @@ func GetTrafficControlUpdate(tcData, ctxtTcData map[string]*models.TrafficContro
 			change.mod[name] = pcfTc
 		}
 	}
-
+	logger.PduSessLog.Info("[SUPI=%s] trafficControl-QoS Flow Update Summary: add=%d, mod=%d, del=%d", supi, len(change.add), len(change.mod), len(change.del))
 	return &change
 }
 

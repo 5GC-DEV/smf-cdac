@@ -114,6 +114,7 @@ func AddPDUSessionAnchorAndULCL(smContext *context.SMContext, nodeID context.Nod
 }
 
 func EstablishPSA2(smContext *context.SMContext) {
+	logger.PduSessLog.Infoln("in EstablishPSA2 ===supi=%s", smContext.Supi)
 	bpMGR := smContext.BPManager
 	bpMGR.PendingUPF = make(context.PendingUPF)
 	activatingPath := bpMGR.ActivatingPath

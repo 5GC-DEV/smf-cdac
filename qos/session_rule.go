@@ -6,6 +6,7 @@ package qos
 
 import (
 	"github.com/omec-project/openapi/models"
+	"github.com/omec-project/smf/logger"
 )
 
 // Handle Session Rule related info
@@ -16,7 +17,7 @@ type SessRulesUpdate struct {
 }
 
 // Get Session rule changes delta
-func GetSessionRulesUpdate(pcfSessRules, ctxtSessRules map[string]*models.SessionRule) *SessRulesUpdate {
+func GetSessionRulesUpdate(pcfSessRules, ctxtSessRules map[string]*models.SessionRule, supi string) *SessRulesUpdate {
 	if len(pcfSessRules) == 0 {
 		return nil
 	}
@@ -49,6 +50,7 @@ func GetSessionRulesUpdate(pcfSessRules, ctxtSessRules map[string]*models.Sessio
 			// TODO
 		}
 	}
+	logger.PduSessLog.Info("[SUPI=%s] SessRule-QoS Flow Update Summary: add=%d, mod=%d, del=%d", supi, len(change.add), len(change.mod), len(change.del))
 	return &change
 }
 

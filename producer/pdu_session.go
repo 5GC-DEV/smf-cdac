@@ -94,9 +94,9 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	// Create SM context
 	// smContext := smf_context.NewSMContext(createData.Supi, createData.PduSessionId)
-	smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, SM context created")
+	smContext.SubPduSessLog.Info("PDUSessionSMContextCreate, SM context created ==supi=%s", smContext.Supi)
 	// smContext.ChangeState(smf_context.SmStateActivePending)
-	smContext.SubCtxLog.Debugln("PDUSessionSMContextCreate, SMContextState change state:", smContext.SMContextState.String())
+	smContext.SubCtxLog.Debugln("supi=%s  PDUSessionSMContextCreate, SMContextState change state: ", smContext.Supi, smContext.SMContextState.String())
 	smContext.SetCreateData(createData)
 	smContext.SmStatusNotifyUri = createData.SmContextStatusUri
 
@@ -106,8 +106,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	// DNN Information from config
 	smContext.DNNInfo = smf_context.RetrieveDnnInformation(*createData.SNssai, createData.Dnn)
 	if smContext.DNNInfo == nil {
-		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, S-NSSAI[sst: %d, sd: %s] DNN[%s] not matched DNN Config",
-			createData.SNssai.Sst, createData.SNssai.Sd, createData.Dnn)
+		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, S-NSSAI[sst: %d, sd: %s] DNN[%s] not matched DNN Config  supi=%s",
+			createData.SNssai.Sst, createData.SNssai.Sd, createData.Dnn, smContext.Supi)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("DnnNotSupported")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
 		return fmt.Errorf("SnssaiError")
@@ -136,8 +136,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		return fmt.Errorf("IpAllocError")
 	} else {
 		smContext.PDUAddress = &smf_context.UeIpAddr{Ip: ip, UpfProvided: false}
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, IP alloc success IP[%s]",
-			smContext.PDUAddress.Ip.String())
+		smContext.SubPduSessLog.Info("PDUSessionSMContextCreate, IP alloc success IP[%s] supi=%s",
+			smContext.PDUAddress.Ip.String(), smContext.Supi)
 	}
 
 	// UDM-Fetch Subscription Data based on servingnetwork.plmn and dnn, snssai
@@ -145,7 +145,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	if createData.ServingNetwork != nil {
 		smPlmnID = createData.ServingNetwork
 	} else {
-		smContext.SubPduSessLog.Infof("ServingNetwork not received from AMF, so taking from guami")
+		smContext.SubPduSessLog.Infof("ServingNetwork not received from AMF, so taking from guami ===supi=%s", smContext.Supi)
 		smPlmnID = createData.Guami.PlmnId
 	}
 	smDataParams := &Nudm_SubscriberDataManagement.GetSmDataParamOpts{
@@ -174,7 +174,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		if len(sessSubData) > 0 {
 			metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), "")
 			smContext.DnnConfiguration = sessSubData[0].DnnConfigurations[smContext.Dnn]
-			smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, subscription data retrieved from UDM")
+			smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, subscription data retrieved from UDM ===supi=%s", smContext.Supi)
 		} else {
 			metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), "NilSubscriptionData")
 			smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SessionManagementSubscriptionData from UDM is nil")
