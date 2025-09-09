@@ -121,17 +121,7 @@ func BuildSmPolicyUpdate(smCtxtPolData *SmCtxtPolicyData, smPolicyDecision *mode
 	} else {
 		logger.PduSessLog.Infof("[SUPI=%s][CorrID=%s] No Condition Data Update", smCtxtPolData.Supi, corrID)
 	}
-	// ---- Final log before return ----
-	logger.PduSessLog.Infof(
-		"[SUPI=%s][CorrID=%s] Completed BuildSmPolicyUpdate: QosFlows=%d, PccRules=%d, SessRules=%d, TCUpdates=%d, CondData=%d",
-		smCtxtPolData.Supi,
-		corrID,
-		len(update.QosFlowUpdate.add)+len(update.QosFlowUpdate.mod)+len(update.QosFlowUpdate.del),
-		len(update.PccRuleUpdate.add)+len(update.PccRuleUpdate.mod)+len(update.PccRuleUpdate.del),
-		len(update.SessRuleUpdate.add)+len(update.SessRuleUpdate.mod)+len(update.SessRuleUpdate.del),
-		len(update.TCUpdate.add)+len(update.TCUpdate.mod)+len(update.TCUpdate.del),
-		len(update.CondDataUpdate.add)+len(update.CondDataUpdate.mod)+len(update.CondDataUpdate.del),
-	)
+
 	return update
 }
 
