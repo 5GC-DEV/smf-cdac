@@ -7,6 +7,7 @@ package producer
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
@@ -19,12 +20,21 @@ import (
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
 	"github.com/omec-project/util/httpwrapper"
+	"github.com/omec-project/util/util_3gpp"
 )
 
 var (
 	NRFCacheRemoveNfProfileFromNrfCache = nrfCache.RemoveNfProfileFromNrfCache
 	SendRemoveSubscription              = consumer.SendRemoveSubscription
 )
+
+// UPFInterfaceInfo store the UPF interface information
+type UPFInterfaceInfo struct {
+	NetworkInstance       string
+	EndpointFQDN          string
+	IPv4EndPointAddresses []net.IP
+	IPv6EndPointAddresses []net.IP
+}
 
 /*
 	func HandleSMPolicyUpdateNotify(eventData interface{}) error {
@@ -335,7 +345,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		removeFAR: []*smfContext.FAR{},
 		removeQER: []*smfContext.QER{},
 	}
-
+	var iface *smf_context.UPFInterfaceInfo
 	// Reset PendingUPF for new build
 	smContext.PendingUPF = make(smfContext.PendingUPF)
 
@@ -379,8 +389,15 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 		ANUPF := dataPath.FirstDPNode
 		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
-
-		for _, dlPDR := range ANUPF.DownLinkTunnel.PDR {
+		defQER, err := ANUPF.CreateSessRuleQer(smContext)
+		if err != nil {
+			logger.PduSessLog.Infof("Create session rule failed: %v", err)
+		}
+		if err := dataPath.ActivateUlDlTunnel(smContext); err != nil {
+			logger.PduSessLog.Errorf("activate UL/DL tunnel error %v", err.Error())
+			//return err
+		}
+		for name, dlPDR := range ANUPF.DownLinkTunnel.PDR {
 			if shouldSendReleaseOnly {
 				// Mark PDR/FAR/QER for removal
 				logger.PduSessLog.Infof("[ReleaseOnly] Removing PDR ID: %v", dlPDR.PDRID)
@@ -398,25 +415,50 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				}
 				continue
 			}
+			logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", name, dlPDR)
+			dlPDR.QER = append(dlPDR.QER, defQER)
+			if dlPDR.Precedence == 0 {
+				dlPDR.Precedence = 1
+			}
+			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
+			dlFAR := dlPDR.FAR
 
+			logger.PduSessLog.Infoln("before DLPDR OuterHeaderCreation")
 			// FAR updates
-			applyAction := smfContext.ApplyAction{Forw: true}
-			if smContext.SmPolicyUpdates != nil &&
-				len(smContext.SmPolicyUpdates) > 0 &&
-				smContext.SmPolicyUpdates[0].SmPolicyDecision != nil {
-				logger.PduSessLog.Info("SmPolicyDecision present, mapping actions to FAR (TODO)")
-			}
+			// applyAction := smfContext.ApplyAction{Forw: true}
 
-			dlPDR.FAR.ApplyAction = applyAction
-			dlPDR.FAR.ForwardingParameters = &smfContext.ForwardingParameters{
-				OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
-				DestinationInterface: smfContext.DestinationInterface{
-					InterfaceValue: smfContext.DestinationInterfaceAccess,
-				},
-				NetworkInstance: []byte(smContext.Dnn),
+			// dlPDR.FAR.ApplyAction = applyAction
+			dlFAR.ApplyAction = smf_context.ApplyAction{
+				Buff: true,
+				Drop: false,
+				Dupl: false,
+				Forw: false,
+				Nocp: true,
 			}
-			logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
-				dlPDR.PDRID, smContext.Dnn)
+			iface = ANUPF.UPF.GetInterface(models.UpInterfaceType_N6, smContext.Dnn)
+			if iface == nil {
+				logger.CtxLog.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
+				// return fmt.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
+			}
+			if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err != nil {
+				logger.CtxLog.Errorf("activate Downlink PDR[%v] failed %v", name, err)
+				// return err
+			} else {
+				dlFAR.ForwardingParameters = &smf_context.ForwardingParameters{
+					// OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
+					OuterHeaderCreation: &smf_context.OuterHeaderCreation{
+						OuterHeaderCreationDescription: smf_context.OuterHeaderCreationGtpUUdpIpv4,
+						Ipv4Address:                    upIP,
+						// Teid:                           nextDLTunnel.TEID,
+					},
+					DestinationInterface: smfContext.DestinationInterface{
+						InterfaceValue: smfContext.DestinationInterfaceAccess,
+					},
+					NetworkInstance: []byte(smContext.Dnn),
+				}
+				logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
+					dlPDR.PDRID, smContext.Dnn)
+			}
 
 			// Update states
 			oldPdrState := dlPDR.State
@@ -428,7 +470,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			dlPDR.State = smfContext.RULE_INITIAL
 			logger.PduSessLog.Infof("PDR ID [%d] state changed from %v → %v", dlPDR.PDRID, oldPdrState, dlPDR.State)
 
-			oldFarState := dlPDR.FAR.State
+			oldFarState := dlFAR.State
 			/*if dlPDR.FAR.State == smfContext.RULE_INITIAL {
 				dlPDR.FAR.State = smfContext.RULE_CREATE
 			} else {
@@ -442,7 +484,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
 
 			// QER handling
-			if len(smContext.SmPolicyUpdates) > 0 &&
+			/*if len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision.QosDecs != nil {
 
 				logger.PduSessLog.Infof("Applying QoS from PolicyDecision for PDR ID [%d]", dlPDR.PDRID)
@@ -481,7 +523,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 						}
 					}
 				}
-			}
+			} */
 
 			// Track UPF pending update
 			if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
@@ -490,27 +532,53 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			}
 		}
 
-		for _, dlPDR := range ANUPF.UpLinkTunnel.PDR {
+		for name, ulPDR := range ANUPF.UpLinkTunnel.PDR {
 			if shouldSendReleaseOnly {
 				// Mark PDR/FAR/QER for removal
-				logger.PduSessLog.Infof("[ReleaseOnly] Removing PDR ID: %v", dlPDR.PDRID)
+				logger.PduSessLog.Infof("[ReleaseOnly] Removing PDR ID: %v", ulPDR.PDRID)
 
-				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
-				if dlPDR.FAR != nil {
-					logger.PduSessLog.Infof("[ReleaseOnly] Removing FAR ID: %v", dlPDR.FAR.FARID)
-					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
+				pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
+				if ulPDR.FAR != nil {
+					logger.PduSessLog.Infof("[ReleaseOnly] Removing FAR ID: %v", ulPDR.FAR.FARID)
+					pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
 				}
-				if dlPDR.QER != nil {
-					for _, q := range dlPDR.QER {
+				if ulPDR.QER != nil {
+					for _, q := range ulPDR.QER {
 						logger.PduSessLog.Infof("[ReleaseOnly] Removing QER ID: %v", q.QERID)
 					}
-					pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
+					pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
 				}
 				continue
 			}
+			ulPDR.QER = append(ulPDR.QER, defQER)
+			if ulPDR.Precedence == 0 {
+				ulPDR.Precedence = 1
+			}
+			ulPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceAccess}
+			ulPDR.PDI.LocalFTeid = &smf_context.FTEID{
+				Ch: true,
+			}
+			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
+			ulPDR.OuterHeaderRemoval = &smf_context.OuterHeaderRemoval{
+				OuterHeaderRemovalDescription: smf_context.OuterHeaderRemovalGtpUUdpIpv4,
+			}
+			ulFAR := ulPDR.FAR
+			ulFAR.ApplyAction = smf_context.ApplyAction{
+				Buff: false,
+				Drop: false,
+				Dupl: false,
+				Forw: true,
+				Nocp: false,
+			}
+			ulFAR.ForwardingParameters = &smf_context.ForwardingParameters{
+				DestinationInterface: smf_context.DestinationInterface{
+					InterfaceValue: smf_context.DestinationInterfaceCore,
+				},
+				NetworkInstance: []byte(smContext.Dnn),
+			}
 
 			// FAR updates
-			applyAction := smfContext.ApplyAction{Forw: true}
+			/*applyAction := smfContext.ApplyAction{Forw: true}
 			if smContext.SmPolicyUpdates != nil &&
 				len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision != nil {
@@ -527,32 +595,32 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			}
 			logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
 				dlPDR.PDRID, smContext.Dnn)
-
+			*/
 			// Update states
-			oldPdrState := dlPDR.State
+			oldPdrState := ulPDR.State
 			/* if dlPDR.State == smfContext.RULE_INITIAL {
 				dlPDR.State = smfContext.RULE_CREATE
 			} else {
 				dlPDR.State = smfContext.RULE_UPDATE
 			}*/
-			dlPDR.State = smfContext.RULE_INITIAL
-			logger.PduSessLog.Infof("PDR ID [%d] state changed from %v → %v", dlPDR.PDRID, oldPdrState, dlPDR.State)
+			ulPDR.State = smfContext.RULE_INITIAL
+			logger.PduSessLog.Infof("PDR ID [%d] state changed from %v → %v", ulPDR.PDRID, oldPdrState, ulPDR.State)
 
-			oldFarState := dlPDR.FAR.State
+			oldFarState := ulFAR.State
 			/*if dlPDR.FAR.State == smfContext.RULE_INITIAL {
 				dlPDR.FAR.State = smfContext.RULE_CREATE
 			} else {
 				dlPDR.FAR.State = smfContext.RULE_UPDATE
 			} */
-			dlPDR.FAR.State = smfContext.RULE_INITIAL
-			logger.PduSessLog.Infof("FAR ID [%d] state changed from %v → %v", dlPDR.FAR.FARID, oldFarState, dlPDR.FAR.State)
+			ulFAR.State = smfContext.RULE_INITIAL
+			logger.PduSessLog.Infof("FAR ID [%d] state changed from %v → %v", ulFAR.FARID, oldFarState, ulFAR.State)
 
 			// Collect PDR/FAR
 			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			// pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
 
 			// ✅ QER handling
-			if len(smContext.SmPolicyUpdates) > 0 &&
+			/*if len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision.QosDecs != nil {
 
 				logger.PduSessLog.Infof("Applying QoS from PolicyDecision for PDR ID [%d]", dlPDR.PDRID)
@@ -588,13 +656,14 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 						}
 					}
 				}
-			}
+			}*/
 
 			// Track UPF pending update
 			if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
 				smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 				logger.PduSessLog.Infof("Marked UPF [%s] as pending update", ANUPF.GetNodeIP())
 			}
+			logger.CtxLog.Infof("activate UpLink PDR[%v]:[%v]", name, ulPDR)
 		}
 	}
 

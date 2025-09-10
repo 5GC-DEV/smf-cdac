@@ -115,7 +115,7 @@ func (node *DataPathNode) ActivateUpLinkTunnel(smContext *SMContext) error {
 	var err error
 	var pdr *PDR
 	var flowQer *QER
-	logger.CtxLog.Debugln("in ActivateUpLinkTunnel")
+	logger.CtxLog.Infoln("in ActivateUpLinkTunnel")
 	node.UpLinkTunnel.SrcEndPoint = node.Prev()
 	node.UpLinkTunnel.DestEndPoint = node
 
@@ -381,11 +381,11 @@ func (dataPath *DataPath) validateDataPathUpfStatus() error {
 
 func (dataPath *DataPath) ActivateUlDlTunnel(smContext *SMContext) error {
 	firstDPNode := dataPath.FirstDPNode
-	logger.PduSessLog.Debugln("in ActivateTunnelAndPDR")
-	logger.PduSessLog.Debugln(dataPath.String())
+	logger.PduSessLog.Infoln("in ActivateTunnelAndPDR")
+	logger.PduSessLog.Infoln(dataPath.String())
 	// Activate Tunnels
 	for curDataPathNode := firstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
-		logger.PduSessLog.Debugln("current DP Node IP:", curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String())
+		logger.PduSessLog.Infoln("current DP Node IP:", curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String())
 		if err := curDataPathNode.ActivateUpLinkTunnel(smContext); err != nil {
 			logger.CtxLog.Warnln(err)
 			return err
