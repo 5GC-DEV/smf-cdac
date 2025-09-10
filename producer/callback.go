@@ -781,9 +781,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			}
 
 			// --- Set states and add to Create list ---
-			dlPDR.State = smfContext.RULE_CREATE
-			dlFAR.State = smfContext.RULE_CREATE
-			defQER.State = smfContext.RULE_CREATE
+			dlPDR.State = smfContext.RULE_INITIAL
+			dlFAR.State = smfContext.RULE_INITIAL
+			defQER.State = smfContext.RULE_INITIAL
 
 			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			if dlFAR != nil {
@@ -831,9 +831,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			}
 
 			// --- Set states and add to Create list ---
-			ulPDR.State = smfContext.RULE_CREATE
-			ulFAR.State = smfContext.RULE_CREATE
-			defQER.State = smfContext.RULE_CREATE
+			ulPDR.State = smfContext.RULE_INITIAL
+			ulFAR.State = smfContext.RULE_INITIAL
+			defQER.State = smfContext.RULE_INITIAL
 
 			pfcpParam.pdrList = append(pfcpParam.pdrList, ulPDR)
 			if ulFAR != nil {
