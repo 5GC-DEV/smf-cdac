@@ -65,6 +65,7 @@ type UPF struct {
 	SNssaiInfos        []SnssaiUPFInfo
 	N3Interfaces       []UPFInterfaceInfo
 	N9Interfaces       []UPFInterfaceInfo
+	N6Interfaces       []UPFInterfaceInfo
 	UPFunctionFeatures *UPFunctionFeatures
 
 	pdrPool sync.Map
@@ -237,6 +238,7 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 
 	upf.N3Interfaces = make([]UPFInterfaceInfo, 0)
 	upf.N9Interfaces = make([]UPFInterfaceInfo, 0)
+	upf.N6Interfaces = make([]UPFInterfaceInfo, 0)
 
 	for _, iface := range ifaces {
 		upIface := NewUPFInterfaceInfo(&iface)
@@ -245,6 +247,8 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 		case models.UpInterfaceType_N3:
 			upf.N3Interfaces = append(upf.N3Interfaces, *upIface)
 		case models.UpInterfaceType_N9:
+			upf.N9Interfaces = append(upf.N9Interfaces, *upIface)
+		case models.UpInterfaceType_N6:
 			upf.N9Interfaces = append(upf.N9Interfaces, *upIface)
 		}
 	}
@@ -280,6 +284,19 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 			for _, d := range dnnList {
 				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
 					return &upf.N9Interfaces[i]
+				}
+			}
+		}
+	case models.UpInterfaceType_N6:
+		logger.CtxLog.Infof("Total UPF N6 Interfaces: %d", len(upf.N6Interfaces))
+		for i, iface := range upf.N6Interfaces {
+			logger.CtxLog.Infof("Checking UPF N6 Interface: %v", iface.NetworkInstance)
+
+			// Split multiple DNNs and check if dnn exists
+			dnnList := strings.Split(iface.NetworkInstance, ",")
+			for _, d := range dnnList {
+				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
+					return &upf.N6Interfaces[i]
 				}
 			}
 		}

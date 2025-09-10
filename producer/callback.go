@@ -439,25 +439,38 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			if iface == nil {
 				logger.CtxLog.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
 				// return fmt.Errorf("UPF Interface is nil for DNN [%v]", smContext.Dnn)
-			}
-			if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err != nil {
-				logger.CtxLog.Errorf("activate Downlink PDR[%v] failed %v", name, err)
-				// return err
 			} else {
-				dlFAR.ForwardingParameters = &smf_context.ForwardingParameters{
-					// OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
-					OuterHeaderCreation: &smf_context.OuterHeaderCreation{
-						OuterHeaderCreationDescription: smf_context.OuterHeaderCreationGtpUUdpIpv4,
-						Ipv4Address:                    upIP,
-						// Teid:                           nextDLTunnel.TEID,
-					},
-					DestinationInterface: smfContext.DestinationInterface{
-						InterfaceValue: smfContext.DestinationInterfaceAccess,
-					},
-					NetworkInstance: []byte(smContext.Dnn),
+				if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err != nil {
+					logger.CtxLog.Errorf("activate Downlink PDR[%v] failed %v", name, err)
+					// return err
+				} else {
+					dlFAR.ForwardingParameters = &smf_context.ForwardingParameters{
+						// OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
+						OuterHeaderCreation: &smf_context.OuterHeaderCreation{
+							OuterHeaderCreationDescription: smf_context.OuterHeaderCreationGtpUUdpIpv4,
+							Ipv4Address:                    upIP,
+							// Teid:                           nextDLTunnel.TEID,
+						},
+						DestinationInterface: smfContext.DestinationInterface{
+							InterfaceValue: smfContext.DestinationInterfaceAccess,
+						},
+						NetworkInstance: []byte(smContext.Dnn),
+					}
+					logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
+						dlPDR.PDRID, smContext.Dnn)
 				}
-				logger.PduSessLog.Infof("Updated FAR for PDR ID [%d], DestinationInterface=Access, DNN=%s",
-					dlPDR.PDRID, smContext.Dnn)
+			}
+			dlFAR.ForwardingParameters = &smf_context.ForwardingParameters{
+				// OuterHeaderCreation: dlPDR.FAR.ForwardingParameters.OuterHeaderCreation,
+				OuterHeaderCreation: &smf_context.OuterHeaderCreation{
+					OuterHeaderCreationDescription: smf_context.OuterHeaderCreationGtpUUdpIpv4,
+					// Ipv4Address:                    upIP,
+					// Teid:                           nextDLTunnel.TEID,
+				},
+				DestinationInterface: smfContext.DestinationInterface{
+					InterfaceValue: smfContext.DestinationInterfaceAccess,
+				},
+				NetworkInstance: []byte(smContext.Dnn),
 			}
 
 			// Update states
@@ -619,7 +632,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			// pfcpParam.farList = append(pfcpParam.farList, dlPDR.FAR)
 
-			// ✅ QER handling
+			// QER handling
 			/*if len(smContext.SmPolicyUpdates) > 0 &&
 				smContext.SmPolicyUpdates[0].SmPolicyDecision.QosDecs != nil {
 
