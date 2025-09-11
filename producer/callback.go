@@ -766,6 +766,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				dlPDR.Precedence = 1
 			}
 			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
+			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
 			logger.PduSessLog.Infof("[BuildPfcpParam] Final DL PDR[%s]: %+v", name, dlPDR)
 			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 
@@ -825,9 +826,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			oldPdrState := dlPDR.State
 			oldFarState := dlFAR.State
 			oldQerState := defQER.State
-			dlPDR.State = smfContext.RULE_INITIAL
-			dlFAR.State = smfContext.RULE_INITIAL
-			defQER.State = smfContext.RULE_INITIAL
+			// dlPDR.State = smfContext.RULE_INITIAL
+			// dlFAR.State = smfContext.RULE_INITIAL
+			// defQER.State = smfContext.RULE_INITIAL
 			logger.PduSessLog.Infof("Downlink PDR ID [%d] state changed from %v → %v", dlPDR.PDRID, oldPdrState, dlPDR.State)
 			logger.PduSessLog.Infof("Downlink FAR ID [%d] state changed from %v → %v", dlFAR.FARID, oldFarState, dlFAR.State)
 			logger.PduSessLog.Infof("Downlink QER ID [%d] state changed from %v → %v", defQER.QERID, oldQerState, defQER.State)
@@ -881,13 +882,13 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			oldPdrState := ulPDR.State
 			oldFarState := ulFAR.State
 			oldQerState := defQER.State
-			ulPDR.State = smfContext.RULE_INITIAL
-			ulFAR.State = smfContext.RULE_INITIAL
-			defQER.State = smfContext.RULE_INITIAL
+			// ulPDR.State = smfContext.RULE_INITIAL
+			// ulFAR.State = smfContext.RULE_INITIAL
+			// defQER.State = smfContext.RULE_INITIAL
 
-			logger.PduSessLog.Infof("Downlink PDR ID [%d] state changed from %v → %v", ulPDR.PDRID, oldPdrState, ulPDR.State)
-			logger.PduSessLog.Infof("Downlink FAR ID [%d] state changed from %v → %v", ulFAR.FARID, oldFarState, ulFAR.State)
-			logger.PduSessLog.Infof("Downlink QER ID [%d] state changed from %v → %v", defQER.QERID, oldQerState, defQER.State)
+			logger.PduSessLog.Infof("Uplink PDR ID [%d] state changed from %v → %v", ulPDR.PDRID, oldPdrState, ulPDR.State)
+			logger.PduSessLog.Infof("Uplink FAR ID [%d] state changed from %v → %v", ulFAR.FARID, oldFarState, ulFAR.State)
+			logger.PduSessLog.Infof("Uplink QER ID [%d] state changed from %v → %v", defQER.QERID, oldQerState, defQER.State)
 
 			pfcpParam.pdrList = append(pfcpParam.pdrList, ulPDR)
 			if ulFAR != nil {
