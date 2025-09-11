@@ -172,19 +172,68 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 
 	// Set state to PFCP Modify before sending PFCP request
 	smContext.ChangeState(smf_context.SmStatePfcpModify)
-
+	var response models.UpdateSmContextResponse
+	response.JsonData = new(models.SmContextUpdatedData)
 	// Build PFCP parameters
 	pfcpParam := BuildPfcpParam(smContext)
+	// var httpResponse *httpwrapper.Response
+	// var err error
 
 	// Send PFCP Session Modification Request
+	// if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+	// logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
+	// txn.Err = err
+	// return err
+	// }
+	/*if err = SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+	// Modify failure
+	smContext.SubCtxLog.Errorf("pfcp session modify error: %v ", err.Error())
+
+	// Form Modify err rsp
+	httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
+
+	/*
+		// TODO: Add Ctxt cleanup if PFCP response is context not found,
+		// just initiating PFCP session release will not help
+			//PFCP Modify Err, initiate release
+			SendPfcpSessionReleaseReq(smContext)
+
+			//Change state to InactivePending
+			smContext.ChangeState(smf_context.SmStateInActivePending)
+			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+	*/
+	/*} else {
+	// Modify Success
+	/*httpResponse = &httpwrapper.Response{
+		Status: http.StatusOK,
+		Body:   response,
+	} */
+
+	/*smContext.ChangeState(smf_context.SmStateActive)
+		smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
+	} */
+
 	if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
-		logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
+		// PFCP modify failed — revert state and return error
+		smContext.SubCtxLog.Errorf("PFCP session modify error: %v", err)
+		// smContext.ChangeState(prevState)
+		logger.PduSessLog.Infof("SMContext[%s-%02d] state reverted to %s after PFCP error",
+			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
+
+		// Build HTTP error response for the original transaction
+		httpResponse := makePduCtxtModifyErrRsp(smContext, err.Error())
 		txn.Err = err
+		txn.Rsp = httpResponse
 		return err
 	}
+	smContext.ChangeState(smf_context.SmStateActive)
+	smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
+	logger.PduSessLog.Infof("PFCP modify successful for UE [%s], PDU Session ID [%d]",
+		smContext.Supi, smContext.PDUSessionID)
 
 	// Now send N1/N2 Msg after PFCP success
 	if err := BuildAndSendQosN1N2TransferMsg(smContext); err != nil {
+		logger.PduSessLog.Errorf("Failed to build/send N1/N2 QoS transfer message: %v", err)
 		txn.Err = err
 		return err
 	}
