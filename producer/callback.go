@@ -694,12 +694,14 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		removeQER: []*smfContext.QER{},
 	}
 
-	var iface *smf_context.UPFInterfaceInfo
+	// var iface *smf_context.UPFInterfaceInfo
 	// Reset PendingUPF for new build
 	smContext.PendingUPF = make(smfContext.PendingUPF)
 
 	logger.PduSessLog.Infof("SMContext: %v", smContext)
 	logger.PduSessLog.Infof("SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
+	logger.PduSessLog.Infof("[BuildPfcpParam] Start building PFCP params for SMContext[%s]", smContext.Supi)
+	logger.PduSessLog.Infof("[BuildPfcpParam] SmPolicyUpdates count: %d", len(smContext.SmPolicyUpdates))
 
 	// --- Release-only logic ---
 	shouldSendReleaseOnly := false
@@ -708,6 +710,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			shouldSendReleaseOnly = true
 		} else {
 			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
+				logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s, Rule=%+v", ruleId, rule)
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
 					shouldSendReleaseOnly = true
 					break
@@ -717,7 +720,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	}
 
 	// --- Iterate over datapaths ---
-	for _, dataPath := range smContext.Tunnel.DataPathPool {
+	for dpIndex, dataPath := range smContext.Tunnel.DataPathPool {
+		logger.PduSessLog.Infof("[BuildPfcpParam] Processing DataPath[%d], Activated=%v", dpIndex, dataPath.Activated)
 		if !dataPath.Activated {
 			logger.PduSessLog.Infof("Skipping inactive DataPath: %+v", dataPath)
 			continue
@@ -728,7 +732,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 		defQER, err := ANUPF.CreateSessRuleQer(smContext)
 		if err != nil {
-			logger.PduSessLog.Infof("Create session rule failed: %v", err)
+			logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
+		} else {
+			logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", defQER)
 		}
 
 		if err := dataPath.ActivateUlDlTunnel(smContext); err != nil {
@@ -739,8 +745,10 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		// Handle Downlink PDRs
 		// ----------------------
 		for name, dlPDR := range ANUPF.DownLinkTunnel.PDR {
+			logger.PduSessLog.Infof("[BuildPfcpParam] Checking DL PDR: Name=%s, ID=%d", name, dlPDR.PDRID)
 			if shouldSendReleaseOnly {
 				// Removal path
+				logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", name)
 				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
 				if dlPDR.FAR != nil {
 					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
@@ -758,32 +766,71 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				dlPDR.Precedence = 1
 			}
 			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
+			logger.PduSessLog.Infof("[BuildPfcpParam] Final DL PDR[%s]: %+v", name, dlPDR)
+			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
+
 			dlFAR := dlPDR.FAR
 
 			// FAR ApplyAction
-			dlFAR.ApplyAction = smf_context.ApplyAction{Forw: true}
+			// dlFAR.ApplyAction = smf_context.ApplyAction{Forw: true}
+			dlFAR.ApplyAction = smf_context.ApplyAction{
+				Buff: true,
+				Drop: false,
+				Dupl: false,
+				Forw: false,
+				Nocp: true,
+			}
 
 			// Interface resolution
-			iface = ANUPF.UPF.GetInterface(models.UpInterfaceType_N6, smContext.Dnn)
-			if iface != nil {
-				if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err == nil {
+			logger.PduSessLog.Infof("Resolving UPF interface for DNN [%s], type [N6]", smContext.Dnn)
+
+			/*iface = ANUPF.UPF.GetInterface(models.UpInterfaceType_N6, smContext.Dnn)
+			dlFAR.ForwardingParameters = &smf_context.ForwardingParameters{
+				OuterHeaderCreation: &smf_context.OuterHeaderCreation{
+					OuterHeaderCreationDescription: smf_context.OuterHeaderCreationGtpUUdpIpv4,
+				},
+				DestinationInterface: smf_context.DestinationInterface{
+					InterfaceValue: smf_context.DestinationInterfaceAccess,
+				},
+				NetworkInstance: []byte(smContext.Dnn),
+			}
+			if iface == nil {
+				logger.PduSessLog.Warnf("No N6 interface found for DNN [%s]", smContext.Dnn)
+			} else {
+				logger.PduSessLog.Infof("Found N6 interface for DNN [%s]", smContext.Dnn)
+
+				if upIP, err := iface.IP(smContext.SelectedPDUSessionType); err != nil {
+					logger.PduSessLog.Errorf("Failed to resolve IP for DNN [%s], PDU type [%v]: %v",
+						smContext.Dnn, smContext.SelectedPDUSessionType, err)
+				} else {
+					logger.PduSessLog.Infof("Resolved UPF IP [%s] for DNN [%s], PDU type [%v]",
+						upIP, smContext.Dnn, smContext.SelectedPDUSessionType)
+
 					dlFAR.ForwardingParameters = &smf_context.ForwardingParameters{
 						OuterHeaderCreation: &smf_context.OuterHeaderCreation{
 							OuterHeaderCreationDescription: smf_context.OuterHeaderCreationGtpUUdpIpv4,
 							Ipv4Address:                    upIP,
 						},
-						DestinationInterface: smfContext.DestinationInterface{
-							InterfaceValue: smfContext.DestinationInterfaceAccess,
+						DestinationInterface: smf_context.DestinationInterface{
+							InterfaceValue: smf_context.DestinationInterfaceAccess,
 						},
 						NetworkInstance: []byte(smContext.Dnn),
 					}
+					logger.PduSessLog.Infof("Configured Downlink FAR with UPF IP [%s] and DNN [%s]",
+						upIP, smContext.Dnn)
 				}
-			}
+			}*/
 
 			// --- Set states and add to Create list ---
+			oldPdrState := dlPDR.State
+			oldFarState := dlFAR.State
+			oldQerState := defQER.State
 			dlPDR.State = smfContext.RULE_INITIAL
 			dlFAR.State = smfContext.RULE_INITIAL
 			defQER.State = smfContext.RULE_INITIAL
+			logger.PduSessLog.Infof("Downlink PDR ID [%d] state changed from %v → %v", dlPDR.PDRID, oldPdrState, dlPDR.State)
+			logger.PduSessLog.Infof("Downlink FAR ID [%d] state changed from %v → %v", dlFAR.FARID, oldFarState, dlFAR.State)
+			logger.PduSessLog.Infof("Downlink QER ID [%d] state changed from %v → %v", defQER.QERID, oldQerState, defQER.State)
 
 			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			if dlFAR != nil {
@@ -831,9 +878,16 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			}
 
 			// --- Set states and add to Create list ---
+			oldPdrState := ulPDR.State
+			oldFarState := ulFAR.State
+			oldQerState := defQER.State
 			ulPDR.State = smfContext.RULE_INITIAL
 			ulFAR.State = smfContext.RULE_INITIAL
 			defQER.State = smfContext.RULE_INITIAL
+
+			logger.PduSessLog.Infof("Downlink PDR ID [%d] state changed from %v → %v", ulPDR.PDRID, oldPdrState, ulPDR.State)
+			logger.PduSessLog.Infof("Downlink FAR ID [%d] state changed from %v → %v", ulFAR.FARID, oldFarState, ulFAR.State)
+			logger.PduSessLog.Infof("Downlink QER ID [%d] state changed from %v → %v", defQER.QERID, oldQerState, defQER.State)
 
 			pfcpParam.pdrList = append(pfcpParam.pdrList, ulPDR)
 			if ulFAR != nil {

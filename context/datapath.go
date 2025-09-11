@@ -435,7 +435,7 @@ func (dpNode *DataPathNode) CreatePccRuleQer(smContext *SMContext, qosData strin
 	return flowQER, nil
 }
 
-func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error) {
+/*func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error) {
 	var flowQER *QER
 
 	sessionRule := smContext.SelectedSessionRule()
@@ -460,6 +460,55 @@ func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error
 
 		flowQER = newQER
 	}
+
+	return flowQER, nil
+} */
+
+func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error) {
+	var flowQER *QER
+
+	logger.PduSessLog.Infof("CreateSessRuleQer: start for UE [%s], PDU Session ID [%d]",
+		smContext.Supi, smContext.PDUSessionID)
+
+	sessionRule := smContext.SelectedSessionRule()
+	if sessionRule == nil {
+		logger.PduSessLog.Warnf("CreateSessRuleQer: no session rule found for UE [%s]", smContext.Supi)
+	} else {
+		logger.PduSessLog.Infof("CreateSessRuleQer: using session rule with AuthSessAmbr UL [%s], DL [%s]",
+			sessionRule.AuthSessAmbr.Uplink, sessionRule.AuthSessAmbr.Downlink)
+	}
+
+	// Get Default QoS-Data for the session
+	smPolicyDec := smContext.SmPolicyUpdates[0].SmPolicyDecision
+	logger.PduSessLog.Debugf("CreateSessRuleQer: policy decision %+v", smPolicyDec)
+
+	defQosData := qos.GetDefaultQoSDataFromPolicyDecision(smPolicyDec)
+	logger.PduSessLog.Infof("CreateSessRuleQer: default QoSData [QosId=%s, 5QI=%d]",
+		defQosData.QosId, defQosData.Var5qi)
+
+	// Create QER in UPF
+	if newQER, err := dpNode.UPF.AddQER(); err != nil {
+		logger.PduSessLog.Errorf("CreateSessRuleQer: AddQER failed for UE [%s], error: %v", smContext.Supi, err)
+		return nil, err
+	} else {
+		newQER.QFI.QFI = qos.GetQosFlowIdFromQosId(defQosData.QosId)
+		newQER.GateStatus = &GateStatus{
+			ULGate: GateOpen,
+			DLGate: GateOpen,
+		}
+		newQER.MBR = &MBR{
+			ULMBR: util.BitRateTokbps(sessionRule.AuthSessAmbr.Uplink),
+			DLMBR: util.BitRateTokbps(sessionRule.AuthSessAmbr.Downlink),
+		}
+
+		logger.PduSessLog.Infof("CreateSessRuleQer: QER created [QFI=%d, UL-MBR=%d kbps, DL-MBR=%d kbps]",
+			newQER.QFI.QFI, newQER.MBR.ULMBR, newQER.MBR.DLMBR)
+
+		flowQER = newQER
+	}
+
+	logger.PduSessLog.Infof("CreateSessRuleQer: success for UE [%s], Session ID [%d], QER-ID [%d]",
+		smContext.Supi, smContext.PDUSessionID, flowQER.QERID)
 
 	return flowQER, nil
 }
