@@ -780,9 +780,10 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 		ANUPF := dataPath.FirstDPNode
 		var defQER *smf_context.QER
+		var err error
 		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
 		if !shouldSendReleaseOnly {
-			defQER, err := ANUPF.CreateSessRuleQer(smContext)
+			defQER, err = ANUPF.CreateSessRuleQer(smContext)
 			if err != nil {
 				logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
 			} else {
@@ -880,6 +881,12 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			oldPdrState := dlPDR.State
 			oldFarState := dlFAR.State
 			oldQerState := defQER.State
+			/*if defQER != nil {
+				oldQerState := defQER.State
+				logger.PduSessLog.Infof("[BuildPfcpParam] Old QER state: %v", oldQerState)
+			} else {
+				logger.PduSessLog.Warn("[BuildPfcpParam] defQER is nil at state check")
+			}*/
 			// dlPDR.State = smfContext.RULE_INITIAL
 			// dlFAR.State = smfContext.RULE_INITIAL
 			// defQER.State = smfContext.RULE_INITIAL
