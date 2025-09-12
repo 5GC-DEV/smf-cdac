@@ -779,7 +779,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		}
 
 		ANUPF := dataPath.FirstDPNode
-		var defQER *smfContext.QER
+		var defQER *smf_context.QER
 		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
 		if !shouldSendReleaseOnly {
 			defQER, err := ANUPF.CreateSessRuleQer(smContext)
