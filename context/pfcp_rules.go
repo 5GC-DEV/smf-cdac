@@ -34,7 +34,7 @@ type PDR struct {
 	State      RuleState
 	PDRID      uint16
 	Precedence uint32
-	RuleId     string // add this field
+	// RuleId     string // add this field
 }
 
 type SDFFilter struct {

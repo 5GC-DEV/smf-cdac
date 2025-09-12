@@ -442,7 +442,7 @@ func (upf *UPF) qerID() (uint32, error) {
 func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	var pdr *PDR
 	var err error
-	pdr.RuleId = rule.PccRuleId // correlate PCC rule with this PDR
+	// pdr.RuleId = rule.PccRuleId // correlate PCC rule with this PDR
 
 	// create empty PDR
 	if pdr, err = upf.AddPDR(); err != nil {
