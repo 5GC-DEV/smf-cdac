@@ -25,7 +25,8 @@ func GetTrafficControlUpdate(tcData, ctxtTcData map[string]*models.TrafficContro
 	for name, pcfTc := range tcData {
 		// if pcfRule is nil then it need to be deleted
 		if pcfTc == nil {
-			change.del[name] = pcfTc // nil
+			// change.del[name] = pcfTc // nil
+			change.del[name] = nil
 			continue
 		}
 

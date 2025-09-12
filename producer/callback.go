@@ -754,6 +754,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 	// --- Release-only logic ---
 	shouldSendReleaseOnly := false
+	ruleid := "0"
 	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
 		if len(smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
 			shouldSendReleaseOnly = true
@@ -761,6 +762,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
 				logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s, Rule=%+v", ruleId, rule)
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
+					ruleid = ruleId
 					shouldSendReleaseOnly = true
 					break
 				}
@@ -777,19 +779,20 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		}
 
 		ANUPF := dataPath.FirstDPNode
+		var defQER *smfContext.QER
 		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
+		if !shouldSendReleaseOnly {
+			defQER, err := ANUPF.CreateSessRuleQer(smContext)
+			if err != nil {
+				logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
+			} else {
+				logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", defQER)
+			}
 
-		defQER, err := ANUPF.CreateSessRuleQer(smContext)
-		if err != nil {
-			logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
-		} else {
-			logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", defQER)
+			if err := dataPath.ActivateUlDlTunnel(smContext); err != nil {
+				logger.PduSessLog.Errorf("activate UL/DL tunnel error %v", err.Error())
+			}
 		}
-
-		if err := dataPath.ActivateUlDlTunnel(smContext); err != nil {
-			logger.PduSessLog.Errorf("activate UL/DL tunnel error %v", err.Error())
-		}
-
 		// ----------------------
 		// Handle Downlink PDRs
 		// ----------------------
@@ -798,12 +801,14 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			if shouldSendReleaseOnly {
 				// Removal path
 				logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", name)
-				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
-				if dlPDR.FAR != nil {
-					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
-				}
-				if dlPDR.QER != nil {
-					pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
+				if dlPDR.RuleId == ruleid {
+					pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
+					if dlPDR.FAR != nil {
+						pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
+					}
+					if dlPDR.QER != nil {
+						pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
+					}
 				}
 				continue
 			}
@@ -898,16 +903,17 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		// ----------------------
 		for name, ulPDR := range ANUPF.UpLinkTunnel.PDR {
 			if shouldSendReleaseOnly {
-				pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
-				if ulPDR.FAR != nil {
-					pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
+				if ulPDR.RuleId == ruleid {
+					pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
+					if ulPDR.FAR != nil {
+						pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
+					}
+					if ulPDR.QER != nil {
+						pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
+					}
+					continue
 				}
-				if ulPDR.QER != nil {
-					pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
-				}
-				continue
 			}
-
 			ulPDR.QER = append(ulPDR.QER, defQER)
 			if ulPDR.Precedence == 0 {
 				ulPDR.Precedence = 1

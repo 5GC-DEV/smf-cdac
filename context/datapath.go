@@ -480,7 +480,7 @@ func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error
 
 	// Get Default QoS-Data for the session
 	smPolicyDec := smContext.SmPolicyUpdates[0].SmPolicyDecision
-	logger.PduSessLog.Debugf("CreateSessRuleQer: policy decision %+v", smPolicyDec)
+	logger.PduSessLog.Infof("CreateSessRuleQer: policy decision %+v", smPolicyDec)
 
 	defQosData := qos.GetDefaultQoSDataFromPolicyDecision(smPolicyDec)
 	logger.PduSessLog.Infof("CreateSessRuleQer: default QoSData [QosId=%s, 5QI=%d]",
