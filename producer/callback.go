@@ -808,13 +808,17 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 					if dlPDR.FAR != nil {
 						pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
 					}
-					if dlPDR.QER != nil {
+					/*if dlPDR.QER != nil && defQER != nil {
 						for _, qer := range dlPDR.QER {
 							if qer != nil && qer.QERID == defQER.QERID {
 								pfcpParam.removeQER = append(pfcpParam.removeQER, qer)
 							}
 						}
+					}*/
+					if dlPDR.QER != nil {
+						pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
 					}
+
 				}
 				continue
 			}
