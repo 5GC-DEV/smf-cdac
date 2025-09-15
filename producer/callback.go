@@ -815,9 +815,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 							}
 						}
 					}*/
-					if dlPDR.QER != nil {
+					/*if dlPDR.QER != nil {
 						pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
-					}
+					} */
 
 				}
 				continue
@@ -925,9 +925,17 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 					if ulPDR.FAR != nil {
 						pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
 					}
-					/*if ulPDR.QER != nil {
+					if ulPDR.QER != nil {
+						for _, qer := range ulPDR.QER {
+							if qer != nil {
+								logger.PduSessLog.Infof(
+									"[BuildPfcpParam] UL PDR[%s] has QER ID [%d], QFI=%d, State=%v",
+									name, qer.QERID, qer.QFI, qer.State,
+								)
+							}
+						}
 						pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
-					}*/
+					}
 				}
 				continue
 			}
