@@ -907,9 +907,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			if dlFAR != nil {
 				pfcpParam.farList = append(pfcpParam.farList, dlFAR)
 			}
-			if defQER != nil {
+			/*if defQER != nil {
 				pfcpParam.qerList = append(pfcpParam.qerList, defQER)
-			}
+			}*/
 
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 		}
@@ -974,9 +974,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			if ulFAR != nil {
 				pfcpParam.farList = append(pfcpParam.farList, ulFAR)
 			}
-			if defQER != nil {
+			/*if defQER != nil {
 				pfcpParam.qerList = append(pfcpParam.qerList, defQER)
-			}
+			}*/
 
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 			logger.CtxLog.Infof("activate UpLink PDR[%v]:[%v]", name, ulPDR)
