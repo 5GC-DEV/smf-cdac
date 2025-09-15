@@ -803,6 +803,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				// Removal path
 				logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", name)
 				if name == ruleid {
+					logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", name)
 					pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
 					if dlPDR.FAR != nil {
 						pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
@@ -911,6 +912,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		for name, ulPDR := range ANUPF.UpLinkTunnel.PDR {
 			if shouldSendReleaseOnly {
 				if name == ruleid {
+					logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", name)
 					pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
 					if ulPDR.FAR != nil {
 						pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
@@ -918,8 +920,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 					if ulPDR.QER != nil {
 						pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
 					}
-					continue
 				}
+				continue
 			}
 			ulPDR.QER = append(ulPDR.QER, defQER)
 			if ulPDR.Precedence == 0 {
