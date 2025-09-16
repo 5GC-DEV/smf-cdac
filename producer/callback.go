@@ -790,7 +790,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", defQER)
 
 				// Add more detailed logging
-				logger.PduSessLog.Infof("[BuildPfcpParam] QER Details -> ID: %v, QFI: %v, DlGate: %v, UlGate: %v, MBR_DL: %v, MBR_UL: %v, GBR_DL: %v, GBR_UL: %v, QER Rule State: %v", defQER.QERID, defQER.QFI, defQER.GateStatus.DLGate, defQER.GateStatus.ULGate, defQER.MBR.DLMBR, defQER.MBR.ULMBR, defQER.GBR.DLGBR, defQER.GBR.ULGBR, defQER.State)
+				// logger.PduSessLog.Infof("[BuildPfcpParam] QER Details -> ID: %v, QFI: %v, DlGate: %v, UlGate: %v, MBR_DL: %v, MBR_UL: %v, GBR_DL: %v, GBR_UL: %v, QER Rule State: %v", defQER.QERID, defQER.QFI, defQER.GateStatus.DLGate, defQER.GateStatus.ULGate, defQER.MBR.DLMBR, defQER.MBR.ULMBR, defQER.GBR.DLGBR, defQER.GBR.ULGBR, defQER.State)
 			}
 		}
 		// ----------------------
