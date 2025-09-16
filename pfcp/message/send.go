@@ -241,49 +241,49 @@ func SendPfcpSessionEstablishmentRequest(
 	if err != nil {
 		return err
 	}
-	logger.PfcpLog.Infof("Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d, PDRs=%d FARs=%d QERs=%d supi=%s", getSeqNumber(), pfcpContext.LocalSEID,
+	logger.PfcpLog.Info("[SendPfcpEstReq]1. Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d, PDRs=%d FARs=%d QERs=%d supi=%s", getSeqNumber(), pfcpContext.LocalSEID,
 		len(pdrList), len(farList), len(qerList), ctx.Supi)
-	logger.PfcpLog.Debugf("supi=%s  ==in SendPfcpSessionEstablishmentRequest pfcpMsg.CPFSEID.Seid %v\n", ctx.Supi, pfcpMsg.SEID())
+	logger.PfcpLog.Info("[SendPfcpEstReq]supi=%s  ==in SendPfcpSessionEstablishmentRequest pfcpMsg.CPFSEID.Seid %v\n", ctx.Supi, pfcpMsg.SEID())
 	ip := upNodeID.ResolveNodeIdToIp()
 
 	upaddr := &net.UDPAddr{
 		IP:   ip,
 		Port: int(upfPort),
 	}
-	ctx.SubPduSessLog.Debugln("supi=%s [SMF] Send SendPfcpSessionEstablishmentRequest", ctx.Supi)
-	ctx.SubPduSessLog.Debugln("supi=%s send to addr", upaddr.String(), ctx.Supi)
-	logger.PfcpLog.Infof("Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d, PDRs=%d FARs=%d QERs=%d supi=%s", getSeqNumber(), pfcpContext.LocalSEID,
+	ctx.SubPduSessLog.Info("[SendPfcpEstReq]supi=%s [SMF] Send SendPfcpSessionEstablishmentRequest", ctx.Supi)
+	ctx.SubPduSessLog.Info("[SendPfcpEstReq]supi=%s send to addr", upaddr.String(), ctx.Supi)
+	logger.PfcpLog.Info("[SendPfcpEstReq]2. Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d, PDRs=%d FARs=%d QERs=%d supi=%s", getSeqNumber(), pfcpContext.LocalSEID,
 		len(pdrList), len(farList), len(qerList), ctx.Supi)
-	logger.PfcpLog.Infof("supi=%s ===in SendPfcpSessionEstablishmentRequest fseid %v", pfcpMsg.SEID(), ctx.Supi)
+	logger.PfcpLog.Info("[SendPfcpEstReq]supi=%s ===in SendPfcpSessionEstablishmentRequest fseid %v", pfcpMsg.SEID(), ctx.Supi)
 
 	if factory.SmfConfig.Configuration.EnableUpfAdapter {
 		adapter.InsertPfcpTxn(pfcpMsg.Sequence(), &upNodeID)
 		if rsp, err := SendPfcpMsgToAdapter(upNodeID, pfcpMsg, upaddr, nil, UPFAdapterURL); err != nil {
-			logger.PfcpLog.Errorf("send pfcp session establish msg to upf-adapter error [%v]  supi=%s", err.Error(), ctx.Supi)
+			logger.PfcpLog.Errorf("[SendPfcpEstReq]send pfcp session establish msg to upf-adapter error [%v]  supi=%s", err.Error(), ctx.Supi)
 			HandlePfcpSendError(pfcpMsg, err)
 			return err
 		} else {
-			logger.PfcpLog.Debugf("send pfcp session establish response [%v]  ==supi=%s", rsp, ctx.Supi)
+			logger.PfcpLog.Info("[SendPfcpEstReq]send pfcp session establish response [%v]  ==supi=%s", rsp, ctx.Supi)
 			if rsp.StatusCode == http.StatusOK {
 				pfcpMsgBytes, err := io.ReadAll(rsp.Body)
 				if err != nil {
 					logger.PfcpLog.Fatalln(err)
 				}
 				pfcpMsgString := string(pfcpMsgBytes)
-				logger.PfcpLog.Debugf("supi=%s  ===pfcp rsp status ok, %s", ctx.Supi, pfcpMsgString)
+				logger.PfcpLog.Info("[SendPfcpEstReq]supi=%s  ===pfcp rsp status ok, %s", ctx.Supi, pfcpMsgString)
 				pfcpRspMsg, err := message.Parse(pfcpMsgBytes)
 				if err != nil {
-					logger.PfcpLog.Errorf("supi=%s parse pfcp session establish response failed: %v", ctx.Supi, err)
+					logger.PfcpLog.Errorf("[SendPfcpEstReq]supi=%s parse pfcp session establish response failed: %v", ctx.Supi, err)
 					return err
 				}
 				eventData := udp.PfcpEventData{LSEID: ctx.PFCPContext[ip.String()].LocalSEID, ErrHandler: HandlePfcpSendError}
 				err = adapter.HandleAdapterPfcpRsp(pfcpRspMsg, &eventData)
 				if err != nil {
-					logger.PfcpLog.Errorf("handle adapter pfcp response failed: %v", err)
+					logger.PfcpLog.Errorf("[SendPfcpEstReq]handle adapter pfcp response failed: %v", err)
 				}
 			} else {
 				// http status !OK
-				HandlePfcpSendError(pfcpMsg, fmt.Errorf("send error to upf-adapter [%v]", rsp.StatusCode))
+				HandlePfcpSendError(pfcpMsg, fmt.Errorf("[SendPfcpEstReq]send error to upf-adapter [%v]", rsp.StatusCode))
 			}
 		}
 	} else {
@@ -294,7 +294,7 @@ func SendPfcpSessionEstablishmentRequest(
 			return err
 		}
 	}
-	ctx.SubPfcpLog.Infof("sent PFCP Session Establish Request to NodeID[%s] supi=%s", ip.String(), ctx.Supi)
+	ctx.SubPfcpLog.Infof("[SendPfcpEstReq]sent PFCP Session Establish Request to NodeID[%s] supi=%s", ip.String(), ctx.Supi)
 	return nil
 }
 

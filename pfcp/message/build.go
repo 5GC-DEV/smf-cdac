@@ -153,7 +153,7 @@ func pdrToCreatePDR(pdr *context.PDR, localSEID uint64) *ie.IE {
 		}
 	}
 	// --- Logging (LocalSEID only) ---
-	logger.PduSessLog.Infof("[LocalSEID=%d] pdrToCreatePDR Building CreatePDR: PDRID=%d, Precedence=%d, FARID=%v, QERCount=%d", localSEID, pdr.PDRID, pdr.Precedence,
+	logger.PduSessLog.Info("[PFCP-pdrToCreatePDR][LocalSEID=%d] pdrToCreatePDR Building CreatePDR: PDRID=%d, Precedence=%d, FARID=%v, QERCount=%d", localSEID, pdr.PDRID, pdr.Precedence,
 		func() interface{} {
 			if pdr.FAR != nil {
 				return pdr.FAR.FARID
@@ -203,25 +203,25 @@ func farToCreateFAR(far *context.FAR) *ie.IE {
 }
 
 func qerToCreateQER(qer *context.QER) *ie.IE {
-	logger.PfcpLog.Infof("===== Create QER: QERID=%d QFI=%d =====", qer.QERID, qer.QFI.QFI)
+	logger.PfcpLog.Info("[qerToCreateQER]===== Create QER: QERID=%d QFI=%d =====", qer.QERID, qer.QFI.QFI)
 	createQERies := make([]*ie.IE, 0)
-	logger.PfcpLog.Infof("[QERID=%d] Adding QERID IE", qer.QERID)
+	logger.PfcpLog.Info("[qerToCreateQER][QERID=%d] Adding QERID IE", qer.QERID)
 	createQERies = append(createQERies, ie.NewQERID(qer.QERID))
 	if qer.GateStatus != nil {
-		logger.PfcpLog.Infof("[QERID=%d] Adding GateStatus IE: UL=%v DL=%v", qer.QERID, qer.GateStatus.ULGate, qer.GateStatus.DLGate)
+		logger.PfcpLog.Info("[qerToCreateQER][QERID=%d] Adding GateStatus IE: UL=%v DL=%v", qer.QERID, qer.GateStatus.ULGate, qer.GateStatus.DLGate)
 		createQERies = append(createQERies, ie.NewGateStatus(qer.GateStatus.ULGate, qer.GateStatus.DLGate))
 	}
-	logger.PfcpLog.Infof("[QERID=%d] Adding QFI IE: QFI=%d", qer.QERID, qer.QFI.QFI)
+	logger.PfcpLog.Info("[qerToCreateQER][QERID=%d] Adding QFI IE: QFI=%d", qer.QERID, qer.QFI.QFI)
 	createQERies = append(createQERies, ie.NewQFI(qer.QFI.QFI))
 	if qer.MBR != nil {
-		logger.PfcpLog.Infof("[QERID=%d] Adding MBR IE: UL=%d DL=%d", qer.QERID, qer.MBR.ULMBR, qer.MBR.DLMBR)
+		logger.PfcpLog.Info("[qerToCreateQER][QERID=%d] Adding MBR IE: UL=%d DL=%d", qer.QERID, qer.MBR.ULMBR, qer.MBR.DLMBR)
 		createQERies = append(createQERies, ie.NewMBR(qer.MBR.ULMBR, qer.MBR.DLMBR))
 	}
 	if qer.GBR != nil {
-		logger.PfcpLog.Infof("[QERID=%d] Adding GBR IE: UL=%d DL=%d", qer.QERID, qer.GBR.ULGBR, qer.GBR.DLGBR)
+		logger.PfcpLog.Info("[qerToCreateQER][QERID=%d] Adding GBR IE: UL=%d DL=%d", qer.QERID, qer.GBR.ULGBR, qer.GBR.DLGBR)
 		createQERies = append(createQERies, ie.NewGBR(qer.GBR.ULGBR, qer.GBR.DLGBR))
 	}
-	logger.PfcpLog.Infof("[QERID=%d] Create QER IE assembled with %d sub-IEs", qer.QERID, len(createQERies))
+	logger.PfcpLog.Info("[qerToCreateQER][QERID=%d] Create QER IE assembled with %d sub-IEs", qer.QERID, len(createQERies))
 	return ie.NewCreateQER(createQERies...)
 }
 
@@ -310,50 +310,49 @@ func BuildPfcpSessionEstablishmentRequest(
 	farList []*context.FAR,
 	qerList []*context.QER,
 ) (*message.SessionEstablishmentRequest, error) {
-	logger.PfcpLog.Infof("3. Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d nodeID=%s PDRs=%d FARs=%d QERs=%d",
+	logger.PfcpLog.Info("[BuildPfcpSessEstabReq] 3. Building PFCP Session Establishment Request: sequenceNumber=%d localSEID=%d nodeID=%s PDRs=%d FARs=%d QERs=%d",
 		sequenceNumber, localSeid, nodeID, len(pdrList), len(farList), len(qerList))
 	ies := make([]*ie.IE, 0)
 	ies = append(ies, ie.NewNodeIDHeuristic(nodeID))
 	ies = append(ies, ie.NewFSEID(localSeid, fseidIpv4Address, nil))
 
 	for _, pdr := range pdrList {
-		logger.PfcpLog.Infof("[LocalSEID=%d][PDR Context] PDRID=%d State=%v Precedence=%d FAR=%v QERCount=%d", localSeid, pdr.PDRID, pdr.State, pdr.Precedence, pdr.FAR, len(pdr.QER))
+		logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [LocalSEID=%d][PDR Context] PDRID=%d State=%v Precedence=%d FAR=%v QERCount=%d", localSeid, pdr.PDRID, pdr.State, pdr.Precedence, pdr.FAR, len(pdr.QER))
 		if pdr.State == context.RULE_INITIAL {
-			logger.PfcpLog.Infof("[LocalSEID=%d] Adding PDR: PDRID=%d, Precedence=%d, FAR=%v, QERCount=%d", localSeid, pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
+			logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [LocalSEID=%d] Adding PDR: PDRID=%d, Precedence=%d, FAR=%v, QERCount=%d", localSeid, pdr.PDRID, pdr.Precedence, pdr.FAR, len(pdr.QER))
 			ies = append(ies, pdrToCreatePDR(pdr, localSeid))
 		}
 	}
 
 	for _, far := range farList {
-		logger.PfcpLog.Infof("[LocalSEID=%d][FAR Context] FARID=%d State=%v ApplyAction=%+v", localSeid, far.FARID, far.State, far.ApplyAction)
+		logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [LocalSEID=%d][FAR Context] FARID=%d State=%v ApplyAction=%+v", localSeid, far.FARID, far.State, far.ApplyAction)
 		if far.State == context.RULE_INITIAL {
-			logger.PfcpLog.Infof("Adding FAR: FARID=%d Action=%+v", far.FARID, far.ApplyAction)
+			logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [LocalSEID=%d] Adding FAR: FARID=%d Action=%+v", localSeid, far.FARID, far.ApplyAction)
 			ies = append(ies, farToCreateFAR(far))
 		}
 		far.State = context.RULE_CREATE
 	}
 
 	qerMap := make(map[uint32]*context.QER)
-	logger.PfcpLog.Infof("[LocalSEID=%d][PFCP] Incoming QER list from SMF context: total=%d", localSeid, len(qerList))
+	logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [LocalSEID=%d][PFCP] Incoming QER list from SMF context: total=%d", localSeid, len(qerList))
 	for _, qer := range qerList {
-		logger.PfcpLog.Infof("[PFCP] Candidate QER from context: QERID=%d, QFI=%d, State=%v, GateStatus=%+v", qer.QERID, qer.QFI.QFI, qer.State, qer.GateStatus)
+		logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [PFCP][LocalSEID=%d] Candidate QER from context: QERID=%d, QFI=%d, State=%v, GateStatus=%+v", localSeid, qer.QERID, qer.QFI.QFI, qer.State, qer.GateStatus)
 		qerMap[qer.QERID] = qer
 	}
-	logger.PfcpLog.Infof("[PFCP] Deduplicated QER map count=%d", len(qerMap))
+	logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [PFCP][LocalSEID=%d] Deduplicated QER map count=%d", localSeid, len(qerMap))
 	for _, filteredQER := range qerMap {
 		if filteredQER.State == context.RULE_INITIAL {
-			logger.PfcpLog.Infof("[PFCP] filteredQER Adding QER: QERID=%d QFI=%d GateStatus=%+v", filteredQER.QERID, filteredQER.QFI.QFI, filteredQER.GateStatus)
+			logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [PFCP] [LocalSEID=%d] filteredQER Adding QER: QERID=%d QFI=%d GateStatus=%+v", localSeid, filteredQER.QERID, filteredQER.QFI.QFI, filteredQER.GateStatus)
 			ies = append(ies, qerToCreateQER(filteredQER))
 		} else {
-			logger.PfcpLog.Infof("[PFCP] Skipping QERID=%d since State=%v (already created/installed)",
-				filteredQER.QERID, filteredQER.State)
+			logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [PFCP] [LocalSEID=%d] Skipping QERID=%d since State=%v (already created/installed)", localSeid, filteredQER.QERID, filteredQER.State)
 		}
 		filteredQER.State = context.RULE_CREATE
 	}
 
 	ies = append(ies, ie.NewPDNType(ie.PDNTypeIPv4))
 
-	logger.PfcpLog.Infof("[LocalSEID=%d] PFCP Session Establishment Request assembled with %d IEs", localSeid, len(ies))
+	logger.PfcpLog.Info("[BuildPfcpSessEstabReq] [LocalSEID=%d] PFCP Session Establishment Request assembled with %d IEs", localSeid, len(ies))
 
 	return message.NewSessionEstablishmentRequest(
 		1,

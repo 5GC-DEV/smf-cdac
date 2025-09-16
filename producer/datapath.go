@@ -89,7 +89,7 @@ func SendPFCPRules(smContext *context.SMContext) {
 
 	for _, dataPath := range smContext.Tunnel.DataPathPool {
 		if dataPath.Activated {
-			logger.PduSessLog.Infof("[SUPI=%s] Processing DataPath: %v", smContext.Supi, dataPath)
+			logger.PduSessLog.Info("[SendPFCPRules][SUPI=%s] Processing DataPath: %v", smContext.Supi, dataPath)
 			for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
 				pdrList := make([]*context.PDR, 0, 2)
 				farList := make([]*context.FAR, 0, 2)
@@ -102,10 +102,10 @@ func SendPFCPRules(smContext *context.SMContext) {
 						if pdr.QER != nil {
 							qerList = append(qerList, pdr.QER...)
 						}
-						logger.PduSessLog.Infof("[SUPI=%s][UL] Node %v -> PDR ID %v added (FAR ID=%v, QER count=%d)", smContext.Supi, curDataPathNode.GetNodeIP(), pdr.PDRID, pdr.FAR.FARID, len(pdr.QER))
+						logger.PduSessLog.Infof("[SendPFCPRules][SUPI=%s][UL] Node %v -> PDR ID %v added (FAR ID=%v, QER count=%d)", smContext.Supi, curDataPathNode.GetNodeIP(), pdr.PDRID, pdr.FAR.FARID, len(pdr.QER))
 					}
 				} else {
-					logger.PduSessLog.Warnf("[SUPI=%s][UL] No uplink tunnel or PDRs for node %v", smContext.Supi, curDataPathNode.GetNodeIP())
+					logger.PduSessLog.Warnf("[SendPFCPRules][SUPI=%s][UL] No uplink tunnel or PDRs for node %v", smContext.Supi, curDataPathNode.GetNodeIP())
 				}
 				if curDataPathNode.DownLinkTunnel != nil && curDataPathNode.DownLinkTunnel.PDR != nil {
 					for _, pdr := range curDataPathNode.DownLinkTunnel.PDR {
@@ -115,10 +115,10 @@ func SendPFCPRules(smContext *context.SMContext) {
 						if pdr.QER != nil {
 							qerList = append(qerList, pdr.QER...)
 						}
-						logger.PduSessLog.Infof("[SUPI=%s][DL] Node %v -> PDR ID %v added (FAR ID=%v, QER count=%d)", smContext.Supi, curDataPathNode.GetNodeIP(), pdr.PDRID, pdr.FAR.FARID, len(pdr.QER))
+						logger.PduSessLog.Info("[SendPFCPRules][SUPI=%s][DL] Node %v -> PDR ID %v added (FAR ID=%v, QER count=%d)", smContext.Supi, curDataPathNode.GetNodeIP(), pdr.PDRID, pdr.FAR.FARID, len(pdr.QER))
 					}
 				} else {
-					logger.PduSessLog.Warnf("[SUPI=%s][DL] No downlink tunnel or PDRs for node %v", smContext.Supi, curDataPathNode.GetNodeIP())
+					logger.PduSessLog.Warnf("[SendPFCPRules][SUPI=%s][DL] No downlink tunnel or PDRs for node %v", smContext.Supi, curDataPathNode.GetNodeIP())
 				}
 
 				pfcpState := pfcpPool[curDataPathNode.GetNodeIP()]
@@ -130,12 +130,12 @@ func SendPFCPRules(smContext *context.SMContext) {
 						farList: farList,
 						qerList: qerList,
 					}
-					logger.PduSessLog.Infof("[SUPI=%s] Initialized PFCPState for node %v: PDR=%d, FAR=%d, QER=%d", smContext.Supi, curDataPathNode.GetNodeIP(), len(pdrList), len(farList), len(qerList))
+					logger.PduSessLog.Info("[SendPFCPRules][SUPI=%s] Initialized PFCPState for node %v: PDR=%d, FAR=%d, QER=%d", smContext.Supi, curDataPathNode.GetNodeIP(), len(pdrList), len(farList), len(qerList))
 				} else {
 					pfcpState.pdrList = append(pfcpState.pdrList, pdrList...)
 					pfcpState.farList = append(pfcpState.farList, farList...)
 					pfcpState.qerList = append(pfcpState.qerList, qerList...)
-					logger.PduSessLog.Infof("[SUPI=%s] Updated PFCPState for node %v: Total PDR=%d, FAR=%d, QER=%d", smContext.Supi, curDataPathNode.GetNodeIP(), len(pfcpState.pdrList), len(pfcpState.farList), len(pfcpState.qerList))
+					logger.PduSessLog.Info("[SendPFCPRules][SUPI=%s] Updated PFCPState for node %v: Total PDR=%d, FAR=%d, QER=%d", smContext.Supi, curDataPathNode.GetNodeIP(), len(pfcpState.pdrList), len(pfcpState.farList), len(pfcpState.qerList))
 				}
 			}
 		}
@@ -147,18 +147,18 @@ func SendPFCPRules(smContext *context.SMContext) {
 			localSEID = sessionContext.LocalSEID
 		}
 
-		logger.PduSessLog.Infof("[SUPI=%s][LocalSEID=%d] Preparing PFCP request for node %v: PDR=%d, FAR=%d, QER=%d", smContext.Supi, localSEID, ip, len(pfcp.pdrList), len(pfcp.farList), len(pfcp.qerList))
+		logger.PduSessLog.Info("[SendPFCPRules][SUPI=%s][LocalSEID=%d] Preparing PFCP request for node %v: PDR=%d, FAR=%d, QER=%d", smContext.Supi, localSEID, ip, len(pfcp.pdrList), len(pfcp.farList), len(pfcp.qerList))
 		if !exist || sessionContext.RemoteSEID == 0 {
 			err := message.SendPfcpSessionEstablishmentRequest(
 				pfcp.nodeID, smContext, pfcp.pdrList, pfcp.farList, nil, pfcp.qerList, pfcp.port)
 			if err != nil {
-				logger.PduSessLog.Errorf("send pfcp session establishment request failed: %v for UPF[%v, %v]: ", err, pfcp.nodeID, pfcp.nodeID.ResolveNodeIdToIp())
+				logger.PduSessLog.Errorf("[SendPFCPRules]send pfcp session establishment request failed: %v for UPF[%v, %v]: ", err, pfcp.nodeID, pfcp.nodeID.ResolveNodeIdToIp())
 			}
 		} else {
 			err := message.SendPfcpSessionModificationRequest(
 				pfcp.nodeID, smContext, pfcp.pdrList, pfcp.farList, nil, pfcp.qerList, pfcp.port)
 			if err != nil {
-				logger.PduSessLog.Errorf("send pfcp session modification request failed: %v for UPF[%v, %v]: ", err, pfcp.nodeID, pfcp.nodeID.ResolveNodeIdToIp())
+				logger.PduSessLog.Errorf("[SendPFCPRules]send pfcp session modification request failed: %v for UPF[%v, %v]: ", err, pfcp.nodeID, pfcp.nodeID.ResolveNodeIdToIp())
 			}
 		}
 	}

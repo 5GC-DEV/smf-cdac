@@ -186,7 +186,6 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	// Decode UE content(PCO)
 	establishmentRequest := m.PDUSessionEstablishmentRequest
-
 	smContext.HandlePDUSessionEstablishmentRequest(establishmentRequest)
 	// Modified to fix the Unsupported Session types
 	if smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4 && smContext.SelectedPDUSessionType != nasMessage.PDUSessionTypeIPv4IPv6 {
