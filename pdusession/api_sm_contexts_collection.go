@@ -135,7 +135,16 @@ func HTTPPostSmContexts(c *gin.Context) {
 		err = c.ShouldBindJSON(request.JsonData)
 	case "multipart/related":
 		logger.PduSessLog.Infoln("Binding request as multipart/related")
-		err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
+		if err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{}); err != nil {
+			logger.PduSessLog.Errorf("Multipart bind failed: %v", err)
+			rsp := models.ProblemDetails{
+				Title:  "Malformed multipart request",
+				Status: http.StatusBadRequest,
+				Detail: err.Error(),
+			}
+			c.JSON(http.StatusBadRequest, rsp)
+			return
+		}
 	default:
 		logger.PduSessLog.Warnf("Unsupported Content-Type: %s", s[0])
 		err = fmt.Errorf("unsupported Content-Type: %s", s[0])
