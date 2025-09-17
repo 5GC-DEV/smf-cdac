@@ -226,7 +226,8 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		txn.Rsp = httpResponse
 		return err
 	}
-	// smContext.ChangeState(smf_context.SmStateActive)
+	smContext.SubCtxLog.Infoln("SMContextState Change State:", smContext.SMContextState.String())
+	smContext.ChangeState(smf_context.SmStateActive)
 	smContext.SubCtxLog.Infoln("SMContextState Change State:", smContext.SMContextState.String())
 	logger.PduSessLog.Infof("PFCP modify successful for UE [%s], PDU Session ID [%d]",
 		smContext.Supi, smContext.PDUSessionID)
@@ -761,8 +762,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		} else {
 			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
 				logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s, Rule=%+v", ruleId, rule)
+				ruleid = ruleId
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
-					ruleid = ruleId
 					shouldSendReleaseOnly = true
 					break
 				}

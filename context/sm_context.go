@@ -246,26 +246,41 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 			if smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdType == NodeIdTypeFqdn {
 				upf = string(smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdValue)
 				upf = strings.Split(upf, ".")[0]
+				smContext.SubCtxLog.Infof("Resolved UPF Node FQDN: %s", upf)
 			} else {
 				upf = smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.GetUPFIP()
+				smContext.SubCtxLog.Infof("Resolved UPF Node IP: %s", upf)
 			}
+		} else {
+			smContext.SubCtxLog.Warn("No UPF tunnel available while changing state")
 		}
 
 		// enterprise name
 		ent := "na"
 		if smfContext.EnterpriseList != nil {
 			entMap := *smfContext.EnterpriseList
-			smContext.SubCtxLog.Debugf("context state change, Enterprises configured = [%v], subscriber slice sst [%v], sd [%v]",
+			smContext.SubCtxLog.Debugf("Enterprises configured: [%v], subscriber slice sst [%v], sd [%v]",
 				entMap, smContext.Snssai.Sst, smContext.Snssai.Sd)
-			ent = entMap[strconv.Itoa(int(smContext.Snssai.Sst))+smContext.Snssai.Sd]
+			entKey := strconv.Itoa(int(smContext.Snssai.Sst)) + smContext.Snssai.Sd
+			if val, ok := entMap[entKey]; ok {
+				ent = val
+				smContext.SubCtxLog.Infof("Mapped enterprise for key [%s]: %s", entKey, ent)
+			} else {
+				smContext.SubCtxLog.Warnf("No enterprise mapping found for key [%s], defaulting to 'na'", entKey)
+			}
 		} else {
-			smContext.SubCtxLog.Debug("context state change, enterprise info not available")
+			smContext.SubCtxLog.Debug("Enterprise info not available")
 		}
 
+		// metrics update
 		if nextState == SmStateActive {
+			smContext.SubCtxLog.Infof("Updating metrics for session [%s], IP [%s], next state [%s], UPF [%s], Enterprise [%s], value=1",
+				smContext.Identifier, smContext.PDUAddress.Ip.String(), nextState.String(), upf, ent)
 			metrics.SetSessProfileStats(smContext.Identifier, smContext.PDUAddress.Ip.String(), nextState.String(),
 				upf, ent, 1)
 		} else {
+			smContext.SubCtxLog.Infof("Updating metrics for session [%s], IP [%s], current state [%s], UPF [%s], Enterprise [%s], value=0",
+				smContext.Identifier, smContext.PDUAddress.Ip.String(), smContext.SMContextState.String(), upf, ent)
 			metrics.SetSessProfileStats(smContext.Identifier, smContext.PDUAddress.Ip.String(), smContext.SMContextState.String(),
 				upf, ent, 0)
 		}
@@ -273,8 +288,10 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 
 	smContext.PublishSmCtxtInfo()
 
-	smContext.SubCtxLog.Infof("context state change, current state[%v] next state[%v]",
+	// log state transition at the end
+	smContext.SubCtxLog.Infof("Context state change: current state [%v] → next state [%v]",
 		smContext.SMContextState.String(), nextState.String())
+
 	smContext.SMContextState = nextState
 }
 
