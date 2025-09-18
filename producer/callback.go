@@ -862,10 +862,11 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		// ----------------------
 		// Handle Uplink PDRs
 		// ----------------------
-		for name, ulPDR := range ANUPF.UpLinkTunnel.PDR {
+		// for name, ulPDR := range ANUPF.UpLinkTunnel.PDR {
+		if ulPDR, ok := ANUPF.UpLinkTunnel.PDR[ruleid]; ok {
 			if shouldSendReleaseOnly {
-				if name == ruleid {
-					logger.PduSessLog.Infof("[BuildPfcpParam] Marking UL PDR[%s] for removal", name)
+				if ruleid == ruleid {
+					logger.PduSessLog.Infof("[BuildPfcpParam] Marking UL PDR[%s] for removal", ruleid)
 					pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
 					if ulPDR.FAR != nil {
 						pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
@@ -875,7 +876,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 							if qer != nil {
 								logger.PduSessLog.Infof(
 									"[BuildPfcpParam] UL PDR[%s] has QER ID [%d], QFI=%d, State=%v",
-									name, qer.QERID, qer.QFI, qer.State,
+									ruleid, qer.QERID, qer.QFI, qer.State,
 								)
 							}
 						}
@@ -916,7 +917,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				pfcpParam.farList = append(pfcpParam.farList, ulFAR)
 			}
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
-			logger.CtxLog.Infof("activate UpLink PDR[%v]:[%v]", name, ulPDR)
+			logger.CtxLog.Infof("activate UpLink PDR[%v]:[%v]", ruleid, ulPDR)
 		}
 	}
 	logger.PfcpLog.Infof("Dumping PFCP Params before return:")
