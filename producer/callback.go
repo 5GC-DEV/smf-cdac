@@ -817,7 +817,13 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 			// --- Normal path ---
 			logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", ruleid, dlPDR)
-			dlPDR.QER = append(dlPDR.QER, dedQER)
+			// dlPDR.QER = append(dlPDR.QER, dedQER)
+			// overwrite any existing QERs with only the new one
+			dlPDR.QER = []*smf_context.QER{dedQER}
+
+			// log freshly set QER
+			logger.PduSessLog.Infof("[BuildPfcpParam] Replaced DL PDR[%s] QERs with new QER: %+v", ruleid, dlPDR)
+
 			if dlPDR.Precedence == 0 {
 				dlPDR.Precedence = 1
 			}
@@ -885,7 +891,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				}
 				continue
 			}
-			ulPDR.QER = append(ulPDR.QER, dedQER)
+			// ulPDR.QER = append(ulPDR.QER, dedQER)
+			ulPDR.QER = []*smf_context.QER{dedQER}
+			logger.PduSessLog.Infof("[BuildPfcpParam] Replaced DL PDR[%s] QERs with new QER: %+v", ruleid, ulPDR)
 			if ulPDR.Precedence == 0 {
 				ulPDR.Precedence = 1
 			}
