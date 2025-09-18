@@ -653,7 +653,8 @@ func (upd *QosFlowsUpdate) GetAddQosFlowUpdate() map[string]*models.QosData {
 }
 
 func GetDefaultQoSDataFromPolicyDecision(smPolicyDecision *models.SmPolicyDecision) *models.QosData {
-	for _, qosData := range smPolicyDecision.QosDecs {
+	for id, qosData := range smPolicyDecision.QosDecs {
+		logger.QosLog.Infof("QoSData ID=%s, DefQosFlowIndication=%v, 5QI=%d", id, qosData.DefQosFlowIndication, qosData.Var5qi)
 		if qosData.DefQosFlowIndication {
 			return qosData
 		}

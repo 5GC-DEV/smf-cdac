@@ -226,8 +226,8 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		txn.Rsp = httpResponse
 		return err
 	}
-	smContext.SubCtxLog.Infoln("SMContextState Change State:", smContext.SMContextState.String())
-	smContext.ChangeState(smf_context.SmStateActive)
+	// smContext.SubCtxLog.Infoln("SMContextState Change State:", smContext.SMContextState.String())
+	// smContext.ChangeState(smf_context.SmStateActive)
 	smContext.SubCtxLog.Infoln("SMContextState Change State:", smContext.SMContextState.String())
 	logger.PduSessLog.Infof("PFCP modify successful for UE [%s], PDU Session ID [%d]",
 		smContext.Supi, smContext.PDUSessionID)
@@ -784,7 +784,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		var err error
 		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
 		if !shouldSendReleaseOnly {
-			defQER, err = ANUPF.CreateSessRuleQer(smContext)
+			defQER, err = ANUPF.CreateDedicatedQosQer(smContext)
 			if err != nil {
 				logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
 			} else {
