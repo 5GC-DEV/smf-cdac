@@ -810,6 +810,17 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 					if dlPDR.FAR != nil {
 						pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
 					}
+					if dlPDR.QER != nil {
+						for _, qer := range dlPDR.QER {
+							if qer != nil {
+								logger.PduSessLog.Infof(
+									"[BuildPfcpParam] UL PDR[%s] has QER ID [%d], QFI=%d, State=%v",
+									ruleid, qer.QERID, qer.QFI, qer.State,
+								)
+							}
+						}
+						pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
+					}
 
 				}
 				continue
