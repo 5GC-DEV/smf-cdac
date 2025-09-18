@@ -780,15 +780,15 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		}
 
 		ANUPF := dataPath.FirstDPNode
-		var defQER *smf_context.QER
+		var dedQER *smf_context.QER
 		var err error
 		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
 		if !shouldSendReleaseOnly {
-			defQER, err = ANUPF.CreateDedicatedQosQer(smContext)
+			dedQER, err = ANUPF.CreateDedicatedQosQer(smContext)
 			if err != nil {
 				logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
 			} else {
-				logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", defQER)
+				logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", dedQER)
 			}
 
 			if err := dataPath.ActivateUlDlTunnel(smContext); err != nil {
@@ -816,7 +816,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 			// --- Normal path ---
 			logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", name, dlPDR)
-			dlPDR.QER = append(dlPDR.QER, defQER)
+			dlPDR.QER = append(dlPDR.QER, dedQER)
 			if dlPDR.Precedence == 0 {
 				dlPDR.Precedence = 1
 			}
@@ -842,17 +842,17 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// --- Set states and add to Create list ---
 			oldPdrState := dlPDR.State
 			oldFarState := dlFAR.State
-			oldQerState := defQER.State
+			oldQerState := dedQER.State
 			logger.PduSessLog.Infof("Downlink PDR ID [%d] state changed from %v → %v", dlPDR.PDRID, oldPdrState, dlPDR.State)
 			logger.PduSessLog.Infof("Downlink FAR ID [%d] state changed from %v → %v", dlFAR.FARID, oldFarState, dlFAR.State)
-			logger.PduSessLog.Infof("Downlink QER ID [%d] state changed from %v → %v", defQER.QERID, oldQerState, defQER.State)
+			logger.PduSessLog.Infof("Downlink QER ID [%d] state changed from %v → %v", dedQER.QERID, oldQerState, dedQER.State)
 
 			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			if dlFAR != nil {
 				pfcpParam.farList = append(pfcpParam.farList, dlFAR)
 			}
-			if defQER != nil {
-				pfcpParam.qerList = append(pfcpParam.qerList, defQER)
+			if dedQER != nil {
+				pfcpParam.qerList = append(pfcpParam.qerList, dedQER)
 			}
 
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
@@ -883,7 +883,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				}
 				continue
 			}
-			ulPDR.QER = append(ulPDR.QER, defQER)
+			ulPDR.QER = append(ulPDR.QER, dedQER)
 			if ulPDR.Precedence == 0 {
 				ulPDR.Precedence = 1
 			}
@@ -905,10 +905,10 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// --- Set states and add to Create list ---
 			oldPdrState := ulPDR.State
 			oldFarState := ulFAR.State
-			oldQerState := defQER.State
+			oldQerState := dedQER.State
 			logger.PduSessLog.Infof("Uplink PDR ID [%d] state changed from %v → %v", ulPDR.PDRID, oldPdrState, ulPDR.State)
 			logger.PduSessLog.Infof("Uplink FAR ID [%d] state changed from %v → %v", ulFAR.FARID, oldFarState, ulFAR.State)
-			logger.PduSessLog.Infof("Uplink QER ID [%d] state changed from %v → %v", defQER.QERID, oldQerState, defQER.State)
+			logger.PduSessLog.Infof("Uplink QER ID [%d] state changed from %v → %v", dedQER.QERID, oldQerState, dedQER.State)
 
 			pfcpParam.pdrList = append(pfcpParam.pdrList, ulPDR)
 			if ulFAR != nil {
