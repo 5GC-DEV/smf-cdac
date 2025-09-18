@@ -770,7 +770,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			}
 		}
 	}
-
+	logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s", ruleid)
 	// --- Iterate over datapaths ---
 	for dpIndex, dataPath := range smContext.Tunnel.DataPathPool {
 		logger.PduSessLog.Infof("[BuildPfcpParam] Processing DataPath[%d], Activated=%v", dpIndex, dataPath.Activated)
@@ -798,13 +798,14 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		// ----------------------
 		// Handle Downlink PDRs
 		// ----------------------
-		for name, dlPDR := range ANUPF.DownLinkTunnel.PDR {
-			logger.PduSessLog.Infof("[BuildPfcpParam] Checking DL PDR: Name=%s, ID=%d", name, dlPDR.PDRID)
+		// for name, dlPDR := range ANUPF.DownLinkTunnel.PDR {
+		if dlPDR, ok := ANUPF.DownLinkTunnel.PDR[ruleid]; ok {
+			logger.PduSessLog.Infof("[BuildPfcpParam] Checking DL PDR: Name=%s, ID=%d", ruleid, dlPDR.PDRID)
 			if shouldSendReleaseOnly {
 				// Removal path
-				logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", name)
-				if name == ruleid {
-					logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", name)
+				logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", ruleid)
+				if ruleid == ruleid {
+					logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", ruleid)
 					pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
 					if dlPDR.FAR != nil {
 						pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
@@ -815,14 +816,14 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			}
 
 			// --- Normal path ---
-			logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", name, dlPDR)
+			logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", ruleid, dlPDR)
 			dlPDR.QER = append(dlPDR.QER, dedQER)
 			if dlPDR.Precedence == 0 {
 				dlPDR.Precedence = 1
 			}
 			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
 			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
-			logger.PduSessLog.Infof("[BuildPfcpParam] Final DL PDR[%s]: %+v", name, dlPDR)
+			logger.PduSessLog.Infof("[BuildPfcpParam] Final DL PDR[%s]: %+v", ruleid, dlPDR)
 			// pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 
 			dlFAR := dlPDR.FAR

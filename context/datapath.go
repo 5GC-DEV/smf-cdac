@@ -545,8 +545,8 @@ func (dpNode *DataPathNode) CreateDedicatedQosQer(smContext *SMContext) (*QER, e
 
 			if qosData.GbrUl != "" && qosData.GbrDl != "" {
 				newQER.GBR = &GBR{
-					ULGBR: util.BitRateTokbps(qosData.GbrUl),
-					DLGBR: util.BitRateTokbps(qosData.GbrDl),
+					ULGBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.GbrUl)),
+					DLGBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.GbrDl)),
 				}
 				logger.PduSessLog.Infof("CreateDedicatedQosQer: GBR set [UL=%d kbps, DL=%d kbps]",
 					newQER.GBR.ULGBR, newQER.GBR.DLGBR)
@@ -556,8 +556,8 @@ func (dpNode *DataPathNode) CreateDedicatedQosQer(smContext *SMContext) (*QER, e
 
 			if qosData.MaxbrUl != "" && qosData.MaxbrDl != "" {
 				newQER.MBR = &MBR{
-					ULMBR: util.BitRateTokbps(qosData.MaxbrUl),
-					DLMBR: util.BitRateTokbps(qosData.MaxbrDl),
+					ULMBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.MaxbrUl)),
+					DLMBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.MaxbrDl)),
 				}
 				logger.PduSessLog.Infof("CreateDedicatedQosQer: MBR set [UL=%d kbps, DL=%d kbps]",
 					newQER.MBR.ULMBR, newQER.MBR.DLMBR)
