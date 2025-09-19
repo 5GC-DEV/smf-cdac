@@ -234,7 +234,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("Session-AMBR set for PDU Session Modification Command")
 		}
 	}
-	if len(smContext.SmPolicyUpdates) > 0 {
+	/*if len(smContext.SmPolicyUpdates) > 0 {
 		// qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
 		qoSRules := qos.BuildQosRulespdumod(smContext.SmPolicyUpdates[0])
 		for _, r := range qoSRules {
@@ -253,6 +253,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			if pDUSessionModificationCommand.AuthorizedQosRules == nil {
 				pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
 			}
+			pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
 			// IMPORTANT: Explicitly set the IEI (this might be missing!)
 			pDUSessionModificationCommand.AuthorizedQosRules.SetIei(0x7A)
 			// Now safely set length and rules
@@ -267,8 +268,44 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("QoS Rules raw hex: %x", qosRulesBytes)
 			smContext.SubGsmLog.Infof("QoS Rules hex dump: [% x]", qosRulesBytes)
 			smContext.SubGsmLog.Infof("QoS Rules byte count = %d", len(qosRulesBytes))
-			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
 			smContext.SubGsmLog.Infof("QoS Rules length set in IE: %d", pDUSessionModificationCommand.AuthorizedQosRules.GetLen())
+		}
+	} */
+	if len(smContext.SmPolicyUpdates) > 0 {
+		qoSRules := qos.BuildQosRulespdumod(smContext.SmPolicyUpdates[0])
+
+		for _, r := range qoSRules {
+			smContext.SubGsmLog.Infof("Built QoS Rule ID: %d, QFI: %d, PF Count: %d",
+				r.Identifier, r.QFI, len(r.PacketFilterList))
+			for _, pf := range r.PacketFilterList {
+				smContext.SubGsmLog.Infof("PF ID: %d, Dir: %d, Content: %s",
+					pf.Identifier, pf.Direction, pf.Content)
+			}
+		}
+
+		qosRulesBytes, err := qoSRules.MarshalBinary()
+		if err != nil {
+			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
+			return nil, fmt.Errorf("failed to marshal QoS rules: %w", err)
+		}
+
+		smContext.SubGsmLog.Infof("QoS Rules raw (hex): %x", qosRulesBytes)
+		smContext.SubGsmLog.Infof("QoS Rules length: %d", len(qosRulesBytes))
+
+		if len(qosRulesBytes) > 0 {
+			// Always create fresh IE (reset buffer)
+			authQosRules := nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
+			authQosRules.SetIei(0x7A)
+
+			// Set payload first
+			authQosRules.SetQosRule(qosRulesBytes)
+			// Then set length to content size
+			authQosRules.SetLen(uint16(len(qosRulesBytes)))
+
+			smContext.SubGsmLog.Infof("AuthorizedQoS IE len: %d", authQosRules.GetLen())
+			smContext.SubGsmLog.Infof("AuthorizedQoS IE hex: %x", authQosRules.GetQosRule())
+
+			pDUSessionModificationCommand.AuthorizedQosRules = authQosRules
 		}
 	}
 	authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
