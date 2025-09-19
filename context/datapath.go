@@ -464,6 +464,75 @@ func (dpNode *DataPathNode) CreateSessRuleQer(smContext *SMContext) (*QER, error
 	return flowQER, nil
 }
 
+func (dpNode *DataPathNode) CreateDedicatedQosQer(smContext *SMContext) (*QER, error) {
+	var createdQER *QER
+
+	logger.PduSessLog.Infof("CreateDedicatedQosQer: start for UE [%s], PDU Session ID [%d]",
+		smContext.Supi, smContext.PDUSessionID)
+
+	smPolicyDec := smContext.SmPolicyUpdates[0].SmPolicyDecision
+	logger.PduSessLog.Infof("CreateDedicatedQosQer: total QoSData entries = %d", len(smPolicyDec.QosDecs))
+
+	for qosID, qosData := range smPolicyDec.QosDecs {
+
+		if qosData.DefQosFlowIndication {
+			logger.PduSessLog.Infof("CreateDedicatedQosQer: skipping default QoSData [QosId=%s]", qosID)
+			continue
+		}
+
+		logger.PduSessLog.Infof("CreateDedicatedQosQer: processing dedicated QoSData [QosId=%s, 5QI=%d]", qosData.QosId, qosData.Var5qi)
+
+		// Create QER in UPF
+		if newQER, err := dpNode.UPF.AddQER(); err != nil {
+			logger.PduSessLog.Errorf("CreateDedicatedQosQer: AddQER failed for UE [%s], QoSId [%s], error: %v",
+				smContext.Supi, qosData.QosId, err)
+			return nil, err
+		} else {
+			newQER.QFI.QFI = qos.GetQosFlowIdFromQosId(qosData.QosId)
+			newQER.GateStatus = &GateStatus{
+				ULGate: GateOpen,
+				DLGate: GateOpen,
+			}
+
+			if qosData.GbrUl != "" && qosData.GbrDl != "" {
+				newQER.GBR = &GBR{
+					ULGBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.GbrUl)),
+					DLGBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.GbrDl)),
+				}
+				logger.PduSessLog.Infof("CreateDedicatedQosQer: GBR set [UL=%d kbps, DL=%d kbps]",
+					newQER.GBR.ULGBR, newQER.GBR.DLGBR)
+			} else {
+				logger.PduSessLog.Infof("CreateDedicatedQosQer: no GBR configured for QoSId [%s]", qosData.QosId)
+			}
+
+			if qosData.MaxbrUl != "" && qosData.MaxbrDl != "" {
+				newQER.MBR = &MBR{
+					ULMBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.MaxbrUl)),
+					DLMBR: util.BitRateTokbps(util.NormalizeBitRate(qosData.MaxbrDl)),
+				}
+				logger.PduSessLog.Infof("CreateDedicatedQosQer: MBR set [UL=%d kbps, DL=%d kbps]",
+					newQER.MBR.ULMBR, newQER.MBR.DLMBR)
+			} else {
+				logger.PduSessLog.Infof("CreateDedicatedQosQer: no MBR configured for QoSId [%s]", qosData.QosId)
+			}
+
+			logger.PduSessLog.Infof("CreateDedicatedQosQer: QER created [QER-ID=%d, QFI=%d] for UE [%s], QoSId [%s]",
+				newQER.QERID, newQER.QFI.QFI, smContext.Supi, qosData.QosId)
+
+			createdQER = newQER
+		}
+	}
+
+	if createdQER == nil {
+		logger.PduSessLog.Warnf("CreateDedicatedQosQer: no dedicated QER created for UE [%s]", smContext.Supi)
+		return nil, nil
+	}
+
+	logger.PduSessLog.Infof("CreateDedicatedQosQer: success, last created QER [QER-ID=%d, QFI=%d] for UE [%s]",
+		createdQER.QERID, createdQER.QFI.QFI, smContext.Supi)
+	return createdQER, nil
+}
+
 // ActivateUpLinkPdr
 func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER, defPrecedence uint32) error {
 	ueIpAddr := UEIPAddress{}

@@ -301,6 +301,9 @@ func SendPfcpSessionModificationRequest(
 	farList []*smf_context.FAR,
 	barList []*smf_context.BAR,
 	qerList []*smf_context.QER,
+	removePDR []*smf_context.PDR,
+	removeFAR []*smf_context.FAR,
+	removeQER []*smf_context.QER,
 	upfPort uint16,
 ) error {
 	seqNum := getSeqNumber()

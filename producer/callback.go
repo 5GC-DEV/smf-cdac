@@ -19,6 +19,7 @@ import (
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
 	"github.com/omec-project/util/httpwrapper"
+	"github.com/omec-project/util/util_3gpp"
 )
 
 var (
@@ -31,110 +32,241 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	request := txn.Req.(models.SmPolicyNotification)
 	smContext := txn.Ctxt.(*smfContext.SMContext)
 
+	smContext.SMLock.Lock()
+	defer smContext.SMLock.Unlock()
+
 	logger.PduSessLog.Infoln("In HandleSMPolicyUpdateNotify")
 	pcfPolicyDecision := request.SmPolicyDecision
 
-	if smContext.SMContextState != smfContext.SmStateActive {
-		// Wait till the state becomes SmStateActive again
-		// TODO: implement waiting in concurrent architecture
+	if smContext.SMContextState != smf_context.SmStateActive {
 		logger.PduSessLog.Warnf("SMContext[%s-%02d] should be SmStateActive, but actual %s",
 			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
 	}
 
-	//TODO: Response data type -
-	//[200 OK] UeCampingRep
-	//[200 OK] array(PartialSuccessReport)
-	//[400 Bad Request] ErrorReport
+	// Derive QoS change
+	logger.PduSessLog.Infof("Building SM Policy Update for UE [%s], PDU Session ID [%d]",
+		smContext.Supi, smContext.PDUSessionID)
 
-	// Derive QoS change(compare existing vs received Policy Decision)
 	policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, pcfPolicyDecision)
-	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 
-	httpResponse := httpwrapper.NewResponse(http.StatusNoContent, nil, nil)
-	txn.Rsp = httpResponse
+	logger.PduSessLog.Infof("SM Policy Update built: %+v", policyUpdates)
 
-	// Form N1/N2 Msg based on QoS Change and Trigger N1/N2 Msg
-	if err := BuildAndSendQosN1N2TransferMsg(smContext); err != nil {
-		// smContext.CommitSmPolicyDecision(false)
-		// Send error rsp to PCF
-		httpResponse.Status = http.StatusBadRequest
-		txn.Err = err
-		return err
-	}
+	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates[:0], policyUpdates)
+	logger.PduSessLog.Infof("Appended SM Policy Update, total updates count: %d",
+		len(smContext.SmPolicyUpdates))
+	logger.PduSessLog.Infof("SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
 
-	// Update UPF
-	// TODO
-
-	// Build `pfcpParam` using the dedicated function
+	// Set state to PFCP Modify before sending PFCP request
+	smContext.ChangeState(smf_context.SmStatePfcpModify)
+	var response models.UpdateSmContextResponse
+	response.JsonData = new(models.SmContextUpdatedData)
+	// Build PFCP parameters
 	pfcpParam := BuildPfcpParam(smContext)
 
-	// Send PFCP Session Modification Request
 	if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
-		logger.PduSessLog.Errorf("Failed to send PFCP session modification request: %v", err)
-		httpResponse.Status = http.StatusInternalServerError
+		// PFCP modify failed — revert state and return error
+		smContext.SubCtxLog.Errorf("PFCP session modify error: %v", err)
+		// smContext.ChangeState(prevState)
+		logger.PduSessLog.Infof("SMContext[%s-%02d] state reverted to %s after PFCP error",
+			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
+
+		// Build HTTP error response for the original transaction
+		httpResponse := makePduCtxtModifyErrRsp(smContext, err.Error())
+		txn.Err = err
+		txn.Rsp = httpResponse
+		return err
+	}
+
+	smContext.SubCtxLog.Infoln("SMContextState Change State:", smContext.SMContextState.String())
+	logger.PduSessLog.Infof("PFCP modify successful for UE [%s], PDU Session ID [%d]",
+		smContext.Supi, smContext.PDUSessionID)
+
+	// Now send N1/N2 Msg after PFCP success
+	if err := BuildAndSendQosN1N2TransferMsg(smContext); err != nil {
+		logger.PduSessLog.Errorf("Failed to build/send N1/N2 QoS transfer message: %v", err)
 		txn.Err = err
 		return err
 	}
 
-	// N1N2 and UPF update Success
-	// Commit SM Policy Decision to SM Context
-	// TODO
-	// smContext.SMLock.Lock()
-	// defer smContext.SMLock.Unlock()
-	// smContext.CommitSmPolicyDecision(true)
+	// Set response and change state to active
+	smContext.ChangeState(smf_context.SmStateActive)
+	smContext.SubCtxLog.Info("PFCP Modify success and N1N2 Msg sent, new state:", smContext.SMContextState.String())
+
+	httpResponse := &httpwrapper.Response{
+		Status: http.StatusOK,
+		Body:   nil,
+	}
 	txn.Rsp = httpResponse
+
 	return nil
 }
 
 func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	pfcpParam := &pfcpParam{
-		pdrList: []*smf_context.PDR{},
-		farList: []*smf_context.FAR{},
-		barList: []*smf_context.BAR{},
-		qerList: []*smf_context.QER{},
+		pdrList:   []*smfContext.PDR{},
+		farList:   []*smfContext.FAR{},
+		barList:   []*smfContext.BAR{},
+		qerList:   []*smfContext.QER{},
+		removePDR: []*smfContext.PDR{},
+		removeFAR: []*smfContext.FAR{},
+		removeQER: []*smfContext.QER{},
 	}
 
 	smContext.PendingUPF = make(smfContext.PendingUPF)
-	var pdrList []*smf_context.PDR
-	var farList []*smf_context.FAR
 
-	logger.PduSessLog.Infof("SMContext: %v", smContext)
-	logger.PduSessLog.Infof("SMContext SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
-
-	// Iterate over the Data Path Pool
-	for _, dataPath := range smContext.Tunnel.DataPathPool {
-		if dataPath.Activated {
-			ANUPF := dataPath.FirstDPNode
-			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
-				// Update FAR actions
-				DLPDR.FAR.ApplyAction = smfContext.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
-				DLPDR.FAR.ForwardingParameters = &smfContext.ForwardingParameters{
-					OuterHeaderCreation: DLPDR.FAR.ForwardingParameters.OuterHeaderCreation,
-					DestinationInterface: smfContext.DestinationInterface{
-						InterfaceValue: smfContext.DestinationInterfaceAccess,
-					},
-					NetworkInstance: []byte(smContext.Dnn),
-				}
-
-				// Mark rules as updated
-				DLPDR.State = smfContext.RULE_UPDATE
-				DLPDR.FAR.State = smfContext.RULE_UPDATE
-
-				// Append to lists
-				pdrList = append(pdrList, DLPDR)
-				farList = append(farList, DLPDR.FAR)
-
-				// Track UPF
-				if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
-					smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+	shouldSendReleaseOnly := false
+	ruleid := "0"
+	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
+		if len(smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
+			shouldSendReleaseOnly = true
+		} else {
+			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
+				logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s, Rule=%+v", ruleId, rule)
+				ruleid = ruleId
+				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
+					shouldSendReleaseOnly = true
+					break
 				}
 			}
 		}
 	}
+	logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s", ruleid)
+	for dpIndex, dataPath := range smContext.Tunnel.DataPathPool {
+		logger.PduSessLog.Infof("[BuildPfcpParam] Processing DataPath[%d], Activated=%v", dpIndex, dataPath.Activated)
+		if !dataPath.Activated {
+			logger.PduSessLog.Infof("Skipping inactive DataPath: %+v", dataPath)
+			continue
+		}
 
-	// Append to pfcpParam
-	pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
-	pfcpParam.farList = append(pfcpParam.farList, farList...)
+		ANUPF := dataPath.FirstDPNode
+		var dedQER *smf_context.QER
+		var err error
+		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
+		if !shouldSendReleaseOnly {
+			dedQER, err = ANUPF.CreateDedicatedQosQer(smContext)
+			if err != nil {
+				logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
+			} else {
+				logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", dedQER)
+			}
+
+			if err := dataPath.ActivateUlDlTunnel(smContext); err != nil {
+				logger.PduSessLog.Errorf("activate UL/DL tunnel error %v", err.Error())
+			}
+		}
+		// ----------------------
+		// Handle Downlink PDRs
+		// ----------------------
+		if dlPDR, ok := ANUPF.DownLinkTunnel.PDR[ruleid]; ok {
+			logger.PduSessLog.Infof("[BuildPfcpParam] Checking DL PDR: Name=%s, ID=%d", ruleid, dlPDR.PDRID)
+			if shouldSendReleaseOnly {
+				logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", ruleid)
+				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
+				if dlPDR.FAR != nil {
+					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
+				}
+				if dlPDR.QER != nil {
+					for _, qer := range dlPDR.QER {
+						if qer != nil {
+							logger.PduSessLog.Infof(
+								"[BuildPfcpParam] UL PDR[%s] has QER ID [%d], QFI=%d, State=%v",
+								ruleid, qer.QERID, qer.QFI, qer.State,
+							)
+						}
+					}
+					pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
+				}
+				continue
+			}
+
+			logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", ruleid, dlPDR)
+			dlPDR.QER = []*smf_context.QER{dedQER}
+
+			logger.PduSessLog.Infof("[BuildPfcpParam] Replaced DL PDR[%s] QERs with new QER: %+v", ruleid, dlPDR)
+
+			if dlPDR.Precedence == 0 {
+				dlPDR.Precedence = 1
+			}
+			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
+			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
+			logger.PduSessLog.Infof("[BuildPfcpParam] Final DL PDR[%s]: %+v", ruleid, dlPDR)
+
+			dlFAR := dlPDR.FAR
+
+			// FAR ApplyAction
+			dlFAR.ApplyAction = smf_context.ApplyAction{
+				Buff: true,
+				Drop: false,
+				Dupl: false,
+				Forw: false,
+				Nocp: true,
+			}
+
+			// Interface resolution
+			logger.PduSessLog.Infof("Resolving UPF interface for DNN [%s], type [N6]", smContext.Dnn)
+
+			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
+			if dlFAR != nil {
+				pfcpParam.farList = append(pfcpParam.farList, dlFAR)
+			}
+			if dedQER != nil {
+				pfcpParam.qerList = append(pfcpParam.qerList, dedQER)
+			}
+
+			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+		}
+
+		// ----------------------
+		// Handle Uplink PDRs
+		// ----------------------
+		if ulPDR, ok := ANUPF.UpLinkTunnel.PDR[ruleid]; ok {
+			if shouldSendReleaseOnly {
+				logger.PduSessLog.Infof("[BuildPfcpParam] Marking UL PDR[%s] for removal", ruleid)
+				pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
+				if ulPDR.FAR != nil {
+					pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
+				}
+				if ulPDR.QER != nil {
+					for _, qer := range ulPDR.QER {
+						if qer != nil {
+							logger.PduSessLog.Infof(
+								"[BuildPfcpParam] UL PDR[%s] has QER ID [%d], QFI=%d, State=%v",
+								ruleid, qer.QERID, qer.QFI, qer.State,
+							)
+						}
+					}
+					pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
+				}
+				continue
+			}
+			ulPDR.QER = []*smf_context.QER{dedQER}
+			logger.PduSessLog.Infof("[BuildPfcpParam] Replaced DL PDR[%s] QERs with new QER: %+v", ruleid, ulPDR)
+			if ulPDR.Precedence == 0 {
+				ulPDR.Precedence = 1
+			}
+			ulPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceAccess}
+			ulPDR.PDI.LocalFTeid = &smf_context.FTEID{Ch: true}
+			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
+			ulPDR.OuterHeaderRemoval = &smf_context.OuterHeaderRemoval{
+				OuterHeaderRemovalDescription: smf_context.OuterHeaderRemovalGtpUUdpIpv4,
+			}
+			ulFAR := ulPDR.FAR
+			ulFAR.ApplyAction = smf_context.ApplyAction{Forw: true}
+			ulFAR.ForwardingParameters = &smf_context.ForwardingParameters{
+				DestinationInterface: smf_context.DestinationInterface{
+					InterfaceValue: smf_context.DestinationInterfaceCore,
+				},
+				NetworkInstance: []byte(smContext.Dnn),
+			}
+
+			pfcpParam.pdrList = append(pfcpParam.pdrList, ulPDR)
+			if ulFAR != nil {
+				pfcpParam.farList = append(pfcpParam.farList, ulFAR)
+			}
+			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+			logger.CtxLog.Infof("activate UpLink PDR[%v]:[%v]", ruleid, ulPDR)
+		}
+	}
 
 	return pfcpParam
 }
@@ -149,7 +281,7 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 		SmInfo: &models.N2SmInformation{
 			PduSessionId: smContext.PDUSessionID,
 			N2InfoContent: &models.N2InfoContent{
-				NgapIeType: models.NgapIeType_PDU_RES_SETUP_REQ,
+				NgapIeType: models.NgapIeType_PDU_RES_MOD_REQ,
 				NgapData: &models.RefToBinaryData{
 					ContentId: "N2SmInformation",
 				},
