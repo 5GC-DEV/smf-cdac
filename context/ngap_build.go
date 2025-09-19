@@ -612,6 +612,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 					uplink = int64(val)
 				}
 			}
+			qi = qos.Var5qi
 			// Convert QosId (string) -> int32
 			/*if qfiVal, err := strconv.Atoi(qos.QosId); err == nil {
 				qfi = int32(qfiVal)
@@ -668,7 +669,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						} else {
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
 						}
-						qi = qosData.Var5qi
+						// qi = qosData.Var5qi
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
 						}
@@ -698,7 +699,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						} else {
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
 						}
-						qi = qosData.Var5qi
+						// qi = qosData.Var5qi
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
 						}

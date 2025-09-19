@@ -249,14 +249,24 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 	// Rules to be deleted
 	if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
 		for id, pccRuleName := range pccRulesUpdate.del {
-			logger.QosLog.Infof("building delete QoS Rule for PCC rule [%s]", pccRuleName)
+			logger.QosLog.Infof("Processing PCC rule deletion: ID='%s', Name='%s'", id, pccRuleName)
 
 			qosRule := BuildDeleteQosRuleFromPccRule(id)
 			if qosRule != nil {
 				qosRules = append(qosRules, *qosRule)
+
+				logger.QosLog.Infof(
+					"Built Delete QoS Rule -> Identifier=%d, OperationCode=%d, DQR=%d, QFI=%d",
+					qosRule.Identifier, qosRule.OperationCode, qosRule.DQR, qosRule.QFI,
+				)
+			} else {
+				logger.QosLog.Warnf("Skipping QoS rule build for PCC rule ID='%s' (nil returned)", id)
 			}
 		}
+
+		logger.QosLog.Infof("Total delete QoS Rules built: %d", len(qosRules))
 	}
+
 	return qosRules
 }
 
@@ -376,13 +386,23 @@ func BuildDeleteQosRuleFromPccRule(pccRuleId string) *QosRule {
 		return nil
 	}
 
+	qosRuleID := GetQosRuleIdFromPccRuleId(pccRuleId)
 	qRule := QosRule{
-		Identifier:    GetQosRuleIdFromPccRuleId(pccRuleId),
+		Identifier:    qosRuleID,
 		OperationCode: OperationCodeDeleteExistingQoSRule,
 		DQR:           0, // not default
 		Precedence:    0,
 		QFI:           0,
 	}
+
+	logger.QosLog.Infof(
+		"BuildDeleteQosRuleFromPccRule: PCC rule ID='%s' mapped to QoS Rule ID=%d (Delete Operation)",
+		pccRuleId, qosRuleID,
+	)
+	logger.QosLog.Debugf(
+		"QoS Rule details - Identifier=%d, OperationCode=%d, DQR=%d, Precedence=%d, QFI=%d",
+		qRule.Identifier, qRule.OperationCode, qRule.DQR, qRule.Precedence, qRule.QFI,
+	)
 
 	return &qRule
 }

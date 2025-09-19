@@ -244,6 +244,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			}
 		}
 		qosRulesBytes, err := qoSRules.MarshalBinary()
+		smContext.SubGsmLog.Infof("QoS Rules raw (hex, before SetLen): %x", qosRulesBytes)
 		if err != nil {
 			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
 			return nil, fmt.Errorf("failed to marshal QoS rules: %w", err)
@@ -257,7 +258,10 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			// Now safely set length and rules
 			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
 			pDUSessionModificationCommand.AuthorizedQosRules.SetQosRule(qosRulesBytes)
-
+			smContext.SubGsmLog.Infof(
+				"QoS Rules raw (hex, after SetQosRule): %x",
+				pDUSessionModificationCommand.AuthorizedQosRules.GetQosRule(),
+			)
 			smContext.SubGsmLog.Infof("QoS Rules included in PDU Session Modification Command, Length: %d", len(qosRulesBytes))
 			smContext.SubGsmLog.Infof("QoS Rules raw hex: %x", qosRulesBytes)
 		}
@@ -322,8 +326,8 @@ func debugPDUSessionModificationCommand(m *nas.Message, smContext *SMContext) {
 
 	if cmd.AuthorizedQosFlowDescriptions != nil {
 		smContext.SubGsmLog.Infof("Authorized QoS Flow Description present")
-		smContext.SubGsmLog.Infof("QoS Rules IEI: 0x%02x", cmd.AuthorizedQosFlowDescriptions.GetIei())
-		smContext.SubGsmLog.Infof("QoS Rules Length: %d", cmd.AuthorizedQosFlowDescriptions.GetLen())
+		smContext.SubGsmLog.Infof("QoS Flow IEI: 0x%02x", cmd.AuthorizedQosFlowDescriptions.GetIei())
+		smContext.SubGsmLog.Infof("QoS Flow Length: %d", cmd.AuthorizedQosFlowDescriptions.GetLen())
 	} else {
 		smContext.SubConsumerLog.Infof("Authorized qos flow description not present")
 	}

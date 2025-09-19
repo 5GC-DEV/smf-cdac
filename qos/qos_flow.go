@@ -108,18 +108,33 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 
 	// Check if there are any QoS flow updates
 	if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
+		logger.QosLog.Warn("smPolicyUpdates or QosFlowUpdate is nil, processing PCC rule deletions only")
+
 		for pccRuleID := range smPolicyUpdates.PccRuleUpdate.del {
+			logger.QosLog.Infof("Processing deletion for PCC rule ID: %s", pccRuleID)
+
 			// Lookup QFI(s) linked to this PCC rule
 			qfiVal, err := strconv.Atoi(pccRuleID)
 			if err != nil {
-				logger.QosLog.Errorf("invalid QFI string: %s, err: %v", pccRuleID, err)
+				logger.QosLog.Errorf("Invalid QFI string for PCC rule ID '%s': %v", pccRuleID, err)
 				continue
 			}
+
 			qfi := uint8(qfiVal)
+			logger.QosLog.Infof("Deleting QoS Flow Description for QFI=%d (from PCC rule %s)", qfi, pccRuleID)
+			if qfi == 0 {
+				logger.QosLog.Warnf("Skipping QoS Flow deletion because QFI=0 for PCC rule ID='%s'", pccRuleID)
+				continue
+			}
 			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
 			hasUpdates = true
 		}
 
+		if hasUpdates {
+			logger.QosLog.Infof("Completed building delete QoS flow descriptions for %d PCC rules", len(smPolicyUpdates.PccRuleUpdate.del))
+		} else {
+			logger.QosLog.Warn("No QoS flow deletions were processed")
+		}
 	}
 	if qosFlowUpdate != nil {
 		// QoS Flow Description to be Added
@@ -410,19 +425,25 @@ func (d *QosFlowDescriptionsAuthorized) BuildModQosFlowDescFromQoSDesc(qosData *
 }*/
 
 func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qfi uint8) {
+	logger.QosLog.Infof("Building Delete QoS Flow Description for QFI=%d", qfi)
+
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
 
 	// Set QFI
 	qfd.SetQoSFlowDescQfi(qfi)
+	logger.QosLog.Infof("Set QFI=%d in QoSFlowDescription", qfi)
 
 	// Operation Code = Delete existing QoS flow description
 	qfd.SetQoSFlowDescOpCode(QFDOpDelete)
+	logger.QosLog.Infof("Set Operation Code = Delete (%d)", QFDOpDelete)
 
 	// No parameters, E-bit must be 0
 	qfd.SetQFDEBitDeleteExistingQFD()
+	logger.QosLog.Infof("Set E-bit for delete existing QoS Flow Description")
 
 	// Append to list
 	d.AddQFD(&qfd)
+	logger.QosLog.Infof("Appended Delete QoS Flow Description for QFI=%d to QFDescriptions list; current total=%d", qfi, len(d.Content))
 }
 
 func GetBitRate(sBitRate string) (val uint16, unit uint8) {
