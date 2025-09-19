@@ -11,14 +11,21 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/omec-project/nas"
-	"github.com/omec-project/nas/nasConvert"
-	"github.com/omec-project/nas/nasMessage"
-	"github.com/omec-project/nas/nasType"
+	// "github.com/omec-project/nas"
+	"github.com/5GC-DEV/nas-cdac"
+	"github.com/5GC-DEV/nas-cdac/nasConvert"
+	"github.com/5GC-DEV/nas-cdac/nasMessage"
+	"github.com/5GC-DEV/nas-cdac/nasType"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/qos"
 	errors "github.com/omec-project/smf/smferrors"
 )
+
+type AuthorizedQosRules struct {
+	Iei    uint8
+	Len    uint16
+	Buffer []uint8
+}
 
 func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error) {
 	m := nas.NewMessage()
@@ -313,7 +320,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			authQosRules.SetLen(uint16(len(qosRulesBytes)))
 
 			// now copy
-			authQosRules.SetQosRule(qosRulesBytes)
+			authQosRules.SetQosRulededqos(qosRulesBytes)
 			smContext.SubGsmLog.Infof("AuthQoS Buffer=%x Len=%d", authQosRules.Buffer, authQosRules.Len)
 
 			smContext.SubGsmLog.Infof("AuthorizedQoS IE len: %d", authQosRules.GetLen())
@@ -416,4 +423,9 @@ func BuildGSMPDUSessionReleaseRejectWithCause(smContext *SMContext, pduSessionID
 	uint8Cause := errors.ErrorCause[cause]
 	pDUSessionReleaseRejectWithCause.SetCauseValue(uint8Cause)
 	return m.PlainNasEncode()
+}
+
+func (a *AuthorizedQosRules) SetQosRule(qosRule []uint8) {
+	a.Buffer = make([]byte, len(qosRule)) // fresh buffer
+	copy(a.Buffer, qosRule)
 }

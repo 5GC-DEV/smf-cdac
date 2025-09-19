@@ -169,6 +169,7 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates[:0], policyUpdates)
 	logger.PduSessLog.Infof("Appended SM Policy Update, total updates count: %d",
 		len(smContext.SmPolicyUpdates))
+	logger.PduSessLog.Infof("SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
 
 	// Set state to PFCP Modify before sending PFCP request
 	smContext.ChangeState(smf_context.SmStatePfcpModify)
