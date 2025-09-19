@@ -297,10 +297,15 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			authQosRules := nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
 			authQosRules.SetIei(0x7A)
 
-			// Set payload first
-			authQosRules.SetQosRule(qosRulesBytes)
-			// Then set length to content size
+			// allocate buffer
+			authQosRules.Buffer = make([]byte, len(qosRulesBytes))
+
+			// set length first
 			authQosRules.SetLen(uint16(len(qosRulesBytes)))
+
+			// now copy
+			authQosRules.SetQosRule(qosRulesBytes)
+			smContext.SubGsmLog.Infof("AuthQoS Buffer=%x Len=%d", authQosRules.Buffer, authQosRules.Len)
 
 			smContext.SubGsmLog.Infof("AuthorizedQoS IE len: %d", authQosRules.GetLen())
 			smContext.SubGsmLog.Infof("AuthorizedQoS IE hex: %x", authQosRules.GetQosRule())
