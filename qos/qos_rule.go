@@ -391,7 +391,6 @@ func BuildDeleteQosRuleFromPccRule(pccRuleId string) *QosRule {
 		Identifier:    qosRuleID,
 		OperationCode: OperationCodeDeleteExistingQoSRule,
 		DQR:           0, // not default
-		Precedence:    0,
 		QFI:           0,
 	}
 
