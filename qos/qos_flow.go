@@ -103,15 +103,24 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 		Content: make([]byte, 0),
 	}
 
-	// Check if there are any QoS flow updates
-	/*if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
-		logger.QosLog.Warn("No QoS flow updates provided, returning empty QoS flow descriptions")
-		QFDescriptions.IeLen = 0
-		return &QFDescriptions
-	} */
-
 	qosFlowUpdate := smPolicyUpdates.QosFlowUpdate
 	hasUpdates := false
+
+	// Check if there are any QoS flow updates
+	if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
+		for pccRuleID := range smPolicyUpdates.PccRuleUpdate.del {
+			// Lookup QFI(s) linked to this PCC rule
+			qfiVal, err := strconv.Atoi(pccRuleID)
+			if err != nil {
+				logger.QosLog.Errorf("invalid QFI string: %s, err: %v", pccRuleID, err)
+				continue
+			}
+			qfi := uint8(qfiVal)
+			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
+			hasUpdates = true
+		}
+
+	}
 
 	// QoS Flow Description to be Added
 	if len(qosFlowUpdate.add) > 0 {
