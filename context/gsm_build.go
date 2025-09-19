@@ -309,8 +309,19 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		smContext.SubGsmLog.Infof("QoS Rules length: %d", len(qosRulesBytes))
 
 		if len(qosRulesBytes) > 0 {
+
+			if pDUSessionModificationCommand.AuthorizedQosRules == nil {
+				pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
+			}
+			pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
+			// IMPORTANT: Explicitly set the IEI (this might be missing!)
+			pDUSessionModificationCommand.AuthorizedQosRules.SetIei(0x7A)
+			// Now safely set length and rules
+			smContext.SubGsmLog.Infof("QoS Rules length from MarshalBinary: %d", len(qosRulesBytes))
+			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
+			pDUSessionModificationCommand.AuthorizedQosRules.SetQosRulededqos(qosRulesBytes)
 			// Always create fresh IE (reset buffer)
-			authQosRules := nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
+			/*authQosRules := nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
 			authQosRules.SetIei(0x7A)
 
 			// allocate buffer
@@ -321,12 +332,12 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 
 			// now copy
 			authQosRules.SetQosRulededqos(qosRulesBytes)
-			smContext.SubGsmLog.Infof("AuthQoS Buffer=%x Len=%d", authQosRules.Buffer, authQosRules.Len)
+			smContext.SubGsmLog.Infof("AuthQoS Buffer=%x Len=%d", authQosRules.Buffer, authQosRules.Len)*/
 
-			smContext.SubGsmLog.Infof("AuthorizedQoS IE len: %d", authQosRules.GetLen())
-			smContext.SubGsmLog.Infof("AuthorizedQoS IE hex: %x", authQosRules.GetQosRule())
+			smContext.SubGsmLog.Infof("AuthorizedQoS IE len: %d", pDUSessionModificationCommand.AuthorizedQosRules.GetLen())
+			smContext.SubGsmLog.Infof("AuthorizedQoS IE hex: %x", pDUSessionModificationCommand.AuthorizedQosRules.GetQosRule())
 
-			pDUSessionModificationCommand.AuthorizedQosRules = authQosRules
+			// pDUSessionModificationCommand.AuthorizedQosRules = authQosRules
 		}
 	}
 
