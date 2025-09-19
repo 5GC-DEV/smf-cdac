@@ -266,15 +266,6 @@ func BuildDeleteQosRuleFromPccRule(pccRuleId string) *QosRule {
 		QFI:           0,
 	}
 
-	logger.QosLog.Infof(
-		"BuildDeleteQosRuleFromPccRule: PCC rule ID='%s' mapped to QoS Rule ID=%d (Delete Operation)",
-		pccRuleId, qosRuleID,
-	)
-	logger.QosLog.Infof(
-		"QoS Rule details - Identifier=%d, OperationCode=%d, DQR=%d, Precedence=%d, QFI=%d",
-		qRule.Identifier, qRule.OperationCode, qRule.DQR, qRule.Precedence, qRule.QFI,
-	)
-
 	return &qRule
 }
 
@@ -287,16 +278,11 @@ func btou(b bool) uint8 {
 
 func GetQosRuleIdFromPccRuleId(pccRuleId string) uint8 {
 	if id, err := strconv.Atoi(pccRuleId); err != nil {
-		// TODO: Error Log
 		return 0
 	} else {
 		return uint8(id)
 	}
 }
-
-/*func GetQosRuleIdFromPccRuleIdpdumod(pccRuleId string) uint8 {
-	return 2
-} */
 
 func (q *QosRule) BuildPacketFilterListFromPccRule(pccRule *models.PccRule) {
 	pfList := []PacketFilter{}
@@ -697,17 +683,6 @@ func (r *QosRule) MarshalBinary() ([]byte, error) {
 		ruleContentBuffer.WriteByte(segregationAndQFIByte)
 	}
 
-	// write precedence
-	/*	if err := ruleContentBuffer.WriteByte(r.Precedence); err != nil {
-			return nil, err
-		}
-
-		// write Segregation and QFI
-		segregationAndQFIByte := r.Segregation<<6 | r.QFI
-		if err := ruleContentBuffer.WriteByte(segregationAndQFIByte); err != nil {
-			return nil, err
-		}*/
-
 	ruleBuffer := bytes.NewBuffer(nil)
 	// write QoS rule identifier
 	if err := ruleBuffer.WriteByte(r.Identifier); err != nil {
@@ -730,10 +705,7 @@ type QoSRules []QosRule
 
 func (rs QoSRules) MarshalBinary() (data []byte, err error) {
 	qosRulesBuffer := bytes.NewBuffer(nil)
-	logger.QosLog.Infof("Starting MarshalBinary for %d QoS rules", len(rs))
-	for i, rule := range rs {
-		logger.QosLog.Infof("Encoding QoS Rule #%d (ID=%d, OpCode=%d, DQR=%d, QFI=%d, PFCount=%d)",
-			i, rule.Identifier, rule.OperationCode, rule.DQR, rule.QFI, len(rule.PacketFilterList))
+	for _, rule := range rs {
 		var ruleBytes []byte
 		if retRuleBytes, err := rule.MarshalBinary(); err != nil {
 			return nil, err
@@ -745,6 +717,5 @@ func (rs QoSRules) MarshalBinary() (data []byte, err error) {
 			return nil, err
 		}
 	}
-	logger.QosLog.Infof("Finished MarshalBinary: total size=%d, hex=%x", len(qosRulesBuffer.Bytes()), qosRulesBuffer.Bytes())
 	return qosRulesBuffer.Bytes(), nil
 }

@@ -7,6 +7,7 @@ package qos
 
 import (
 	"github.com/omec-project/openapi/models"
+	"github.com/omec-project/smf/logger"
 )
 
 type PccRulesUpdate struct {
@@ -15,6 +16,7 @@ type PccRulesUpdate struct {
 
 func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *PccRulesUpdate {
 	if len(pcfPccRules) == 0 {
+		logger.PduSessLog.Infoln("[GetPccRulesUpdate] No PCF PCC rules received, returning nil")
 		return nil
 	}
 
@@ -24,21 +26,31 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 		del: make(map[string]*models.PccRule),
 	}
 
+	logger.PduSessLog.Infof("[GetPccRulesUpdate] Comparing PCC rules: PCF(%d) vs CTXT(%d)", len(pcfPccRules), len(ctxtPccRules))
+
 	// Compare against Ctxt rules to get added or modified rules
 	for name, pcfRule := range pcfPccRules {
 		// if pcfRule is nil then it need to be deleted
 		if pcfRule == nil {
+			logger.PduSessLog.Warnf("[GetPccRulesUpdate] PCC rule %q marked for deletion", name)
 			change.del[name] = pcfRule // nil
 			continue
 		}
 
 		// match against SM ctxt Rules for add/mod
 		if ctxtrule := ctxtPccRules[name]; ctxtrule == nil {
+			logger.PduSessLog.Infof("[GetPccRulesUpdate] PCC rule %q marked for addition", name)
 			change.add[name] = pcfRule
 		} else if GetPccRuleChanges(pcfRule, ctxtrule) {
+			logger.PduSessLog.Infof("[GetPccRulesUpdate] PCC rule %q marked for modification", name)
 			change.mod[name] = pcfRule
+		} else {
+			logger.PduSessLog.Debugf("[GetPccRulesUpdate] PCC rule %q unchanged", name)
 		}
 	}
+
+	logger.PduSessLog.Infof("[GetPccRulesUpdate] Summary: add=%d, mod=%d, del=%d",
+		len(change.add), len(change.mod), len(change.del))
 
 	return &change
 }
@@ -66,8 +78,50 @@ func CommitPccRulesUpdate(smCtxtPolData *SmCtxtPolicyData, update *PccRulesUpdat
 
 // Get the difference between 2 pcc rules
 func GetPccRuleChanges(s, d *models.PccRule) bool {
-	// TODO
+	if s == nil || d == nil {
+		return true
+	}
+
+	if s.PccRuleId != d.PccRuleId ||
+		s.AppId != d.AppId ||
+		s.ContVer != d.ContVer ||
+		s.Precedence != d.Precedence ||
+		s.AfSigProtocol != d.AfSigProtocol ||
+		s.AppReloc != d.AppReloc ||
+		s.RefCondData != d.RefCondData {
+		return true
+	}
+
+	if !stringSlicesEqual(s.RefQosData, d.RefQosData) ||
+		!stringSlicesEqual(s.RefTcData, d.RefTcData) ||
+		!stringSlicesEqual(s.RefChgData, d.RefChgData) ||
+		!stringSlicesEqual(s.RefUmData, d.RefUmData) {
+		return true
+	}
+
+	if len(s.FlowInfos) != len(d.FlowInfos) {
+		return true
+	}
+	for i := range s.FlowInfos {
+		if s.FlowInfos[i] != d.FlowInfos[i] {
+			return true
+		}
+	}
+
 	return false
+}
+
+// Helper to compare two string slices (order matters)
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func (upd *PccRulesUpdate) GetAddPccRuleUpdate() map[string]*models.PccRule {
