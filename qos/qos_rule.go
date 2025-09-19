@@ -394,7 +394,7 @@ func BuildDeleteQosRuleFromPccRule(pccRuleId string) *QosRule {
 	qRule := QosRule{
 		Identifier:    qosRuleID,
 		OperationCode: OperationCodeDeleteExistingQoSRule,
-		DQR:           0, // not default
+		DQR:           0,
 		QFI:           0,
 	}
 
@@ -797,7 +797,7 @@ func (pf *PacketFilter) MarshalBinary() (data []byte, err error) {
 	return packetFilterBuffer.Bytes(), nil
 }
 
-func (r *QosRule) MarshalBinary() ([]byte, error) {
+/*func (r *QosRule) MarshalBinary() ([]byte, error) {
 	ruleContentBuffer := bytes.NewBuffer(nil)
 
 	// write rule content Header
@@ -850,6 +850,48 @@ func (r *QosRule) MarshalBinary() ([]byte, error) {
 	}
 
 	return ruleBuffer.Bytes(), nil
+} */
+
+func (r *QosRule) MarshalBinary() ([]byte, error) {
+	ruleContent := bytes.NewBuffer(nil)
+
+	// --- 1. Header byte: OperationCode (3 bits) | DQR (1 bit) | NumPF (4 bits) ---
+	if len(r.PacketFilterList) > 15 {
+		return nil, fmt.Errorf("too many packet filters: %d (max 15)", len(r.PacketFilterList))
+	}
+	header := (r.OperationCode&0x07)<<5 | (r.DQR&0x01)<<4 | uint8(len(r.PacketFilterList)&0x0F)
+	ruleContent.WriteByte(header)
+
+	// --- 2. Packet Filters (if any) ---
+	for _, pf := range r.PacketFilterList {
+		pfBytes, err := pf.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		ruleContent.Write(pfBytes)
+	}
+
+	// --- 3. Precedence & QFI only for Create/Modify rules ---
+	if r.OperationCode != OperationCodeDeleteExistingQoSRule {
+		ruleContent.WriteByte(r.Precedence)
+		segregationAndQFI := (r.Segregation << 6) | (r.QFI & 0x3F)
+		ruleContent.WriteByte(segregationAndQFI)
+	}
+
+	// --- 4. Wrap with Identifier and Length ---
+	finalBuf := bytes.NewBuffer(nil)
+	finalBuf.WriteByte(r.Identifier)
+
+	// Length is 1 byte, per 3GPP TS 24.501 section 9.11.4.13
+	ruleLen := ruleContent.Len()
+	if ruleLen > 255 {
+		return nil, fmt.Errorf("QoS rule too long: %d bytes", ruleLen)
+	}
+	finalBuf.WriteByte(uint8(ruleLen))
+
+	finalBuf.Write(ruleContent.Bytes())
+
+	return finalBuf.Bytes(), nil
 }
 
 type QoSRules []QosRule
