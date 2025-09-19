@@ -271,6 +271,15 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("QoS Rules length set in IE: %d", pDUSessionModificationCommand.AuthorizedQosRules.GetLen())
 		}
 	} */
+	authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
+	// authQfd := qos.BuildAuthorizedQosFlowDescriptionsmodcommand(smContext.SmPolicyUpdates[0])
+	// Add Default Qos Flow
+	// authQfd.AddDefaultQosFlowDescription(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule)
+	if pDUSessionModificationCommand.AuthorizedQosFlowDescriptions == nil {
+		pDUSessionModificationCommand.AuthorizedQosFlowDescriptions = nasType.NewAuthorizedQosFlowDescriptions(nasMessage.PDUSessionModificationCommandAuthorizedQosFlowDescriptionsType)
+	}
+	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetLen(authQfd.IeLen)
+	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetQoSFlowDescriptions(authQfd.Content)
 	if len(smContext.SmPolicyUpdates) > 0 {
 		qoSRules := qos.BuildQosRulespdumod(smContext.SmPolicyUpdates[0])
 
@@ -313,15 +322,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			pDUSessionModificationCommand.AuthorizedQosRules = authQosRules
 		}
 	}
-	authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
-	// authQfd := qos.BuildAuthorizedQosFlowDescriptionsmodcommand(smContext.SmPolicyUpdates[0])
-	// Add Default Qos Flow
-	// authQfd.AddDefaultQosFlowDescription(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule)
-	if pDUSessionModificationCommand.AuthorizedQosFlowDescriptions == nil {
-		pDUSessionModificationCommand.AuthorizedQosFlowDescriptions = nasType.NewAuthorizedQosFlowDescriptions(nasMessage.PDUSessionModificationCommandAuthorizedQosFlowDescriptionsType)
-	}
-	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetLen(authQfd.IeLen)
-	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetQoSFlowDescriptions(authQfd.Content)
+
 	smContext.SubGsmLog.Infof("PDU Session Modification Command built successfully for Session ID: %d", smContext.PDUSessionID)
 	smContext.SubGsmLog.Infof("Before encoding:")
 	debugPDUSessionModificationCommand(m, smContext)
