@@ -263,6 +263,10 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 				logger.QosLog.Warnf("Skipping QoS rule build for PCC rule ID='%s' (nil returned)", id)
 			}
 		}
+		for i, qr := range qosRules {
+			logger.QosLog.Infof("Final QoS Rule[%d] -> Identifier=%d, OperationCode=%d, DQR=%d, QFI=%d",
+				i, qr.Identifier, qr.OperationCode, qr.DQR, qr.QFI)
+		}
 
 		logger.QosLog.Infof("Total delete QoS Rules built: %d", len(qosRules))
 	}
@@ -398,7 +402,7 @@ func BuildDeleteQosRuleFromPccRule(pccRuleId string) *QosRule {
 		"BuildDeleteQosRuleFromPccRule: PCC rule ID='%s' mapped to QoS Rule ID=%d (Delete Operation)",
 		pccRuleId, qosRuleID,
 	)
-	logger.QosLog.Debugf(
+	logger.QosLog.Infof(
 		"QoS Rule details - Identifier=%d, OperationCode=%d, DQR=%d, Precedence=%d, QFI=%d",
 		qRule.Identifier, qRule.OperationCode, qRule.DQR, qRule.Precedence, qRule.QFI,
 	)
@@ -852,8 +856,10 @@ type QoSRules []QosRule
 
 func (rs QoSRules) MarshalBinary() (data []byte, err error) {
 	qosRulesBuffer := bytes.NewBuffer(nil)
-
-	for _, rule := range rs {
+	logger.QosLog.Infof("Starting MarshalBinary for %d QoS rules", len(rs))
+	for i, rule := range rs {
+		logger.QosLog.Infof("Encoding QoS Rule #%d (ID=%d, OpCode=%d, DQR=%d, QFI=%d, PFCount=%d)",
+			i, rule.Identifier, rule.OperationCode, rule.DQR, rule.QFI, len(rule.PacketFilterList))
 		var ruleBytes []byte
 		if retRuleBytes, err := rule.MarshalBinary(); err != nil {
 			return nil, err
@@ -865,5 +871,6 @@ func (rs QoSRules) MarshalBinary() (data []byte, err error) {
 			return nil, err
 		}
 	}
+	logger.QosLog.Infof("Finished MarshalBinary: total size=%d, hex=%x", len(qosRulesBuffer.Bytes()), qosRulesBuffer.Bytes())
 	return qosRulesBuffer.Bytes(), nil
 }
