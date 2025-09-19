@@ -104,11 +104,11 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	}
 
 	// Check if there are any QoS flow updates
-	if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
+	/*if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
 		logger.QosLog.Warn("No QoS flow updates provided, returning empty QoS flow descriptions")
 		QFDescriptions.IeLen = 0
 		return &QFDescriptions
-	}
+	} */
 
 	qosFlowUpdate := smPolicyUpdates.QosFlowUpdate
 	hasUpdates := false
