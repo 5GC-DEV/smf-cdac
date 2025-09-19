@@ -180,10 +180,10 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 
 	// Rules to be deleted
 	if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
-		for _, pccRuleName := range pccRulesUpdate.del {
+		for id, pccRuleName := range pccRulesUpdate.del {
 			logger.QosLog.Infof("building delete QoS Rule for PCC rule [%s]", pccRuleName)
 
-			qosRule := BuildDeleteQosRuleFromPccRule(pccRuleName)
+			qosRule := BuildDeleteQosRuleFromPccRule(id)
 			if qosRule != nil {
 				qosRules = append(qosRules, *qosRule)
 			}
@@ -248,10 +248,10 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 
 	// Rules to be deleted
 	if pccRulesUpdate != nil && pccRulesUpdate.del != nil {
-		for _, pccRuleName := range pccRulesUpdate.del {
+		for id, pccRuleName := range pccRulesUpdate.del {
 			logger.QosLog.Infof("building delete QoS Rule for PCC rule [%s]", pccRuleName)
 
-			qosRule := BuildDeleteQosRuleFromPccRule(pccRuleName)
+			qosRule := BuildDeleteQosRuleFromPccRule(id)
 			if qosRule != nil {
 				qosRules = append(qosRules, *qosRule)
 			}
@@ -370,18 +370,20 @@ func BuildModifyQosRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosD
 	return &qRule
 }
 
-func BuildDeleteQosRuleFromPccRule(pccRule *models.PccRule) *QosRule {
-	qRule := QosRule{
-		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
-		OperationCode: OperationCodeDeleteExistingQoSRule,
-		// For delete operations, other fields may not be needed
-		// but setting them for completeness
-		DQR:        0, // Default value for delete
-		Precedence: 0, // Default value for delete
-		QFI:        0, // Default value for delete
+func BuildDeleteQosRuleFromPccRule(pccRuleId string) *QosRule {
+	if pccRuleId == "" {
+		logger.QosLog.Warnf("BuildDeleteQosRuleFromPccRule: empty PCC rule ID, skipping")
+		return nil
 	}
 
-	// No packet filters needed for delete operation
+	qRule := QosRule{
+		Identifier:    GetQosRuleIdFromPccRuleId(pccRuleId),
+		OperationCode: OperationCodeDeleteExistingQoSRule,
+		DQR:           0, // not default
+		Precedence:    0,
+		QFI:           0,
+	}
+
 	return &qRule
 }
 

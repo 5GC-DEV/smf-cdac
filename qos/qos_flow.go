@@ -136,9 +136,16 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	// QoS Flow Description to be Deleted
 	if len(qosFlowUpdate.del) > 0 {
 		logger.QosLog.Infof("Processing %d QoS flows to delete", len(qosFlowUpdate.del))
-		for name, qosFlow := range qosFlowUpdate.del {
-			logger.QosLog.Infof("Deleting QoS Flow Description [%v]", name)
-			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qosFlow)
+		for qfiStr := range qosFlowUpdate.del {
+			qfiVal, err := strconv.Atoi(qfiStr)
+			if err != nil {
+				logger.QosLog.Errorf("invalid QFI string: %s, err: %v", qfiStr, err)
+				continue
+			}
+			qfi := uint8(qfiVal)
+
+			logger.QosLog.Infof("Deleting QoS Flow Description [QFI=%v]", qfi)
+			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
 			hasUpdates = true
 		}
 	}
@@ -377,7 +384,7 @@ func (d *QosFlowDescriptionsAuthorized) BuildModQosFlowDescFromQoSDesc(qosData *
 	d.AddQFD(&qfd)
 }
 
-func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qosData *models.QosData) {
+/*func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qosData *models.QosData) {
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
 
 	// Set QFI
@@ -391,6 +398,22 @@ func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qosData *
 
 	// Set E-Bit of QFD for the "Delete existing QoS flow description" operation
 	qfd.SetQFDEBitDeleteExistingQFD()
+}*/
+
+func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qfi uint8) {
+	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
+
+	// Set QFI
+	qfd.SetQoSFlowDescQfi(qfi)
+
+	// Operation Code = Delete existing QoS flow description
+	qfd.SetQoSFlowDescOpCode(QFDOpDelete)
+
+	// No parameters, E-bit must be 0
+	qfd.SetQFDEBitDeleteExistingQFD()
+
+	// Append to list
+	d.AddQFD(&qfd)
 }
 
 func GetBitRate(sBitRate string) (val uint16, unit uint8) {
