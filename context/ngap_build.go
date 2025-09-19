@@ -588,6 +588,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	uplink := ngapConvert.UEAmbrToInt64(sessRule.AuthSessAmbr.Uplink)
 	qfi := sessRule.AuthDefQos.Var5qi
 	priority := sessRule.AuthDefQos.Arp.PriorityLevel
+	qi := sessRule.AuthDefQos.Var5qi // initialize qi with default Var5QI
 
 	// Now check if SM Policy Decision has QosData for this session rule
 	var policyDecision *qos.SmCtxtPolicyData
@@ -667,6 +668,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						} else {
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
 						}
+						qi = qosData.Var5qi
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
 						}
@@ -696,7 +698,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						} else {
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
 						}
-
+						qi = qosData.Var5qi
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
 						}
@@ -744,7 +746,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 							QosCharacteristics: ngapType.QosCharacteristics{
 								Present: ngapType.QosCharacteristicsPresentNonDynamic5QI,
 								NonDynamic5QI: &ngapType.NonDynamic5QIDescriptor{
-									FiveQI: ngapType.FiveQI{Value: int64(qfi)},
+									FiveQI: ngapType.FiveQI{Value: int64(qi)},
 								},
 							},
 							AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{

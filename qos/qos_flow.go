@@ -121,44 +121,44 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 		}
 
 	}
-
-	// QoS Flow Description to be Added
-	if len(qosFlowUpdate.add) > 0 {
-		logger.QosLog.Infof("Processing %d QoS flows to add", len(qosFlowUpdate.add))
-		for name, qosFlow := range qosFlowUpdate.add {
-			logger.QosLog.Infof("Adding QoS Flow Description [%v]", name)
-			QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
-			hasUpdates = true
-		}
-	}
-
-	// QoS Flow Description to be Modified
-	if len(qosFlowUpdate.mod) > 0 {
-		logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
-		for name, qosFlow := range qosFlowUpdate.mod {
-			logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
-			QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
-			hasUpdates = true
-		}
-	}
-
-	// QoS Flow Description to be Deleted
-	if len(qosFlowUpdate.del) > 0 {
-		logger.QosLog.Infof("Processing %d QoS flows to delete", len(qosFlowUpdate.del))
-		for qfiStr := range qosFlowUpdate.del {
-			qfiVal, err := strconv.Atoi(qfiStr)
-			if err != nil {
-				logger.QosLog.Errorf("invalid QFI string: %s, err: %v", qfiStr, err)
-				continue
+	if qosFlowUpdate != nil {
+		// QoS Flow Description to be Added
+		if len(qosFlowUpdate.add) > 0 {
+			logger.QosLog.Infof("Processing %d QoS flows to add", len(qosFlowUpdate.add))
+			for name, qosFlow := range qosFlowUpdate.add {
+				logger.QosLog.Infof("Adding QoS Flow Description [%v]", name)
+				QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
+				hasUpdates = true
 			}
-			qfi := uint8(qfiVal)
+		}
 
-			logger.QosLog.Infof("Deleting QoS Flow Description [QFI=%v]", qfi)
-			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
-			hasUpdates = true
+		// QoS Flow Description to be Modified
+		if len(qosFlowUpdate.mod) > 0 {
+			logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
+			for name, qosFlow := range qosFlowUpdate.mod {
+				logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
+				QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
+				hasUpdates = true
+			}
+		}
+
+		// QoS Flow Description to be Deleted
+		if len(qosFlowUpdate.del) > 0 {
+			logger.QosLog.Infof("Processing %d QoS flows to delete", len(qosFlowUpdate.del))
+			for qfiStr := range qosFlowUpdate.del {
+				qfiVal, err := strconv.Atoi(qfiStr)
+				if err != nil {
+					logger.QosLog.Errorf("invalid QFI string: %s, err: %v", qfiStr, err)
+					continue
+				}
+				qfi := uint8(qfiVal)
+
+				logger.QosLog.Infof("Deleting QoS Flow Description [QFI=%v]", qfi)
+				QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
+				hasUpdates = true
+			}
 		}
 	}
-
 	// Set the length based on the content
 	QFDescriptions.IeLen = uint16(len(QFDescriptions.Content))
 
