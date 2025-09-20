@@ -56,12 +56,10 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		len(smContext.SmPolicyUpdates))
 	logger.PduSessLog.Infof("SmPolicyUpdates: %v", smContext.SmPolicyUpdates)
 
-	// Set state to PFCP Modify before sending PFCP request
-	smContext.ChangeState(smf_context.SmStatePfcpModify)
-	var response models.UpdateSmContextResponse
-	response.JsonData = new(models.SmContextUpdatedData)
 	// Build PFCP parameters
 	pfcpParam := BuildPfcpParam(smContext)
+	// Set state to PFCP Modify before sending PFCP request
+	smContext.ChangeState(smf_context.SmStatePfcpModify)
 
 	if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
 		// PFCP modify failed — revert state and return error

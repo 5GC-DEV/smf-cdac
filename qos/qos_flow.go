@@ -202,8 +202,6 @@ func (qfd *QosFlowDescriptionsAuthorized) Validate() error {
 	return nil
 }
 
-// Add these getter methods to your QosFlowsUpdate struct
-
 func (q *QosFlowsUpdate) GetModified() map[string]*models.QosData {
 	if q == nil {
 		return nil

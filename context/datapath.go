@@ -474,7 +474,6 @@ func (dpNode *DataPathNode) CreateDedicatedQosQer(smContext *SMContext) (*QER, e
 	logger.PduSessLog.Infof("CreateDedicatedQosQer: total QoSData entries = %d", len(smPolicyDec.QosDecs))
 
 	for qosID, qosData := range smPolicyDec.QosDecs {
-
 		if qosData.DefQosFlowIndication {
 			logger.PduSessLog.Infof("CreateDedicatedQosQer: skipping default QoSData [QosId=%s]", qosID)
 			continue

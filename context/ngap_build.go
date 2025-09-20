@@ -260,11 +260,9 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	priority := sessRule.AuthDefQos.Arp.PriorityLevel
 	qi := sessRule.AuthDefQos.Var5qi
 
-	var policyDecision *qos.SmCtxtPolicyData
-	// policyDecision := ctx.SmPolicyData
+	policyDecision := ctx.SmPolicyData.SmCtxtQosData.QosData
 	if policyDecision != nil {
-		for _, qos := range policyDecision.SmCtxtQosData.QosData {
-			// Example: log GBR/MBR values
+		for _, qos := range policyDecision {
 			ctx.SubPduSessLog.Infof(
 				"QoSId=%s, Var5QI=%d, GBR: UL=%s, DL=%s, MBR: UL=%s, DL=%s",
 				qos.QosId, qos.Var5qi, qos.GbrUl, qos.GbrDl, qos.MaxbrUl, qos.MaxbrDl,
@@ -305,8 +303,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	}
 	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
 
-	// Step 2: Get QoS parameters from policy updates (if available) or fallback to session rule
-
 	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
 	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
 
@@ -327,7 +323,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						} else {
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
 						}
-						// qi = qosData.Var5qi
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
 						}

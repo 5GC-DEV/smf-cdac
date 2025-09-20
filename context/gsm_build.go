@@ -267,7 +267,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		smContext.SubGsmLog.Debugf("QoS Rules length: %d", len(qosRulesBytes))
 
 		if len(qosRulesBytes) > 0 {
-
 			if pDUSessionModificationCommand.AuthorizedQosRules == nil {
 				pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
 			}
