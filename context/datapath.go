@@ -478,7 +478,6 @@ func (dpNode *DataPathNode) CreateDedicatedQosQer(smContext *SMContext) (*QER, e
 
 	// Iterate over all QoSData in SM Policy decision
 	for qosID, qosData := range smPolicyDec.QosDecs {
-
 		// Skip default QoS flows
 		if qosData.DefQosFlowIndication {
 			logger.PduSessLog.Infof("CreateDedicatedQosQer: skipping default QoSData [QosId=%s]", qosID)

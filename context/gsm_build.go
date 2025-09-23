@@ -245,7 +245,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		smContext.SmPolicyUpdates[0].SessRuleUpdate != nil &&
 		smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil &&
 		smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr != nil {
-
 		modAmbr := nasConvert.ModelsToSessionAMBR(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr)
 		pDUSessionModificationCommand.SessionAMBR = &modAmbr
 		pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
