@@ -292,6 +292,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		if len(qosRulesBytes) > 0 {
 			pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(
 				nas.MsgTypePDUSessionModificationCommand)
+			pDUSessionModificationCommand.AuthorizedQosRules.SetIei(0x7A)
 			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
 			pDUSessionModificationCommand.AuthorizedQosRules.SetQosRule(qosRulesBytes)
 
