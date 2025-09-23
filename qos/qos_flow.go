@@ -434,7 +434,7 @@ func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qfi uint8
 	logger.QosLog.Infof("Set QFI=%d in QoSFlowDescription", qfi)
 
 	// Operation Code = Delete existing QoS flow description
-	qfd.SetQoSFlowDescOpCode(QFDOpDelete)
+	qfd.SetQoSFlowDescOpCode(QFDOpModify)
 	logger.QosLog.Infof("Set Operation Code = Delete (%d)", QFDOpDelete)
 	logger.QosLog.Infof("OpCode after setting: 0x%02x\n", qfd.OpCode)
 

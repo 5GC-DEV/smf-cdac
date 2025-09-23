@@ -482,7 +482,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			// Check if any PCC rule has nil or empty ID
 			for ruleId, rule := range ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
-					ruleId = rule.PccRuleId
+					ruleid = ruleId
 					shouldSendReleaseOnly = true
 					logger.PduSessLog.Warnf("Invalid PCC Rule found (ruleId='%s'), setting shouldSendReleaseOnly = true", ruleId)
 					break
