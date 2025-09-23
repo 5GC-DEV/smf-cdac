@@ -172,19 +172,30 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	}
 }
 
+// BuildPDUSessionResourceModifyRequestTransfer builds and encodes
+// the NGAP PDUSessionResourceModifyRequestTransfer message.
+// This is used to update the RAN with QoS flow changes (add/modify/delete).
+// 3GPP TS 38.413 8.2.3v16.2.0 (NGAP: PDU Session Resource Modify Request)
 func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error) {
-	ctx.SubPduSessLog.Infof("Building PDUSessionResourceModifyRequestTransfer for SUPI[%s], PDU Session ID[%d]", ctx.Supi, ctx.PDUSessionID)
+	// Start logging with SUPI and Session ID
+	ctx.SubPduSessLog.Infof(
+		"Building PDUSessionResourceModifyRequestTransfer for SUPI[%s], PDU Session ID[%d]",
+		ctx.Supi, ctx.PDUSessionID,
+	)
 
 	resourceModifyRequestTransfer := ngapType.PDUSessionResourceModifyRequestTransfer{}
 
+	// ----------------------------------------------------
+	// Step 1: Check if only QosFlowToReleaseList should be sent
+	// ----------------------------------------------------
 	shouldSendReleaseOnly := false
 	if len(ctx.SmPolicyUpdates) > 0 && ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
-		// Check if PccRules map is empty
+		// If PccRules map is empty → release only
 		if len(ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
 			shouldSendReleaseOnly = true
 			logger.PduSessLog.Warnln("PccRules map is empty, setting shouldSendReleaseOnly = true")
 		} else {
-			// Check if any PCC rule has nil or empty ID
+			// If any PCC rule is invalid (nil or empty ID) → release only
 			for ruleId, rule := range ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
 					shouldSendReleaseOnly = true
@@ -195,6 +206,9 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		}
 	}
 
+	// ----------------------------------------------------
+	// Step 2: Handle Release-Only Case
+	// ----------------------------------------------------
 	if shouldSendReleaseOnly {
 		ctx.SubPduSessLog.Info("PCC rule ID is nil, sending only QosFlowToReleaseList")
 
@@ -204,9 +218,9 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			ctx.SubPduSessLog.Error("SelectedSessionRule is nil")
 			return nil, fmt.Errorf("sessRule is nil")
 		}
-
 		qfi := sessRule.AuthDefQos.Var5qi
 
+		// Build QoS Flow Release List
 		qosFlowToReleaseList := ngapType.QosFlowListWithCause{}
 		qosFlowToReleaseList.List = append(qosFlowToReleaseList.List, ngapType.QosFlowWithCauseItem{
 			QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
@@ -216,13 +230,10 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			},
 		})
 
+		// Add IE to NGAP transfer message
 		ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
-			Id: ngapType.ProtocolIEID{
-				Value: ngapType.ProtocolIEIDQosFlowToReleaseList,
-			},
-			Criticality: ngapType.Criticality{
-				Value: ngapType.CriticalityPresentReject,
-			},
+			Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDQosFlowToReleaseList},
+			Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 			Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
 				Present:              ngapType.PDUSessionResourceModifyRequestTransferIEsPresentQosFlowToReleaseList,
 				QosFlowToReleaseList: &qosFlowToReleaseList,
@@ -231,7 +242,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
 		ctx.SubPduSessLog.Infof("Appended QosFlowToReleaseList with %d entries", len(qosFlowToReleaseList.List))
 
-		// Skip AMBR and QoS flow modifications, go directly to encoding
+		// Encode the NGAP message and return
 		ctx.SubPduSessLog.Info("Encoding PDUSessionResourceModifyRequestTransfer structure (QosFlowToReleaseList only)")
 		if buf, err := aper.MarshalWithParams(resourceModifyRequestTransfer, "valueExt"); err != nil {
 			ctx.SubPduSessLog.Errorf("Failed to encode PDUSessionResourceModifyRequestTransfer: %v", err)
@@ -242,24 +253,35 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		}
 	}
 
+	// ----------------------------------------------------
+	// Step 3: Normal QoS Add/Modify Case
+	// ----------------------------------------------------
+
+	// Get selected session rule
 	sessRule := ctx.SelectedSessionRule()
 	if sessRule == nil {
 		ctx.SubPduSessLog.Error("SelectedSessionRule is nil")
 		return nil, fmt.Errorf("sessRule is nil")
 	}
 
+	// Session AMBR must be present
 	if sessRule.AuthSessAmbr == nil {
 		ctx.SubPduSessLog.Error("AuthSessAmbr is nil")
 		return nil, fmt.Errorf("no PDU Session AMBR")
 	}
 
-	// Take AMBR first (session level)
+	// Extract AMBR values
 	gbdownlink := ngapConvert.UEAmbrToInt64(sessRule.AuthSessAmbr.Downlink)
 	gbuplink := ngapConvert.UEAmbrToInt64(sessRule.AuthSessAmbr.Uplink)
+
+	// Default QoS params from session rule
 	qfi := sessRule.AuthDefQos.Var5qi
 	priority := sessRule.AuthDefQos.Arp.PriorityLevel
 	qi := sessRule.AuthDefQos.Var5qi
 
+	// ----------------------------------------------------
+	// Step 4: Check QoS Policy Decision overrides
+	// ----------------------------------------------------
 	policyDecision := ctx.SmPolicyData.SmCtxtQosData.QosData
 	if policyDecision != nil {
 		for _, qos := range policyDecision {
@@ -267,8 +289,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 				"QoSId=%s, Var5QI=%d, GBR: UL=%s, DL=%s, MBR: UL=%s, DL=%s",
 				qos.QosId, qos.Var5qi, qos.GbrUl, qos.GbrDl, qos.MaxbrUl, qos.MaxbrDl,
 			)
-
-			// If GBR is available, override AMBR for this flow
+			// Override AMBR with GBR if available
 			if qos.GbrDl != "" {
 				if val, err := StringToBitRate(qos.GbrDl); err == nil {
 					gbdownlink = int64(val)
@@ -282,17 +303,13 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			qi = qos.Var5qi
 		}
 	}
+	ctx.SubPduSessLog.Infof("Using QoS: DL = %d bps, UL = %d bps, qfi = %d , arp = %d ",
+		gbdownlink, gbuplink, qfi, priority)
 
-	ctx.SubPduSessLog.Infof("Using QoS: DL = %d bps, UL = %d bps, qfi = %d , arp = %d ", gbdownlink, gbuplink, qfi, priority)
-
-	// Build NGAP IE
+	// Add AMBR IE to NGAP message
 	ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
-		Id: ngapType.ProtocolIEID{
-			Value: ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate,
-		},
-		Criticality: ngapType.Criticality{
-			Value: ngapType.CriticalityPresentReject,
-		},
+		Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate},
+		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
 			Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentPDUSessionAggregateMaximumBitRate,
 			PDUSessionAggregateMaximumBitRate: &ngapType.PDUSessionAggregateMaximumBitRate{
@@ -303,26 +320,30 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	}
 	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
 
+	// Default ARP values
 	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
 	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
 
-	// Check for updated QoS data in policy updates
+	// ----------------------------------------------------
+	// Step 5: Handle policy updates (QoS flow add/modify)
+	// ----------------------------------------------------
 	if len(ctx.SmPolicyUpdates) > 0 {
 		policyUpdate := ctx.SmPolicyUpdates[0]
 		if policyUpdate != nil && policyUpdate.QosFlowUpdate != nil {
 			ctx.SubPduSessLog.Infof("Found QoS flow updates in policy updates")
 
-			// Check for modified QoS data first
+			// Handle modified flows first
 			if len(policyUpdate.QosFlowUpdate.GetModified()) > 0 {
 				for qosId, qosData := range policyUpdate.QosFlowUpdate.GetModified() {
 					if qosData != nil {
-						ctx.SubPduSessLog.Infof("Found modified QoS data for QosId[%s]: Var5QI=%d", qosId, qosData.Var5qi)
-						// Convert QosId string -> int32
+						ctx.SubPduSessLog.Infof("Modified QoS data: QosId[%s], Var5QI=%d", qosId, qosData.Var5qi)
+						// Convert QosId string to int
 						if qfiVal, err := strconv.Atoi(qosData.QosId); err == nil {
 							qfi = int32(qfiVal)
 						} else {
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
 						}
+						// Apply priority and ARP if present
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
 						}
@@ -335,24 +356,21 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 								arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
 							}
 						}
-						break // Use the first modified QoS data found
+						break
 					}
 				}
 			}
 
-			// Check for added QoS data if no modifications found
+			// Handle added flows if no modified ones
 			if len(policyUpdate.QosFlowUpdate.GetAdded()) > 0 {
 				for qosId, qosData := range policyUpdate.QosFlowUpdate.GetAdded() {
 					if qosData != nil {
-						ctx.SubPduSessLog.Infof("Found added QoS data for QosId[%s]: Var5QI=%d", qosId, qosData.Var5qi)
-
-						// Convert QosId string -> int32
+						ctx.SubPduSessLog.Infof("Added QoS data: QosId[%s], Var5QI=%d", qosId, qosData.Var5qi)
 						if qfiVal, err := strconv.Atoi(qosData.QosId); err == nil {
 							qfi = int32(qfiVal)
 						} else {
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
 						}
-						// qi = qosData.Var5qi
 						if qosData.PriorityLevel > 0 {
 							priority = qosData.PriorityLevel
 						}
@@ -365,14 +383,14 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 								arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
 							}
 						}
-						break // Use the first added QoS data found
+						break
 					}
 				}
 			}
 		}
 	}
 
-	// Apply ARP settings based on session rule if not overridden above
+	// Apply ARP defaults from session rule if not overridden
 	if sessRule.AuthDefQos.Arp.PreemptCap == models.PreemptionCapability_NOT_PREEMPT {
 		arpPreemptCap = ngapType.PreEmptionCapabilityPresentShallNotTriggerPreEmption
 	}
@@ -380,47 +398,42 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
 	}
 
-	ctx.SubPduSessLog.Infof("Final QoS Flow: QFI = %d, Priority = %d, PreemptCap = %d, PreemptVul = %d",
-		qfi, priority, arpPreemptCap, arpPreemptVul)
+	ctx.SubPduSessLog.Infof(
+		"Final QoS Flow: QFI = %d, Priority = %d, PreemptCap = %d, PreemptVul = %d",
+		qfi, priority, arpPreemptCap, arpPreemptVul,
+	)
 
+	// Build QoS AddOrModify IE
 	ie = ngapType.PDUSessionResourceModifyRequestTransferIEs{
-		Id: ngapType.ProtocolIEID{
-			Value: ngapType.ProtocolIEIDQosFlowAddOrModifyRequestList,
-		},
-		Criticality: ngapType.Criticality{
-			Value: ngapType.CriticalityPresentReject,
-		},
+		Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDQosFlowAddOrModifyRequestList},
+		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
 			Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentQosFlowAddOrModifyRequestList,
 			QosFlowAddOrModifyRequestList: &ngapType.QosFlowAddOrModifyRequestList{
-				List: []ngapType.QosFlowAddOrModifyRequestItem{
-					{
-						QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
-						QosFlowLevelQosParameters: &ngapType.QosFlowLevelQosParameters{
-							QosCharacteristics: ngapType.QosCharacteristics{
-								Present: ngapType.QosCharacteristicsPresentNonDynamic5QI,
-								NonDynamic5QI: &ngapType.NonDynamic5QIDescriptor{
-									FiveQI: ngapType.FiveQI{Value: int64(qi)},
-								},
-							},
-							AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{
-								PriorityLevelARP: ngapType.PriorityLevelARP{Value: int64(priority)},
-								PreEmptionCapability: ngapType.PreEmptionCapability{
-									Value: arpPreemptCap,
-								},
-								PreEmptionVulnerability: ngapType.PreEmptionVulnerability{
-									Value: arpPreemptVul,
-								},
+				List: []ngapType.QosFlowAddOrModifyRequestItem{{
+					QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
+					QosFlowLevelQosParameters: &ngapType.QosFlowLevelQosParameters{
+						QosCharacteristics: ngapType.QosCharacteristics{
+							Present: ngapType.QosCharacteristicsPresentNonDynamic5QI,
+							NonDynamic5QI: &ngapType.NonDynamic5QIDescriptor{
+								FiveQI: ngapType.FiveQI{Value: int64(qi)},
 							},
 						},
+						AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{
+							PriorityLevelARP:        ngapType.PriorityLevelARP{Value: int64(priority)},
+							PreEmptionCapability:    ngapType.PreEmptionCapability{Value: arpPreemptCap},
+							PreEmptionVulnerability: ngapType.PreEmptionVulnerability{Value: arpPreemptVul},
+						},
 					},
-				},
+				}},
 			},
 		},
 	}
 	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
 
-	// Step 3: Encoding
+	// ----------------------------------------------------
+	// Step 6: Encode NGAP message
+	// ----------------------------------------------------
 	ctx.SubPduSessLog.Info("Encoding PDUSessionResourceModifyRequestTransfer structure")
 	if buf, err := aper.MarshalWithParams(resourceModifyRequestTransfer, "valueExt"); err != nil {
 		ctx.SubPduSessLog.Errorf("Failed to encode PDUSessionResourceModifyRequestTransfer: %v", err)
@@ -431,6 +444,13 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	}
 }
 
+// This function is needed because QoS parameters in 3GPP specifications (e.g., GBR, MBR)
+// are often provisioned or configured as strings with units (kbps/mbps),
+// but internally the SMF/UPF and PFCP signaling require numeric values in bps.
+//
+// Supported units:
+//   - "kbps" → kilobits per second (multiplied by 1,000)
+//   - "mbps" → megabits per second (multiplied by 1,000,000)
 func StringToBitRate(s string) (uint64, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if strings.HasSuffix(s, "kbps") {

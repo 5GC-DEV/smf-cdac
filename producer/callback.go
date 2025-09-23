@@ -99,21 +99,31 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	return nil
 }
 
+// BuildPfcpParam constructs the PFCP parameters (PDRs, FARs, QERs,) for a given SMContext.
+// It analyzes the SM Policy updates and the current data paths in the SM context to:
+//  1. Create or modify PDRs (Packet Detection Rules), FARs (Forwarding Action Rules), and QERs (QoS Enforcement Rules).
+//  2. Identify PDRs, FARs, and QERs to be removed if the policy indicates a release-only scenario.
+//  3. Activate UL/DL tunnels on the UPFs if needed.
+//
+// This function returns a pfcpParam structure containing lists of rules to add or remove for PFCP session management.
 func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
+	// Initialize PFCP parameter container
 	pfcpParam := &pfcpParam{
 		pdrList:   []*smfContext.PDR{},
 		farList:   []*smfContext.FAR{},
-		barList:   []*smfContext.BAR{},
 		qerList:   []*smfContext.QER{},
 		removePDR: []*smfContext.PDR{},
 		removeFAR: []*smfContext.FAR{},
 		removeQER: []*smfContext.QER{},
 	}
 
+	// Initialize map to track UPFs pending PFCP configuration
 	smContext.PendingUPF = make(smfContext.PendingUPF)
 
+	// Determine if we only need to release existing rules (no new policy)
 	shouldSendReleaseOnly := false
 	ruleid := "0"
+
 	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
 		if len(smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
 			shouldSendReleaseOnly = true
@@ -121,6 +131,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
 				logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s, Rule=%+v", ruleId, rule)
 				ruleid = ruleId
+				// If any PCC rule is invalid or empty, we treat this as release-only
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
 					shouldSendReleaseOnly = true
 					break
@@ -129,6 +140,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		}
 	}
 	logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s", ruleid)
+
+	// Iterate over all active data paths in the SM context
 	for dpIndex, dataPath := range smContext.Tunnel.DataPathPool {
 		logger.PduSessLog.Infof("[BuildPfcpParam] Processing DataPath[%d], Activated=%v", dpIndex, dataPath.Activated)
 		if !dataPath.Activated {
@@ -140,6 +153,8 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		var dedQER *smf_context.QER
 		var err error
 		logger.PduSessLog.Infof("Processing DataPath with UPF Node: %s", ANUPF.GetNodeIP())
+
+		// Only create/activate QERs and tunnels if not release-only
 		if !shouldSendReleaseOnly {
 			dedQER, err = ANUPF.CreateDedicatedQosQer(smContext)
 			if err != nil {
@@ -152,11 +167,14 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				logger.PduSessLog.Errorf("activate UL/DL tunnel error %v", err.Error())
 			}
 		}
+
 		// ----------------------
 		// Handle Downlink PDRs
 		// ----------------------
 		if dlPDR, ok := ANUPF.DownLinkTunnel.PDR[ruleid]; ok {
 			logger.PduSessLog.Infof("[BuildPfcpParam] Checking DL PDR: Name=%s, ID=%d", ruleid, dlPDR.PDRID)
+
+			// Release-only scenario: mark PDR, FAR, QER for removal
 			if shouldSendReleaseOnly {
 				logger.PduSessLog.Infof("[BuildPfcpParam] Marking DL PDR[%s] for removal", ruleid)
 				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
@@ -164,45 +182,28 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
 				}
 				if dlPDR.QER != nil {
-					for _, qer := range dlPDR.QER {
-						if qer != nil {
-							logger.PduSessLog.Infof(
-								"[BuildPfcpParam] UL PDR[%s] has QER ID [%d], QFI=%d, State=%v",
-								ruleid, qer.QERID, qer.QFI, qer.State,
-							)
-						}
-					}
 					pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
 				}
 				continue
 			}
 
-			logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v]", ruleid, dlPDR)
+			// Attach dedicated QER to DL PDR
 			dlPDR.QER = []*smf_context.QER{dedQER}
-
-			logger.PduSessLog.Infof("[BuildPfcpParam] Replaced DL PDR[%s] QERs with new QER: %+v", ruleid, dlPDR)
-
 			if dlPDR.Precedence == 0 {
 				dlPDR.Precedence = 1
 			}
+
+			// Set PDI fields for core interface
 			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
 			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
-			logger.PduSessLog.Infof("[BuildPfcpParam] Final DL PDR[%s]: %+v", ruleid, dlPDR)
 
+			// Configure FAR for downlink traffic
 			dlFAR := dlPDR.FAR
-
-			// FAR ApplyAction
 			dlFAR.ApplyAction = smf_context.ApplyAction{
-				Buff: true,
-				Drop: false,
-				Dupl: false,
-				Forw: false,
-				Nocp: true,
+				Buff: true, Drop: false, Dupl: false, Forw: false, Nocp: true,
 			}
 
-			// Interface resolution
-			logger.PduSessLog.Infof("Resolving UPF interface for DNN [%s], type [N6]", smContext.Dnn)
-
+			// Append to PFCP param lists
 			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 			if dlFAR != nil {
 				pfcpParam.farList = append(pfcpParam.farList, dlFAR)
@@ -219,35 +220,32 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 		// ----------------------
 		if ulPDR, ok := ANUPF.UpLinkTunnel.PDR[ruleid]; ok {
 			if shouldSendReleaseOnly {
-				logger.PduSessLog.Infof("[BuildPfcpParam] Marking UL PDR[%s] for removal", ruleid)
+				// Mark UL PDR, FAR, QER for removal
 				pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
 				if ulPDR.FAR != nil {
 					pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
 				}
 				if ulPDR.QER != nil {
-					for _, qer := range ulPDR.QER {
-						if qer != nil {
-							logger.PduSessLog.Infof(
-								"[BuildPfcpParam] UL PDR[%s] has QER ID [%d], QFI=%d, State=%v",
-								ruleid, qer.QERID, qer.QFI, qer.State,
-							)
-						}
-					}
 					pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
 				}
 				continue
 			}
+
+			// Attach dedicated QER to UL PDR
 			ulPDR.QER = []*smf_context.QER{dedQER}
-			logger.PduSessLog.Infof("[BuildPfcpParam] Replaced DL PDR[%s] QERs with new QER: %+v", ruleid, ulPDR)
 			if ulPDR.Precedence == 0 {
 				ulPDR.Precedence = 1
 			}
+
+			// Set PDI and outer header removal for access interface
 			ulPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceAccess}
 			ulPDR.PDI.LocalFTeid = &smf_context.FTEID{Ch: true}
 			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
 			ulPDR.OuterHeaderRemoval = &smf_context.OuterHeaderRemoval{
 				OuterHeaderRemovalDescription: smf_context.OuterHeaderRemovalGtpUUdpIpv4,
 			}
+
+			// Configure FAR for UL traffic
 			ulFAR := ulPDR.FAR
 			ulFAR.ApplyAction = smf_context.ApplyAction{Forw: true}
 			ulFAR.ForwardingParameters = &smf_context.ForwardingParameters{
@@ -257,10 +255,12 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				NetworkInstance: []byte(smContext.Dnn),
 			}
 
+			// Append to PFCP param lists
 			pfcpParam.pdrList = append(pfcpParam.pdrList, ulPDR)
 			if ulFAR != nil {
 				pfcpParam.farList = append(pfcpParam.farList, ulFAR)
 			}
+
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 			logger.CtxLog.Infof("activate UpLink PDR[%v]:[%v]", ruleid, ulPDR)
 		}
@@ -269,64 +269,87 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	return pfcpParam
 }
 
+// 3GPP Reference: TS 23.502 §4.3.3.4 – "PDU Session Modification" procedure
 func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
-	// N1N2 Request towards AMF
+	// -------------------------------
+	// Initialize N1N2 Message Transfer Request
+	// -------------------------------
 	n1n2Request := models.N1N2MessageTransferRequest{}
 
-	// N2 Container Info
+	// -------------------------------
+	// Prepare N2 container info (NGAP message)
+	// -------------------------------
 	n2InfoContainer := models.N2InfoContainer{
-		N2InformationClass: models.N2InformationClass_SM,
+		N2InformationClass: models.N2InformationClass_SM, // SM information for NGAP
 		SmInfo: &models.N2SmInformation{
-			PduSessionId: smContext.PDUSessionID,
+			PduSessionId: smContext.PDUSessionID, // PDU session ID
 			N2InfoContent: &models.N2InfoContent{
-				NgapIeType: models.NgapIeType_PDU_RES_MOD_REQ,
+				NgapIeType: models.NgapIeType_PDU_RES_MOD_REQ, // NGAP IE type for PDUSessionResourceModifyRequest
 				NgapData: &models.RefToBinaryData{
-					ContentId: "N2SmInformation",
+					ContentId: "N2SmInformation", // Reference ID for binary data
 				},
 			},
-			SNssai: smContext.Snssai,
+			SNssai: smContext.Snssai, // Slice information
 		},
 	}
 
-	// N1 Container Info
+	// -------------------------------
+	// Prepare N1 container info (NAS message)
+	// -------------------------------
 	n1MsgContainer := models.N1MessageContainer{
-		N1MessageClass:   "SM",
-		N1MessageContent: &models.RefToBinaryData{ContentId: "GSM_NAS"},
+		N1MessageClass:   "SM",                                          // Session Management NAS message
+		N1MessageContent: &models.RefToBinaryData{ContentId: "GSM_NAS"}, // Binary content reference
 	}
 
-	// N1N2 Json Data
-	n1n2Request.JsonData = &models.N1N2MessageTransferReqData{PduSessionId: smContext.PDUSessionID}
+	// -------------------------------
+	// Fill JsonData for N1N2 transfer
+	// -------------------------------
+	n1n2Request.JsonData = &models.N1N2MessageTransferReqData{
+		PduSessionId: smContext.PDUSessionID,
+	}
 
-	// N1 Msg
+	// -------------------------------
+	// Build N1 (NAS) PDU Session Modification Command
+	// -------------------------------
 	if smNasBuf, err := smfContext.BuildGSMPDUSessionModificationCommand(smContext); err != nil {
-		logger.PduSessLog.Errorf("build GSM BuildGSMPDUSessionModificationCommand failed: %s", err)
+		logger.PduSessLog.Errorf("BuildGSMPDUSessionModificationCommand failed: %s", err)
 	} else {
-		n1n2Request.BinaryDataN1Message = smNasBuf
-		n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer
+		n1n2Request.BinaryDataN1Message = smNasBuf                // Attach binary NAS message
+		n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer // Attach N1 container
 	}
 
-	// N2 Msg
+	// -------------------------------
+	// Build N2 (NGAP) PDUSessionResourceModifyRequestTransfer
+	// -------------------------------
 	n2Pdu, err := smfContext.BuildPDUSessionResourceModifyRequestTransfer(smContext)
 	if err != nil {
-		smContext.SubPduSessLog.Errorf("SMPolicyUpdate, build PDUSession Resource Modify Request Transfer Error(%s)", err.Error())
+		smContext.SubPduSessLog.Errorf("Build PDUSessionResourceModifyRequestTransfer failed: %s", err.Error())
 	} else {
-		n1n2Request.BinaryDataN2Information = n2Pdu
-		n1n2Request.JsonData.N2InfoContainer = &n2InfoContainer
+		n1n2Request.BinaryDataN2Information = n2Pdu             // Attach binary NGAP message
+		n1n2Request.JsonData.N2InfoContainer = &n2InfoContainer // Attach N2 container
 	}
 
 	smContext.SubPduSessLog.Infoln("QoS N1N2 transfer initiated")
-	rspData, _, err := smContext.
-		CommunicationClient.
+
+	// -------------------------------
+	// Send N1N2 Message Transfer to AMF
+	// -------------------------------
+	rspData, _, err := smContext.CommunicationClient.
 		N1N2MessageCollectionDocumentApi.
 		N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
 	if err != nil {
-		smContext.SubPfcpLog.Warnf("send N1N2Transfer failed, %v", err.Error())
+		smContext.SubPfcpLog.Warnf("Send N1N2Transfer failed: %v", err.Error())
 		return err
 	}
+
+	// -------------------------------
+	// Check response cause
+	// -------------------------------
 	if rspData.Cause == models.N1N2MessageTransferCause_N1_MSG_NOT_TRANSFERRED {
-		smContext.SubPfcpLog.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
-		return fmt.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
+		smContext.SubPfcpLog.Errorf("N1N2MessageTransfer failure: %v", rspData.Cause)
+		return fmt.Errorf("N1N2MessageTransfer failure: %v", rspData.Cause)
 	}
+
 	smContext.SubPduSessLog.Infoln("QoS N1N2 Transfer completed")
 	return nil
 }

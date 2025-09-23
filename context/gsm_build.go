@@ -20,6 +20,10 @@ import (
 	errors "github.com/omec-project/smf/smferrors"
 )
 
+const (
+	PTI uint8 = 0 // indicates that the request is initiated by the core network.
+)
+
 type AuthorizedQosRules struct {
 	Iei    uint8
 	Len    uint16
@@ -212,39 +216,57 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	return m.PlainNasEncode()
 }
 
+// 3GPP Reference: TS 24.501, Section 8.3.4 – "PDU Session Modification Command"
 func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error) {
+	// Initialize NAS message
 	m := nas.NewMessage()
 	m.GsmMessage = nas.NewGsmMessage()
+
+	// Set NAS Message Type and Extended Protocol Discriminator for SM messages
 	m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
 	m.GsmHeader.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+
+	// Create PDUSessionModificationCommand IE
 	m.PDUSessionModificationCommand = nasMessage.NewPDUSessionModificationCommand(0x0)
 	pDUSessionModificationCommand := m.PDUSessionModificationCommand
 
 	pDUSessionModificationCommand.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
 	pDUSessionModificationCommand.SetPDUSessionID(uint8(smContext.PDUSessionID))
-	// Method 1: Simple increment with wraparound
-	pti := uint8(0)
-	pDUSessionModificationCommand.SetPTI(pti)
-	// pDUSessionModificationCommand.SetPTI(0)
+
+	// PTI = 0 indicates core-initiated request
+	pDUSessionModificationCommand.SetPTI(PTI)
+
 	pDUSessionModificationCommand.SetMessageType(nas.MsgTypePDUSessionModificationCommand)
 
-	if len(smContext.SmPolicyUpdates) > 0 {
-		if smContext.SmPolicyUpdates[0].SessRuleUpdate != nil &&
-			smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil &&
-			smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr != nil {
-			modAmbr := nasConvert.ModelsToSessionAMBR(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr)
-			pDUSessionModificationCommand.SessionAMBR = &modAmbr
-			pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
+	// ===============================
+	// Set Session-AMBR if available
+	// ===============================
+	if len(smContext.SmPolicyUpdates) > 0 &&
+		smContext.SmPolicyUpdates[0].SessRuleUpdate != nil &&
+		smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule != nil &&
+		smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr != nil {
 
-			smContext.SubGsmLog.Infof("Session-AMBR set for PDU Session Modification Command")
-		}
+		modAmbr := nasConvert.ModelsToSessionAMBR(smContext.SmPolicyUpdates[0].SessRuleUpdate.ActiveSessRule.AuthSessAmbr)
+		pDUSessionModificationCommand.SessionAMBR = &modAmbr
+		pDUSessionModificationCommand.SessionAMBR.SetLen(uint8(len(pDUSessionModificationCommand.SessionAMBR.Octet)))
+
+		smContext.SubGsmLog.Infof("Session-AMBR set for PDU Session Modification Command")
 	}
+
+	// ===============================
+	// Build Authorized QoS Flow Descriptions
+	// ===============================
 	authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
 	if pDUSessionModificationCommand.AuthorizedQosFlowDescriptions == nil {
-		pDUSessionModificationCommand.AuthorizedQosFlowDescriptions = nasType.NewAuthorizedQosFlowDescriptions(nasMessage.PDUSessionModificationCommandAuthorizedQosFlowDescriptionsType)
+		pDUSessionModificationCommand.AuthorizedQosFlowDescriptions = nasType.NewAuthorizedQosFlowDescriptions(
+			nasMessage.PDUSessionModificationCommandAuthorizedQosFlowDescriptionsType)
 	}
 	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetLen(authQfd.IeLen)
 	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetQoSFlowDescriptions(authQfd.Content)
+
+	// ===============================
+	// Build Authorized QoS Rules
+	// ===============================
 	if len(smContext.SmPolicyUpdates) > 0 {
 		qoSRules := qos.BuildQosRulespdumod(smContext.SmPolicyUpdates[0])
 
@@ -257,6 +279,7 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 			}
 		}
 
+		// Marshal QoS rules to binary
 		qosRulesBytes, err := qoSRules.MarshalBinary()
 		if err != nil {
 			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
@@ -266,22 +289,21 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		smContext.SubGsmLog.Debugf("QoS Rules raw (hex): %x", qosRulesBytes)
 		smContext.SubGsmLog.Debugf("QoS Rules length: %d", len(qosRulesBytes))
 
+		// If there are QoS rules, create the Authorized QoS Rules IE
 		if len(qosRulesBytes) > 0 {
-			if pDUSessionModificationCommand.AuthorizedQosRules == nil {
-				pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
-			}
-			pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(nas.MsgTypePDUSessionModificationCommand)
-			pDUSessionModificationCommand.AuthorizedQosRules.SetIei(0x7A)
-			// Now safely set length and rules
-			smContext.SubGsmLog.Debugf("QoS Rules length from MarshalBinary: %d", len(qosRulesBytes))
+			pDUSessionModificationCommand.AuthorizedQosRules = nasType.NewAuthorizedQosRules(
+				nas.MsgTypePDUSessionModificationCommand)
 			pDUSessionModificationCommand.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
 			pDUSessionModificationCommand.AuthorizedQosRules.SetQosRule(qosRulesBytes)
+
 			smContext.SubGsmLog.Debugf("AuthorizedQoS IE len: %d", pDUSessionModificationCommand.AuthorizedQosRules.GetLen())
 			smContext.SubGsmLog.Debugf("AuthorizedQoS IE hex: %x", pDUSessionModificationCommand.AuthorizedQosRules.GetQosRule())
 		}
 	}
 
 	smContext.SubGsmLog.Infof("PDU Session Modification Command built successfully for Session ID: %d", smContext.PDUSessionID)
+
+	// Encode NAS message to bytes
 	encoded, err := m.PlainNasEncode()
 	if err != nil {
 		smContext.SubGsmLog.Errorf("Encoding failed: %v", err)
@@ -290,7 +312,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 
 	smContext.SubGsmLog.Infof("Successfully encoded message, length: %d, hex: %x", len(encoded), encoded)
 	return encoded, nil
-	// return m.PlainNasEncode()
 }
 
 func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {

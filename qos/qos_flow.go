@@ -92,38 +92,42 @@ func GetQosFlowIdFromQosId(qosId string) uint8 {
 	}
 }
 
-/*func GetQosFlowIdFromQosIdhardcode(qosId string) uint8 {
-	return 2
-}*/
-
 // Build Qos Flow Description to be sent to UE
 func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowDescriptionsAuthorized {
+	// Initialize QoS Flow Descriptions structure
 	QFDescriptions := QosFlowDescriptionsAuthorized{
 		IeType:  nasMessage.PDUSessionEstablishmentAcceptAuthorizedQosFlowDescriptionsType,
 		Content: make([]byte, 0),
 	}
 
 	qosFlowUpdate := smPolicyUpdates.QosFlowUpdate
-	hasUpdates := false
+	hasUpdates := false // Track if any QoS flows were processed
 
-	// Check if there are any QoS flow updates
+	// ===============================
+	// Handle PCC rule deletions if QoS flow updates are nil
+	// ===============================
 	if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
 		logger.QosLog.Warn("smPolicyUpdates or QosFlowUpdate is nil, processing PCC rule deletions only")
 
 		for pccRuleID := range smPolicyUpdates.PccRuleUpdate.del {
 			logger.QosLog.Infof("Processing deletion for PCC rule ID: %s", pccRuleID)
+
 			qfiVal, err := strconv.Atoi(pccRuleID)
 			if err != nil {
 				logger.QosLog.Errorf("Invalid QFI string for PCC rule ID '%s': %v", pccRuleID, err)
 				continue
 			}
-
 			qfi := uint8(qfiVal)
+
 			logger.QosLog.Infof("Deleting QoS Flow Description for QFI=%d (from PCC rule %s)", qfi, pccRuleID)
+
+			// Skip if QFI is zero
 			if qfi == 0 {
 				logger.QosLog.Warnf("Skipping QoS Flow deletion because QFI=0 for PCC rule ID='%s'", pccRuleID)
 				continue
 			}
+
+			// Build delete QoS Flow Description
 			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
 			hasUpdates = true
 		}
@@ -134,8 +138,12 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 			logger.QosLog.Warn("No QoS flow deletions were processed")
 		}
 	}
+
+	// ===============================
+	// Handle Add/Modify/Delete QoS Flow updates
+	// ===============================
 	if qosFlowUpdate != nil {
-		// QoS Flow Description to be Added
+		// Add QoS flows
 		if len(qosFlowUpdate.add) > 0 {
 			logger.QosLog.Infof("Processing %d QoS flows to add", len(qosFlowUpdate.add))
 			for name, qosFlow := range qosFlowUpdate.add {
@@ -145,7 +153,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 			}
 		}
 
-		// QoS Flow Description to be Modified
+		// Modify QoS flows
 		if len(qosFlowUpdate.mod) > 0 {
 			logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
 			for name, qosFlow := range qosFlowUpdate.mod {
@@ -155,7 +163,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 			}
 		}
 
-		// QoS Flow Description to be Deleted
+		// Delete QoS flows
 		if len(qosFlowUpdate.del) > 0 {
 			logger.QosLog.Infof("Processing %d QoS flows to delete", len(qosFlowUpdate.del))
 			for qfiStr := range qosFlowUpdate.del {
@@ -172,9 +180,13 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 			}
 		}
 	}
-	// Set the length based on the content
+
+	// ===============================
+	// Set IE length based on content
+	// ===============================
 	QFDescriptions.IeLen = uint16(len(QFDescriptions.Content))
 
+	// Logging summary
 	if !hasUpdates {
 		logger.QosLog.Warn("No valid QoS flow updates processed, returning empty QoS flow descriptions")
 	} else {
@@ -223,6 +235,9 @@ func (q *QosFlowsUpdate) GetDeleted() map[string]*models.QosData {
 	return q.del
 }
 
+// BuildAddQosFlowDescFromQoSDesc builds a new QoS Flow Description (QFD)
+// for the "create new QoS flow" operation, based on QoS data from PCF.
+// This is used when a new QoS flow is authorized by policy control.
 func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDesc(qosData *models.QosData) {
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
 
@@ -263,6 +278,9 @@ func (d *QosFlowDescriptionsAuthorized) BuildAddQosFlowDescFromQoSDesc(qosData *
 	d.AddQFD(&qfd)
 }
 
+// BuildModQosFlowDescFromQoSDesc builds a QoS Flow Description (QFD)
+// for the "modify existing QoS flow" operation, based on updated QoS data.
+// Only parameters that are present and need to be modified are added.
 func (d *QosFlowDescriptionsAuthorized) BuildModQosFlowDescFromQoSDesc(qosData *models.QosData) {
 	qfd := QoSFlowDescription{QFDLen: QFDFixLen}
 
@@ -306,6 +324,9 @@ func (d *QosFlowDescriptionsAuthorized) BuildModQosFlowDescFromQoSDesc(qosData *
 	d.AddQFD(&qfd)
 }
 
+// BuildDelQosFlowDescFromQoSDesc builds a QoS Flow Description (QFD)
+// for the "delete existing QoS flow" operation, for a given QFI.
+// Unlike Add/Modify, no parameters are included in the delete operation.
 func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qfi uint8) {
 	logger.QosLog.Infof("Building Delete QoS Flow Description for QFI=%d", qfi)
 
