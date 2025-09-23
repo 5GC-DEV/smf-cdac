@@ -472,6 +472,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			}
 		}
 	} */
+	ruleid := "0"
 	if len(ctx.SmPolicyUpdates) > 0 && ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
 		// Check if PccRules map is empty
 		if len(ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
@@ -481,6 +482,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			// Check if any PCC rule has nil or empty ID
 			for ruleId, rule := range ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
+					ruleId = rule.PccRuleId
 					shouldSendReleaseOnly = true
 					logger.PduSessLog.Warnf("Invalid PCC Rule found (ruleId='%s'), setting shouldSendReleaseOnly = true", ruleId)
 					break
@@ -499,11 +501,14 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			return nil, fmt.Errorf("sessRule is nil")
 		}
 
-		qfi := sessRule.AuthDefQos.Var5qi
-
+		//qfi := sessRule.AuthDefQos.qfi
+		ruleidInt, err := strconv.Atoi(ruleid)
+		if err != nil {
+			logger.PduSessLog.Errorf("Invalid ruleid: %s", ruleid)
+		}
 		qosFlowToReleaseList := ngapType.QosFlowListWithCause{}
 		qosFlowToReleaseList.List = append(qosFlowToReleaseList.List, ngapType.QosFlowWithCauseItem{
-			QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
+			QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(ruleidInt)},
 			Cause: ngapType.Cause{
 				Present: ngapType.CausePresentNas,
 				Nas:     &ngapType.CauseNas{Value: ngapType.CauseNasPresentNormalRelease},

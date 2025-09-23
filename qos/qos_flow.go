@@ -152,7 +152,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 			logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
 			for name, qosFlow := range qosFlowUpdate.mod {
 				logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
-				QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
+				QFDescriptions.BuildModQosFlowDescFromQoSDesc(qosFlow)
 				hasUpdates = true
 			}
 		}
@@ -436,6 +436,7 @@ func (d *QosFlowDescriptionsAuthorized) BuildDelQosFlowDescFromQoSDesc(qfi uint8
 	// Operation Code = Delete existing QoS flow description
 	qfd.SetQoSFlowDescOpCode(QFDOpDelete)
 	logger.QosLog.Infof("Set Operation Code = Delete (%d)", QFDOpDelete)
+	logger.QosLog.Infof("OpCode after setting: 0x%02x\n", qfd.OpCode)
 
 	// No parameters, E-bit must be 0
 	qfd.SetQFDEBitDeleteExistingQFD()
