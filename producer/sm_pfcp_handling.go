@@ -16,7 +16,7 @@ func SendPfcpSessionModifyReq(smContext *smf_context.SMContext, pfcpParam *pfcpP
 	defaultPath := smContext.Tunnel.DataPathPool.GetDefaultPath()
 	ANUPF := defaultPath.FirstDPNode
 	err := pfcp_message.SendPfcpSessionModificationRequest(ANUPF.UPF.NodeID, smContext,
-		pfcpParam.pdrList, pfcpParam.farList, pfcpParam.barList, pfcpParam.qerList, ANUPF.UPF.Port)
+		pfcpParam.pdrList, pfcpParam.farList, pfcpParam.barList, pfcpParam.qerList, pfcpParam.removePDR, pfcpParam.removeFAR, pfcpParam.removeQER, ANUPF.UPF.Port)
 	if err != nil {
 		smContext.SubCtxLog.Errorf("pfcp session modification failure: %+v", err)
 	}
@@ -25,13 +25,13 @@ func SendPfcpSessionModifyReq(smContext *smf_context.SMContext, pfcpParam *pfcpP
 
 	switch PFCPResponseStatus {
 	case smf_context.SessionUpdateSuccess:
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, PFCP Session Update Success")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, PFCP Session Update Success")
 
 	case smf_context.SessionUpdateFailed:
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, PFCP Session Update Failed")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, PFCP Session Update Failed")
 		fallthrough
 	case smf_context.SessionUpdateTimeout:
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, PFCP Session Modification Timeout")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, PFCP Session Modification Timeout")
 
 		err := fmt.Errorf("pfcp modification failure")
 		return err

@@ -333,10 +333,12 @@ func BuildPfcpSessionModificationRequest(
 	pdrList []*context.PDR,
 	farList []*context.FAR,
 	qerList []*context.QER,
+	removePDR []*context.PDR,
+	removeFAR []*context.FAR,
+	removeQER []*context.QER,
 ) (*message.SessionModificationRequest, error) {
 	ies := make([]*ie.IE, 0)
 	ies = append(ies, ie.NewFSEID(localSEID, fseidIPv4Address, nil))
-
 	for _, pdr := range pdrList {
 		switch pdr.State {
 		case context.RULE_INITIAL:
@@ -368,6 +370,19 @@ func BuildPfcpSessionModificationRequest(
 		}
 		qer.State = context.RULE_CREATE
 	}
+
+	for _, pdr := range removePDR {
+		ies = append(ies, buildRemovePDRIE(pdr))
+	}
+
+	for _, far := range removeFAR {
+		ies = append(ies, buildRemoveFARIE(far))
+	}
+
+	for _, qer := range removeQER {
+		ies = append(ies, buildRemoveQERIE(qer))
+	}
+
 	return message.NewSessionModificationRequest(
 		0,
 		0,
@@ -408,4 +423,16 @@ func BuildPfcpSessionReportResponse(cause uint8, drobu bool, seqFromUPF uint32, 
 		ie.NewCause(cause),
 		ie.NewPFCPSRRspFlags(uint8(*flag)),
 	)
+}
+
+func buildRemovePDRIE(pdr *context.PDR) *ie.IE {
+	return ie.NewRemovePDR(ie.NewPDRID(pdr.PDRID))
+}
+
+func buildRemoveFARIE(far *context.FAR) *ie.IE {
+	return ie.NewRemoveFAR(ie.NewFARID(far.FARID))
+}
+
+func buildRemoveQERIE(qer *context.QER) *ie.IE {
+	return ie.NewRemoveQER(ie.NewQERID(qer.QERID))
 }

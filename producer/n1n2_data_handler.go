@@ -25,10 +25,13 @@ type pfcpAction struct {
 }
 
 type pfcpParam struct {
-	pdrList []*context.PDR
-	farList []*context.FAR
-	barList []*context.BAR
-	qerList []*context.QER
+	pdrList   []*context.PDR
+	farList   []*context.FAR
+	barList   []*context.BAR
+	qerList   []*context.QER
+	removePDR []*context.PDR // Add for teardown
+	removeFAR []*smf_context.FAR
+	removeQER []*smf_context.QER
 }
 
 func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction) error {
