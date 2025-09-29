@@ -12,7 +12,7 @@ require (
 	github.com/omec-project/nas v1.5.3
 	github.com/omec-project/ngap v1.4.2
 	github.com/omec-project/openapi v1.4.1
-	github.com/omec-project/util v1.3.2
+	// github.com/omec-project/util v1.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/segmentio/kafka-go v0.4.48
@@ -22,6 +22,8 @@ require (
 	go.mongodb.org/mongo-driver v1.17.4
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace github.com/omec-project/util => github.com/ReshmaJS/util v1.3.2-idgen
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -106,3 +108,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317 // indirect
 )
+
+require github.com/omec-project/util v1.3.2
