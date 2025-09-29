@@ -712,19 +712,31 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 	n1n2Request.JsonData = &models.N1N2MessageTransferReqData{PduSessionId: smContext.PDUSessionID}
 
 	if success {
+		logger.PduSessLog.Infof("PDU Session Establishment Success for SUPI: %s, DNN: %s, PDU Session ID: %d",
+			smContext.Supi, smContext.Dnn, smContext.PDUSessionID)
 		if smNasBuf, err := smf_context.BuildGSMPDUSessionEstablishmentAccept(smContext); err != nil {
+			logger.PduSessLog.Errorf("Failed to build GSM PDUSessionEstablishmentAccept for SUPI: %s, PDU Session ID: %d, Error: %s",
+				smContext.Supi, smContext.PDUSessionID, err)
 			logger.PduSessLog.Errorf("build GSM PDUSessionEstablishmentAccept failed: %s", err)
 		} else {
+			logger.PduSessLog.Debugf("Successfully built GSM PDUSessionEstablishmentAccept [len=%d] for SUPI: %s, PDU Session ID: %d",
+				len(smNasBuf), smContext.Supi, smContext.PDUSessionID)
 			n1n2Request.BinaryDataN1Message = smNasBuf
 			n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer
 		}
 
 		if n2Pdu, err := smf_context.BuildPDUSessionResourceSetupRequestTransfer(smContext); err != nil {
+			logger.PduSessLog.Errorf("Failed to build PDUSessionResourceSetupRequestTransfer for SUPI: %s, PDU Session ID: %d, Error: %s",
+				smContext.Supi, smContext.PDUSessionID, err)
 			logger.PduSessLog.Errorf("build PDUSessionResourceSetupRequestTransfer failed: %s", err)
 		} else {
+			logger.PduSessLog.Debugf("Successfully built PDUSessionResourceSetupRequestTransfer [len=%d] for SUPI: %s, PDU Session ID: %d",
+				len(n2Pdu), smContext.Supi, smContext.PDUSessionID)
 			n1n2Request.BinaryDataN2Information = n2Pdu
 			n1n2Request.JsonData.N2InfoContainer = &n2InfoContainer
 		}
+		logger.PduSessLog.Infof("Completed preparing N1N2Request for SUPI: %s, PDU Session ID: %d",
+			smContext.Supi, smContext.PDUSessionID)
 	} else {
 		if smNasBuf, err := smf_context.BuildGSMPDUSessionEstablishmentReject(smContext,
 			nasMessage.Cause5GSMRequestRejectedUnspecified); err != nil {
@@ -736,6 +748,8 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 	}
 
 	smContext.SubPduSessLog.Infof("N1N2 transfer initiated")
+	smContext.SubPduSessLog.Infof("N1N2 transfer initiated for SUPI: %s, PDU Session ID: %d",
+		smContext.Supi, smContext.PDUSessionID)
 	rspData, _, err := smContext.
 		CommunicationClient.
 		N1N2MessageCollectionDocumentApi.
