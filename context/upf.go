@@ -131,7 +131,7 @@ func NewUPFInterfaceInfo(i *factory.InterfaceUpfInfoItem) *UPFInterfaceInfo {
 
 // *** add unit test ***//
 // IP returns the IP of the user plane IP information of the pduSessType
-func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
+/*func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 	if (pduSessType == nasMessage.PDUSessionTypeIPv4 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) && len(i.IPv4EndPointAddresses) != 0 {
 		return i.IPv4EndPointAddresses[0].To4(), nil
 	}
@@ -160,6 +160,64 @@ func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 		}
 	}
 
+	return nil, errors.New("not matched ip address")
+} */
+
+func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
+	if i == nil {
+		logger.CtxLog.Error("UPFInterfaceInfo.IP(): called on nil receiver")
+		// return nil, errors.New("nil UPFInterfaceInfo")
+	}
+
+	logger.CtxLog.Infof("UPFInterfaceInfo.IP(): pduSessType=%d, IPv4Addrs=%v, IPv6Addrs=%v, FQDN=%s",
+		pduSessType, i.IPv4EndPointAddresses, i.IPv6EndPointAddresses, i.EndpointFQDN)
+
+	// IPv4 case
+	if (pduSessType == nasMessage.PDUSessionTypeIPv4 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) &&
+		len(i.IPv4EndPointAddresses) != 0 {
+		ip := i.IPv4EndPointAddresses[0].To4()
+		logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv4 %s", ip)
+		return ip, nil
+	}
+
+	// IPv6 case
+	if (pduSessType == nasMessage.PDUSessionTypeIPv6 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) &&
+		len(i.IPv6EndPointAddresses) != 0 {
+		ip := i.IPv6EndPointAddresses[0]
+		logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv6 %s", ip)
+		return ip, nil
+	}
+
+	// FQDN case
+	if i.EndpointFQDN != "" {
+		logger.CtxLog.Infof("UPFInterfaceInfo.IP(): resolving FQDN=%s", i.EndpointFQDN)
+		if resolvedAddr, err := net.ResolveIPAddr("ip", i.EndpointFQDN); err != nil {
+			logger.CtxLog.Errorf("UPFInterfaceInfo.IP(): resolve FQDN [%s] failed: %v", i.EndpointFQDN, err)
+		} else {
+			logger.CtxLog.Infof("UPFInterfaceInfo.IP(): resolved FQDN %s -> %s", i.EndpointFQDN, resolvedAddr.IP)
+
+			switch pduSessType {
+			case nasMessage.PDUSessionTypeIPv4:
+				ip := resolvedAddr.IP.To4()
+				logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv4 from FQDN %s", ip)
+				return ip, nil
+			case nasMessage.PDUSessionTypeIPv6:
+				ip := resolvedAddr.IP.To16()
+				logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv6 from FQDN %s", ip)
+				return ip, nil
+			default:
+				if v4 := resolvedAddr.IP.To4(); v4 != nil {
+					logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv4 (default branch) %s", v4)
+					return v4, nil
+				}
+				ip := resolvedAddr.IP.To16()
+				logger.CtxLog.Infof("UPFInterfaceInfo.IP(): returning IPv6 (default branch) %s", ip)
+				return ip, nil
+			}
+		}
+	}
+
+	logger.CtxLog.Warnf("UPFInterfaceInfo.IP(): no matching IP found for type=%d", pduSessType)
 	return nil, errors.New("not matched ip address")
 }
 
@@ -425,12 +483,13 @@ func (upf *UPF) qerID() (uint32, error) {
 func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	var pdr *PDR
 	var err error
-
+	logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][Enter] UPF=%s Rule=%s Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, rule.Precedence, upf.uuid.String())
 	// create empty PDR
 	if pdr, err = upf.AddPDR(); err != nil {
+		logger.CtxLog.Errorf("[DP][BuildCreatePdrFromPccRule][Error] UPF=%s Rule=%s failed to allocate PDR err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, err, upf.uuid.String())
 		return nil, err
 	}
-
+	logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][PDR][Allocated] PDRID=%d UPF=%s Rule=%s uuid=%s", pdr.PDRID, upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, upf.uuid.String())
 	// SDF Filter
 	sdfFilter := SDFFilter{}
 
@@ -443,9 +502,11 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 		sdfFilter.FlowDescription = []byte(flow.FlowDescription)
 		sdfFilter.LengthOfFlowDescription = uint16(len(sdfFilter.FlowDescription))
 		if id, err := strconv.ParseUint(flow.PackFiltId, 10, 32); err != nil {
+			logger.CtxLog.Errorf("[DP][BuildCreatePdrFromPccRule][Error] UPF=%s Rule=%s invalid PackFiltId=%s err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, flow.PackFiltId, err, upf.uuid.String())
 			return nil, err
 		} else {
 			sdfFilter.SdfFilterId = uint32(id)
+			logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][FlowDescription] Rule=%s FilterID=%d Desc=%s uuid=%s", rule.PccRuleId, sdfFilter.SdfFilterId, flow.FlowDescription, upf.uuid.String())
 		}
 	}
 
@@ -453,18 +514,21 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	if flow.TosTrafficClass != "" {
 		sdfFilter.Ttc = true
 		sdfFilter.TosTrafficClass = []byte(flow.TosTrafficClass)
+		logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][TosTrafficClass] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.TosTrafficClass, upf.uuid.String())
 	}
 
 	// Flow Label
 	if flow.FlowLabel != "" {
 		sdfFilter.Fl = true
 		sdfFilter.FlowLabel = []byte(flow.FlowLabel)
+		logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][FlowLabel] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.FlowLabel, upf.uuid.String())
 	}
 
 	// Security Parameter Index
 	if flow.Spi != "" {
 		sdfFilter.Spi = true
 		sdfFilter.SecurityParameterIndex = []byte(flow.Spi)
+		logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][SPI] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.Spi, upf.uuid.String())
 	}
 
 	pdi := PDI{
@@ -473,30 +537,36 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 
 	pdr.PDI = pdi
 	pdr.Precedence = uint32(rule.Precedence)
-
+	logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][Exit] UPF=%s Rule=%s PDRID=%d Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, pdr.PDRID, pdr.Precedence, upf.uuid.String())
 	return pdr, nil
 }
 
 func (upf *UPF) AddPDR() (*PDR, error) {
+	logger.CtxLog.Info("[DP][AddPDR][Enter] UPF=%s Status=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), upf.UPFStatus, upf.uuid.String())
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 		err := fmt.Errorf("this upf do not associate with smf")
+		logger.CtxLog.Errorf("[DP][AddPDR][Error] %v", err)
 		return nil, err
 	}
 
 	pdr := new(PDR)
 	if PDRID, err := upf.pdrID(); err != nil {
+		logger.CtxLog.Errorf("[DP][AddPDR][Error] UPF=%s failed to allocate PDRID err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), err, upf.uuid.String())
 		return nil, err
 	} else {
 		pdr.PDRID = PDRID
 		upf.pdrPool.Store(pdr.PDRID, pdr)
+		logger.CtxLog.Info("[DP][AddPDR][PDR][Allocated] UPF=%s PDRID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, upf.uuid.String())
 	}
 
 	if newFAR, err := upf.AddFAR(); err != nil {
+		logger.CtxLog.Errorf("[DP][AddPDR][Error] UPF=%s PDRID=%d failed to allocate FAR err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, err, upf.uuid.String())
 		return nil, err
 	} else {
 		pdr.FAR = newFAR
+		logger.CtxLog.Info("[DP][AddPDR][FAR][Associated] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, newFAR.FARID, upf.uuid.String())
 	}
-
+	logger.CtxLog.Infof("[DP][Exit][AddPDR] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, pdr.FAR.FARID, upf.uuid.String())
 	return pdr, nil
 }
 
