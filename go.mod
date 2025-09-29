@@ -12,7 +12,7 @@ require (
 	github.com/omec-project/nas v1.5.3
 	github.com/omec-project/ngap v1.4.2
 	github.com/omec-project/openapi v1.4.1
-	// github.com/omec-project/util v1.3.2
+	github.com/omec-project/util v1.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/segmentio/kafka-go v0.4.48
@@ -108,5 +108,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317 // indirect
 )
-
-require github.com/omec-project/util v1.3.2
