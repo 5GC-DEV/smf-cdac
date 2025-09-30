@@ -4,14 +4,14 @@ go 1.24.0
 
 require (
 	github.com/5GC-DEV/config5g-cdac v0.2.1
+	github.com/5GC-DEV/nas-cdac v0.0.0-20250930122720-777e5390c4bc
+	github.com/5GC-DEV/openapi-cdac v1.0.1-0.20250930103916-588dd800f7e9
 	github.com/antihax/optional v1.0.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/omec-project/aper v1.3.1
-	github.com/omec-project/nas v1.5.3
 	github.com/omec-project/ngap v1.4.2
-	github.com/omec-project/openapi v1.4.1
 	github.com/omec-project/util v1.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
@@ -22,6 +22,8 @@ require (
 	go.mongodb.org/mongo-driver v1.17.4
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require github.com/omec-project/openapi v1.4.1 // indirect
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -48,7 +50,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect

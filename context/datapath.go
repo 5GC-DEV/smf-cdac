@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/omec-project/openapi/models"
+	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/util"

@@ -20,8 +20,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/omec-project/nas/nasMessage"
-	"github.com/omec-project/openapi/models"
+	"github.com/5GC-DEV/nas-cdac/nasMessage"
+	"github.com/5GC-DEV/openapi-cdac/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"

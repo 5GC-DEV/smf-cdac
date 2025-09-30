@@ -19,7 +19,7 @@ import (
 	"time"
 
 	protos "github.com/5GC-DEV/config5g-cdac/proto/sdcoreConfig"
-	"github.com/omec-project/openapi/models"
+	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/omec-project/smf/logger"
 	utilLogger "github.com/omec-project/util/logger"
 )

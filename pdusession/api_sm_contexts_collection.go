@@ -17,9 +17,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/5GC-DEV/openapi-cdac"
+	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/gin-gonic/gin"
-	"github.com/omec-project/openapi"
-	"github.com/omec-project/openapi/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/fsm"
 	"github.com/omec-project/smf/logger"

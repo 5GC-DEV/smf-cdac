@@ -4,7 +4,7 @@
 
 package context
 
-import "github.com/omec-project/openapi/models"
+import "github.com/5GC-DEV/openapi-cdac/models"
 
 type SNssai struct {
 	Sd  string
