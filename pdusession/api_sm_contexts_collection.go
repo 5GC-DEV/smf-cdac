@@ -47,8 +47,10 @@ func HTTPPostSmContexts(c *gin.Context) {
 	s := strings.Split(c.GetHeader("Content-Type"), ";")
 	switch s[0] {
 	case "application/json":
+		logger.PduSessLog.Debugln("Binding request as application/json")
 		err = c.ShouldBindJSON(request.JsonData)
 	case "multipart/related":
+		logger.PduSessLog.Debugln("Binding request as multipart/related")
 		err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
 	}
 
