@@ -22,7 +22,7 @@ import (
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/metrics"
-	"github.com/omec-project/util/drsm"
+	"github.com/5GC-DEV/util-cdac/drsm"
 )
 
 func init() {

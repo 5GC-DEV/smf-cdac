@@ -13,7 +13,7 @@ import (
 
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
-	mi "github.com/omec-project/util/metricinfo"
+	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 	"github.com/segmentio/kafka-go"
 )
 

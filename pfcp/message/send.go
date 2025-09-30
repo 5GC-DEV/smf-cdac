@@ -28,7 +28,7 @@ import (
 	"github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/pfcp/adapter"
 	"github.com/omec-project/smf/pfcp/udp"
-	mi "github.com/omec-project/util/metricinfo"
+	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 	"github.com/wmnsk/go-pfcp/message"
 )
 

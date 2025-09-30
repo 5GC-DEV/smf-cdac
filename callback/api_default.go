@@ -17,6 +17,7 @@ package callback
 import (
 	"net/http"
 
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/gin-gonic/gin"
 	"github.com/omec-project/openapi"
 	"github.com/omec-project/openapi/models"
@@ -26,7 +27,6 @@ import (
 	stats "github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
 )
 
 // SubscriptionsPost -

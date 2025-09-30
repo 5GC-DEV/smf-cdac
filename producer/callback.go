@@ -18,8 +18,8 @@ import (
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
-	"github.com/omec-project/util/util_3gpp"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
+	"github.com/5GC-DEV/util-cdac/util_3gpp"
 )
 
 var (

@@ -8,6 +8,7 @@ package producer
 import (
 	"net/http"
 
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/omec-project/nas"
 	"github.com/omec-project/openapi/Nsmf_PDUSession"
 	"github.com/omec-project/openapi/models"
@@ -17,7 +18,6 @@ import (
 	"github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
 )
 
 type pfcpAction struct {

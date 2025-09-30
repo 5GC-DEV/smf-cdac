@@ -15,7 +15,7 @@ import (
 	"github.com/omec-project/smf/consumer"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/producer"
-	"github.com/omec-project/util/httpwrapper"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 )
 
 func HTTPNfSubscriptionStatusNotify(c *gin.Context) {

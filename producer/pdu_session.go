@@ -27,7 +27,7 @@ import (
 	pfcp_message "github.com/omec-project/smf/pfcp/message"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 )
 
 func formContextCreateErrRsp(httpStatus int, problemBody *models.ProblemDetails, n1SmMsg *models.RefToBinaryData) *httpwrapper.Response {

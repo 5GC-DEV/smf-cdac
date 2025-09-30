@@ -13,7 +13,7 @@ import (
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/pfcp/message"
-	"github.com/omec-project/util/flowdesc"
+	"github.com/5GC-DEV/util-cdac/flowdesc"
 )
 
 func AddPDUSessionAnchorAndULCL(smContext *context.SMContext, nodeID context.NodeID) {

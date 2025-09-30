@@ -17,12 +17,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/5GC-DEV/util-cdac/idgenerator"
 	"github.com/google/uuid"
 	"github.com/omec-project/nas/nasMessage"
 	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
-	"github.com/omec-project/util/idgenerator"
 )
 
 var upfPool sync.Map
@@ -483,13 +483,13 @@ func (upf *UPF) qerID() (uint32, error) {
 func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	var pdr *PDR
 	var err error
-	logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][Enter] UPF=%s Rule=%s Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, rule.Precedence, upf.uuid.String())
+	logger.CtxLog.Debug("[DP][BuildCreatePdrFromPccRule][Enter] UPF=%s Rule=%s Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, rule.Precedence, upf.uuid.String())
 	// create empty PDR
 	if pdr, err = upf.AddPDR(); err != nil {
 		logger.CtxLog.Errorf("[DP][BuildCreatePdrFromPccRule][Error] UPF=%s Rule=%s failed to allocate PDR err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, err, upf.uuid.String())
 		return nil, err
 	}
-	logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][PDR][Allocated] PDRID=%d UPF=%s Rule=%s uuid=%s", pdr.PDRID, upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, upf.uuid.String())
+	logger.CtxLog.Debug("[DP][BuildCreatePdrFromPccRule][PDR][Allocated] PDRID=%d UPF=%s Rule=%s uuid=%s", pdr.PDRID, upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, upf.uuid.String())
 	// SDF Filter
 	sdfFilter := SDFFilter{}
 
@@ -506,7 +506,7 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 			return nil, err
 		} else {
 			sdfFilter.SdfFilterId = uint32(id)
-			logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][FlowDescription] Rule=%s FilterID=%d Desc=%s uuid=%s", rule.PccRuleId, sdfFilter.SdfFilterId, flow.FlowDescription, upf.uuid.String())
+			logger.CtxLog.Debug("[DP][BuildCreatePdrFromPccRule][SDF][FlowDescription] Rule=%s FilterID=%d Desc=%s uuid=%s", rule.PccRuleId, sdfFilter.SdfFilterId, flow.FlowDescription, upf.uuid.String())
 		}
 	}
 
@@ -514,21 +514,21 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	if flow.TosTrafficClass != "" {
 		sdfFilter.Ttc = true
 		sdfFilter.TosTrafficClass = []byte(flow.TosTrafficClass)
-		logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][TosTrafficClass] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.TosTrafficClass, upf.uuid.String())
+		logger.CtxLog.Debug("[DP][BuildCreatePdrFromPccRule][SDF][TosTrafficClass] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.TosTrafficClass, upf.uuid.String())
 	}
 
 	// Flow Label
 	if flow.FlowLabel != "" {
 		sdfFilter.Fl = true
 		sdfFilter.FlowLabel = []byte(flow.FlowLabel)
-		logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][FlowLabel] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.FlowLabel, upf.uuid.String())
+		logger.CtxLog.Debug("[DP][BuildCreatePdrFromPccRule][SDF][FlowLabel] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.FlowLabel, upf.uuid.String())
 	}
 
 	// Security Parameter Index
 	if flow.Spi != "" {
 		sdfFilter.Spi = true
 		sdfFilter.SecurityParameterIndex = []byte(flow.Spi)
-		logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][SDF][SPI] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.Spi, upf.uuid.String())
+		logger.CtxLog.Debug("[DP][BuildCreatePdrFromPccRule][SDF][SPI] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.Spi, upf.uuid.String())
 	}
 
 	pdi := PDI{
@@ -537,12 +537,12 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 
 	pdr.PDI = pdi
 	pdr.Precedence = uint32(rule.Precedence)
-	logger.CtxLog.Infof("[DP][BuildCreatePdrFromPccRule][Exit] UPF=%s Rule=%s PDRID=%d Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, pdr.PDRID, pdr.Precedence, upf.uuid.String())
+	logger.CtxLog.Debug("[DP][BuildCreatePdrFromPccRule][Exit] UPF=%s Rule=%s PDRID=%d Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, pdr.PDRID, pdr.Precedence, upf.uuid.String())
 	return pdr, nil
 }
 
 func (upf *UPF) AddPDR() (*PDR, error) {
-	logger.CtxLog.Info("[DP][AddPDR][Enter] UPF=%s Status=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), upf.UPFStatus, upf.uuid.String())
+	logger.CtxLog.Debug("[DP][AddPDR][Enter] UPF=%s Status=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), upf.UPFStatus, upf.uuid.String())
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 		err := fmt.Errorf("this upf do not associate with smf")
 		logger.CtxLog.Errorf("[DP][AddPDR][Error] %v", err)
@@ -556,7 +556,7 @@ func (upf *UPF) AddPDR() (*PDR, error) {
 	} else {
 		pdr.PDRID = PDRID
 		upf.pdrPool.Store(pdr.PDRID, pdr)
-		logger.CtxLog.Info("[DP][AddPDR][PDR][Allocated] UPF=%s PDRID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, upf.uuid.String())
+		logger.CtxLog.Debug("[DP][AddPDR][PDR][Allocated] UPF=%s PDRID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, upf.uuid.String())
 	}
 
 	if newFAR, err := upf.AddFAR(); err != nil {
@@ -564,9 +564,9 @@ func (upf *UPF) AddPDR() (*PDR, error) {
 		return nil, err
 	} else {
 		pdr.FAR = newFAR
-		logger.CtxLog.Info("[DP][AddPDR][FAR][Associated] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, newFAR.FARID, upf.uuid.String())
+		logger.CtxLog.Debug("[DP][AddPDR][FAR][Associated] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, newFAR.FARID, upf.uuid.String())
 	}
-	logger.CtxLog.Infof("[DP][Exit][AddPDR] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, pdr.FAR.FARID, upf.uuid.String())
+	logger.CtxLog.Debug("[DP][Exit][AddPDR] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, pdr.FAR.FARID, upf.uuid.String())
 	return pdr, nil
 }
 

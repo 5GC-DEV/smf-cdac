@@ -20,7 +20,7 @@ import (
 	pfcp_message "github.com/omec-project/smf/pfcp/message"
 	"github.com/omec-project/smf/pfcp/udp"
 	"github.com/omec-project/smf/producer"
-	mi "github.com/omec-project/util/metricinfo"
+	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 	"github.com/wmnsk/go-pfcp/ie"
 	"github.com/wmnsk/go-pfcp/message"
 )

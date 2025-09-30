@@ -26,8 +26,8 @@ import (
 	stats "github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
-	mi "github.com/omec-project/util/metricinfo"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
+	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 )
 
 var (

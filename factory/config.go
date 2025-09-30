@@ -21,7 +21,7 @@ import (
 	protos "github.com/5GC-DEV/config5g-cdac/proto/sdcoreConfig"
 	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/smf/logger"
-	utilLogger "github.com/omec-project/util/logger"
+	utilLogger "github.com/5GC-DEV/util-cdac/logger"
 )
 
 const (
