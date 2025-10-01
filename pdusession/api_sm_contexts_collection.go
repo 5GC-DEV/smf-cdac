@@ -17,9 +17,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/5GC-DEV/openapi-cdac"
+	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/gin-gonic/gin"
-	"github.com/omec-project/openapi"
-	"github.com/omec-project/openapi/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/fsm"
 	"github.com/omec-project/smf/logger"
@@ -47,8 +47,10 @@ func HTTPPostSmContexts(c *gin.Context) {
 	s := strings.Split(c.GetHeader("Content-Type"), ";")
 	switch s[0] {
 	case "application/json":
+		logger.PduSessLog.Debugln("Binding request as application/json")
 		err = c.ShouldBindJSON(request.JsonData)
 	case "multipart/related":
+		logger.PduSessLog.Debugln("Binding request as multipart/related")
 		err = c.ShouldBindWith(&request, openapi.MultipartRelatedBinding{})
 	}
 

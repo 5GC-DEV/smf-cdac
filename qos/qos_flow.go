@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/omec-project/nas/nasMessage"
-	"github.com/omec-project/openapi/models"
+	"github.com/5GC-DEV/nas-cdac/nasMessage"
+	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/omec-project/smf/logger"
 )
 

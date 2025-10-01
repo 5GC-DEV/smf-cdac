@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/5GC-DEV/nas-cdac/nasMessage"
+	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/google/uuid"
-	"github.com/omec-project/nas/nasMessage"
-	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/util/idgenerator"
