@@ -21,8 +21,12 @@ import (
 const DefaultNonGBR5QI = 9
 
 func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error) {
+	logger.PduSessLog.Debugf("Building PDUSessionResourceSetupRequestTransfer for SUPI[%s], PDU Session ID[%d]",
+		ctx.Supi, ctx.PDUSessionID)
 	ANUPF := ctx.Tunnel.DataPathPool.GetDefaultPath().FirstDPNode
 	UpNode := ANUPF.UPF
+	logger.PduSessLog.Debugf("Selected UPF NodeID: %+v, Tunnel TEID: %d",
+		UpNode.NodeID, ANUPF.UpLinkTunnel.TEID)
 	teidOct := make([]byte, 4)
 	binary.BigEndian.PutUint32(teidOct, ANUPF.UpLinkTunnel.TEID)
 
@@ -36,8 +40,11 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
 	sessRule := ctx.SelectedSessionRule()
 	if sessRule == nil || sessRule.AuthSessAmbr == nil {
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Missing SessionRule or AMBR", ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("no PDU Session AMBR")
 	}
+	logger.PduSessLog.Debugf("SUPI[%s], PDUSessionID[%d]: AMBR DL[%s], UL[%s]",
+		ctx.Supi, ctx.PDUSessionID, sessRule.AuthSessAmbr.Downlink, sessRule.AuthSessAmbr.Uplink)
 	ie.Value = ngapType.PDUSessionResourceSetupRequestTransferIEsValue{
 		Present: ngapType.PDUSessionResourceSetupRequestTransferIEsPresentPDUSessionAggregateMaximumBitRate,
 		PDUSessionAggregateMaximumBitRate: &ngapType.PDUSessionAggregateMaximumBitRate{
@@ -57,12 +64,19 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
 	logger.CtxLog.Infof("N3Interfaces count: %d", len(UpNode.N3Interfaces))
 	// Possible cause: Physical interface connecting to UPF may be down
+	logger.CtxLog.Infof("SUPI[%s], PDUSessionID[%d]: N3Interfaces count: %d",
+		ctx.Supi, ctx.PDUSessionID, len(UpNode.N3Interfaces))
 	if len(UpNode.N3Interfaces) == 0 {
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF", ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}
 	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
+			ctx.Supi, ctx.PDUSessionID, err)
 		return nil, err
 	} else {
+		logger.PduSessLog.Infof("SUPI[%s], PDUSessionID[%d]: Using N3 IP[%v] for UPF[%s]",
+			ctx.Supi, ctx.PDUSessionID, n3IP, UpNode.NodeID)
 		ie.Value = ngapType.PDUSessionResourceSetupRequestTransferIEsValue{
 			Present: ngapType.PDUSessionResourceSetupRequestTransferIEsPresentULNGUUPTNLInformation,
 			ULNGUUPTNLInformation: &ngapType.UPTransportLayerInformation{
@@ -81,6 +95,8 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	}
 
 	resourceSetupRequestTransfer.ProtocolIEs.List = append(resourceSetupRequestTransfer.ProtocolIEs.List, ie)
+	logger.PduSessLog.Debugf("SUPI[%s], PDUSessionID[%d]: PDU Session Type set to IPv4",
+		ctx.Supi, ctx.PDUSessionID)
 
 	// PDU Session Type
 	ie = ngapType.PDUSessionResourceSetupRequestTransferIEs{}
@@ -99,19 +115,28 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 
 	// Initialise QosFlows with existing Ctxt QosFlows, if any
 	if len(ctx.SmPolicyData.SmCtxtQosData.QosData) > 0 {
+		logger.PduSessLog.Debugf("SUPI[%s], PDUSessionID[%d]: Found %d QoS flows in existing context",
+			ctx.Supi, ctx.PDUSessionID, len(ctx.SmPolicyData.SmCtxtQosData.QosData))
 		qosAddFlows = ctx.SmPolicyData.SmCtxtQosData.QosData
 	}
 
 	// PCF has provided some update
 	if len(ctx.SmPolicyUpdates) > 0 {
+		logger.PduSessLog.Infof("SUPI[%s], PDUSessionID[%d]: Applying QoS updates from PCF",
+			ctx.Supi, ctx.PDUSessionID)
 		smPolicyUpdates := ctx.SmPolicyUpdates[0]
 		if smPolicyUpdates.QosFlowUpdate != nil && smPolicyUpdates.QosFlowUpdate.GetAddQosFlowUpdate() != nil {
 			qosAddFlows = smPolicyUpdates.QosFlowUpdate.GetAddQosFlowUpdate()
 		}
 	}
-
+	if len(qosAddFlows) == 0 {
+		logger.PduSessLog.Warnf("SUPI[%s], PDUSessionID[%d]: No QoS flows found for PDU session",
+			ctx.Supi, ctx.PDUSessionID)
+	}
 	// QoS Flow Setup Request List
 	if len(qosAddFlows) > 0 {
+		logger.PduSessLog.Infof("SUPI[%s], PDUSessionID[%d]: Preparing %d QoS flow setup items",
+			ctx.Supi, ctx.PDUSessionID, len(qosAddFlows))
 		ie = ngapType.PDUSessionResourceSetupRequestTransferIEs{}
 		ie.Id.Value = ngapType.ProtocolIEIDQosFlowSetupRequestList
 		ie.Criticality.Value = ngapType.CriticalityPresentReject
@@ -166,8 +191,12 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	}
 
 	if buf, err := aper.MarshalWithParams(resourceSetupRequestTransfer, "valueExt"); err != nil {
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to encode PDU Session Resource Setup Request Transfer: %v",
+			ctx.Supi, ctx.PDUSessionID, err)
 		return nil, fmt.Errorf("encode resourceSetupRequestTransfer failed: %s", err)
 	} else {
+		logger.PduSessLog.Infof("SUPI[%s], PDUSessionID[%d]: Successfully built PDU Session Resource Setup Request Transfer, size=%d bytes",
+			ctx.Supi, ctx.PDUSessionID, len(buf))
 		return buf, nil
 	}
 }
