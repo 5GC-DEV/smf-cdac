@@ -19,13 +19,9 @@ type PccRulesUpdate struct {
 
 func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *PccRulesUpdate {
 	if len(pcfPccRules) == 0 {
-
 		logger.PduSessLog.Infoln("[GetPccRulesUpdate] No PCF PCC rules received, returning nil")
-
 		return nil
-
 	}
-
 	change := PccRulesUpdate{
 		add: make(map[string]*models.PccRule),
 
@@ -35,7 +31,6 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 	}
 
 	logger.PduSessLog.Infof("[GetPccRulesUpdate] Comparing PCC rules: PCF(%d) vs CTXT(%d)", len(pcfPccRules), len(ctxtPccRules))
-
 	// Compare against Ctxt rules to get added or modified rules
 
 	for name, pcfRule := range pcfPccRules {
