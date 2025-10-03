@@ -4,15 +4,15 @@ go 1.24.0
 
 require (
 	github.com/5GC-DEV/config5g-cdac v0.2.1
-	github.com/5GC-DEV/nas-cdac v0.0.0-20250930122720-777e5390c4bc
+	github.com/5GC-DEV/nas-cdac v0.0.0-20251003065343-87d9d21b06f6
 	github.com/5GC-DEV/openapi-cdac v1.0.1-0.20250930103916-588dd800f7e9
+	github.com/5GC-DEV/util-cdac v0.0.0-20250930103432-58951725c085
 	github.com/antihax/optional v1.0.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/omec-project/aper v1.3.1
 	github.com/omec-project/ngap v1.4.2
-	github.com/omec-project/util v1.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/segmentio/kafka-go v0.4.48

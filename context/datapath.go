@@ -13,10 +13,10 @@ import (
 	"sync"
 
 	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/5GC-DEV/util-cdac/util_3gpp"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/util"
-	"github.com/omec-project/util/util_3gpp"
 )
 
 // GTPTunnel represents the GTP tunnel information

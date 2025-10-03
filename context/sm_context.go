@@ -23,6 +23,8 @@ import (
 	"github.com/5GC-DEV/openapi-cdac/Npcf_SMPolicyControl"
 	"github.com/5GC-DEV/openapi-cdac/models"
 	nrfCache "github.com/5GC-DEV/openapi-cdac/nrfcache"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
+	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 	"github.com/google/uuid"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
@@ -31,8 +33,6 @@ import (
 	"github.com/omec-project/smf/qos"
 	errors "github.com/omec-project/smf/smferrors"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
-	mi "github.com/omec-project/util/metricinfo"
 	"go.uber.org/zap"
 )
 

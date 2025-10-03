@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/omec-project/smf/factory"
-	"github.com/omec-project/util/metricinfo"
+	"github.com/5GC-DEV/util-cdac/metricinfo"
 )
 
 var my_false bool = false

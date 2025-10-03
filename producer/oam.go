@@ -11,7 +11,7 @@ import (
 
 	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/omec-project/smf/context"
-	"github.com/omec-project/util/httpwrapper"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 )
 
 type PDUSessionInfo struct {

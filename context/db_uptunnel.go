@@ -9,8 +9,8 @@ import (
 	"net"
 
 	"github.com/omec-project/smf/logger"
-	"github.com/omec-project/util/idgenerator"
-	"github.com/omec-project/util/mongoapi"
+	"github.com/5GC-DEV/util-cdac/idgenerator"
+	"github.com/5GC-DEV/util-cdac/mongoapi"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
