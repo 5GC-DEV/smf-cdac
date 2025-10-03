@@ -425,12 +425,13 @@ func (upf *UPF) qerID() (uint32, error) {
 func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	var pdr *PDR
 	var err error
-
+	logger.CtxLog.Debugf("[DP][BuildCreatePdrFromPccRule][Enter] UPF=%s Rule=%s Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, rule.Precedence, upf.uuid.String())
 	// create empty PDR
 	if pdr, err = upf.AddPDR(); err != nil {
+		logger.CtxLog.Errorf("[DP][BuildCreatePdrFromPccRule][Error] UPF=%s Rule=%s failed to allocate PDR err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, err, upf.uuid.String())
 		return nil, err
 	}
-
+	logger.CtxLog.Debugf("[DP][BuildCreatePdrFromPccRule][PDR][Allocated] PDRID=%d UPF=%s Rule=%s uuid=%s", pdr.PDRID, upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, upf.uuid.String())
 	// SDF Filter
 	sdfFilter := SDFFilter{}
 
@@ -443,8 +444,10 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 		sdfFilter.FlowDescription = []byte(flow.FlowDescription)
 		sdfFilter.LengthOfFlowDescription = uint16(len(sdfFilter.FlowDescription))
 		if id, err := strconv.ParseUint(flow.PackFiltId, 10, 32); err != nil {
+			logger.CtxLog.Errorf("[DP][BuildCreatePdrFromPccRule][Error] UPF=%s Rule=%s invalid PackFiltId=%s err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, flow.PackFiltId, err, upf.uuid.String())
 			return nil, err
 		} else {
+			logger.CtxLog.Debugf("[DP][BuildCreatePdrFromPccRule][SDF][FlowDescription] Rule=%s FilterID=%d Desc=%s uuid=%s", rule.PccRuleId, sdfFilter.SdfFilterId, flow.FlowDescription, upf.uuid.String())
 			sdfFilter.SdfFilterId = uint32(id)
 		}
 	}
@@ -459,12 +462,15 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	if flow.FlowLabel != "" {
 		sdfFilter.Fl = true
 		sdfFilter.FlowLabel = []byte(flow.FlowLabel)
+		logger.CtxLog.Debugf("[DP][BuildCreatePdrFromPccRule][SDF][FlowLabel] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.FlowLabel, upf.uuid.String())
 	}
 
 	// Security Parameter Index
 	if flow.Spi != "" {
 		sdfFilter.Spi = true
 		sdfFilter.SecurityParameterIndex = []byte(flow.Spi)
+		logger.CtxLog.Debugf("[DP][BuildCreatePdrFromPccRule][SDF][SPI] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.Spi, upf.uuid.String())
+
 	}
 
 	pdi := PDI{
@@ -473,30 +479,36 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 
 	pdr.PDI = pdi
 	pdr.Precedence = uint32(rule.Precedence)
-
+	logger.CtxLog.Debugf("[DP][BuildCreatePdrFromPccRule][Exit] UPF=%s Rule=%s PDRID=%d Precedence=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), rule.PccRuleId, pdr.PDRID, pdr.Precedence, upf.uuid.String())
 	return pdr, nil
 }
 
 func (upf *UPF) AddPDR() (*PDR, error) {
+	logger.CtxLog.Debugf("[DP][AddPDR][Enter] UPF=%s Status=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), upf.UPFStatus, upf.uuid.String())
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 		err := fmt.Errorf("this upf do not associate with smf")
+		logger.CtxLog.Errorf("[DP][AddPDR][Error] %v", err)
 		return nil, err
 	}
 
 	pdr := new(PDR)
 	if PDRID, err := upf.pdrID(); err != nil {
+		logger.CtxLog.Errorf("[DP][AddPDR][Error] UPF=%s failed to allocate PDRID err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), err, upf.uuid.String())
 		return nil, err
 	} else {
 		pdr.PDRID = PDRID
 		upf.pdrPool.Store(pdr.PDRID, pdr)
+		logger.CtxLog.Debugf("[DP][AddPDR][PDR][Allocated] UPF=%s PDRID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, upf.uuid.String())
 	}
 
 	if newFAR, err := upf.AddFAR(); err != nil {
+		logger.CtxLog.Errorf("[DP][AddPDR][Error] UPF=%s PDRID=%d failed to allocate FAR err=%v uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, err, upf.uuid.String())
 		return nil, err
 	} else {
 		pdr.FAR = newFAR
+		logger.CtxLog.Debugf("[DP][AddPDR][FAR][Associated] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, newFAR.FARID, upf.uuid.String())
 	}
-
+	logger.CtxLog.Debugf("[DP][Exit][AddPDR] UPF=%s PDRID=%d FARID=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), pdr.PDRID, pdr.FAR.FARID, upf.uuid.String())
 	return pdr, nil
 }
 
