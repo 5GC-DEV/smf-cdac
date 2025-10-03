@@ -150,7 +150,6 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 			if qfi == 0 {
 				logger.QosLog.Warnf("Skipping QoS Flow deletion because QFI=0 for PCC rule ID='%s'", pccRuleID)
 				continue
-
 			}
 			// Build delete QoS Flow Description
 			QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
@@ -161,7 +160,6 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 		} else {
 			logger.QosLog.Warn("No QoS flow deletions were processed")
 		}
-
 	}
 
 	// ===============================
@@ -207,9 +205,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 				QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
 				hasUpdates = true
 			}
-
 		}
-
 	}
 
 	// ===============================
