@@ -470,7 +470,6 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 		sdfFilter.Spi = true
 		sdfFilter.SecurityParameterIndex = []byte(flow.Spi)
 		logger.CtxLog.Debugf("[DP][BuildCreatePdrFromPccRule][SDF][SPI] Rule=%s Value=%s uuid=%s", rule.PccRuleId, flow.Spi, upf.uuid.String())
-
 	}
 
 	pdi := PDI{
