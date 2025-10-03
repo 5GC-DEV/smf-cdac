@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/omec-project/smf/logger"
-	utilLogger "github.com/omec-project/util/logger"
+	utilLogger "github.com/5GC-DEV/util-cdac/logger"
 )
 
 // Route is the information for every URI.

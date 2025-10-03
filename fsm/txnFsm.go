@@ -16,7 +16,7 @@ import (
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/producer"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 )
 
 func (SmfTxnFsm) TxnInit(txn *transaction.Transaction) (transaction.TxnEvent, error) {

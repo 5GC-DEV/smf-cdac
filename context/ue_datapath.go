@@ -10,7 +10,7 @@ import (
 
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
-	"github.com/omec-project/util/idgenerator"
+	"github.com/5GC-DEV/util-cdac/idgenerator"
 )
 
 type UEPreConfigPaths struct {

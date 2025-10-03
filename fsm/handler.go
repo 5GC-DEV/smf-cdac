@@ -12,7 +12,7 @@ import (
 	stats "github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/producer"
 	"github.com/omec-project/smf/transaction"
-	mi "github.com/omec-project/util/metricinfo"
+	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 )
 
 // Define SM Context level Events

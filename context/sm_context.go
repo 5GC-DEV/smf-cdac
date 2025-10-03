@@ -31,8 +31,8 @@ import (
 	"github.com/omec-project/smf/qos"
 	errors "github.com/omec-project/smf/smferrors"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
-	mi "github.com/omec-project/util/metricinfo"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
+	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 	"go.uber.org/zap"
 )
 
