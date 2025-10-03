@@ -43,7 +43,6 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 		if ctxtrule := ctxtPccRules[name]; ctxtrule == nil {
 			logger.PduSessLog.Infof("[GetPccRulesUpdate] PCC rule %q marked for addition", name)
 			change.add[name] = pcfRule
-
 		} else if GetPccRuleChanges(pcfRule, ctxtrule) {
 			logger.PduSessLog.Infof("[GetPccRulesUpdate] PCC rule %q marked for modification", name)
 			change.mod[name] = pcfRule
