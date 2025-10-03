@@ -18,7 +18,6 @@ type PccRulesUpdate struct {
 }
 
 func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *PccRulesUpdate {
-
 	if len(pcfPccRules) == 0 {
 
 		logger.PduSessLog.Infoln("[GetPccRulesUpdate] No PCF PCC rules received, returning nil")
@@ -28,7 +27,6 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 	}
 
 	change := PccRulesUpdate{
-
 		add: make(map[string]*models.PccRule),
 
 		mod: make(map[string]*models.PccRule),
@@ -69,9 +67,7 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 			change.mod[name] = pcfRule
 
 		} else {
-
 			logger.PduSessLog.Debugf("[GetPccRulesUpdate] PCC rule %q unchanged", name)
-
 		}
 
 	}
@@ -81,23 +77,17 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 		len(change.add), len(change.mod), len(change.del))
 
 	return &change
-
 }
 
 func CommitPccRulesUpdate(smCtxtPolData *SmCtxtPolicyData, update *PccRulesUpdate) {
-
 	// Iterate through Add/Mod/Del rules
 
 	// Add new Rules
 
 	if len(update.add) > 0 {
-
 		for name, rule := range update.add {
-
 			smCtxtPolData.SmCtxtPccRules.PccRules[name] = rule
-
 		}
-
 	}
 
 	// Mod rules
@@ -107,25 +97,17 @@ func CommitPccRulesUpdate(smCtxtPolData *SmCtxtPolicyData, update *PccRulesUpdat
 	// Del Rules
 
 	if len(update.del) > 0 {
-
 		for name := range update.del {
-
 			delete(smCtxtPolData.SmCtxtPccRules.PccRules, name)
-
 		}
-
 	}
-
 }
 
 // Get the difference between 2 pcc rules
 
 func GetPccRuleChanges(s, d *models.PccRule) bool {
-
 	if s == nil || d == nil {
-
 		return true
-
 	}
 
 	if s.PccRuleId != d.PccRuleId ||
@@ -143,7 +125,6 @@ func GetPccRuleChanges(s, d *models.PccRule) bool {
 		s.RefCondData != d.RefCondData {
 
 		return true
-
 	}
 
 	if !stringSlicesEqual(s.RefQosData, d.RefQosData) ||
@@ -155,55 +136,37 @@ func GetPccRuleChanges(s, d *models.PccRule) bool {
 		!stringSlicesEqual(s.RefUmData, d.RefUmData) {
 
 		return true
-
 	}
 
 	if len(s.FlowInfos) != len(d.FlowInfos) {
-
 		return true
-
 	}
 
 	for i := range s.FlowInfos {
-
 		if s.FlowInfos[i] != d.FlowInfos[i] {
-
 			return true
-
 		}
-
 	}
 
 	return false
-
 }
 
 // Helper to compare two string slices (order matters)
 
 func stringSlicesEqual(a, b []string) bool {
-
 	if len(a) != len(b) {
-
 		return false
-
 	}
 
 	for i := range a {
-
 		if a[i] != b[i] {
-
 			return false
-
 		}
-
 	}
 
 	return true
-
 }
 
 func (upd *PccRulesUpdate) GetAddPccRuleUpdate() map[string]*models.PccRule {
-
 	return upd.add
-
 }

@@ -56,11 +56,9 @@ var (
 )
 
 func init() {
-
 	atomicLevel = zap.NewAtomicLevelAt(zap.InfoLevel)
 
 	config := zap.Config{
-
 		Level: atomicLevel,
 
 		Development: false,
@@ -93,11 +91,8 @@ func init() {
 	var err error
 
 	log, err = config.Build()
-
 	if err != nil {
-
 		panic(err)
-
 	}
 
 	AppLog = log.Sugar().With("component", "SMF", "category", "App")
@@ -133,21 +128,16 @@ func init() {
 	QosLog = log.Sugar().With("component", "SMF", "category", "QosFsm")
 
 	KafkaLog = log.Sugar().With("component", "SMF", "category", "Kafka")
-
 }
 
 func GetLogger() *zap.Logger {
-
 	return log
-
 }
 
 // SetLogLevel: set the log level (panic|fatal|error|warn|info|debug)
 
 func SetLogLevel(level zapcore.Level) {
-
 	InitLog.Infoln("set log level:", level)
 
 	atomicLevel.SetLevel(level)
-
 }
