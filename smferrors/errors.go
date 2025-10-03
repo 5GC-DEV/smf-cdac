@@ -15,7 +15,6 @@ import (
 
 var (
 	N1SmError = models.ProblemDetails{
-
 		Title: "Invalid N1 Message",
 
 		Status: http.StatusForbidden,
@@ -26,7 +25,6 @@ var (
 	}
 
 	DnnDeniedError = models.ProblemDetails{
-
 		Title: "DNN Denied",
 
 		Status: http.StatusForbidden,
@@ -39,7 +37,6 @@ var (
 	}
 
 	DnnNotSupported = models.ProblemDetails{
-
 		Title: "DNN Not Supported",
 
 		Status: http.StatusForbidden,
@@ -52,7 +49,6 @@ var (
 	}
 
 	InsufficientResourceSliceDnn = models.ProblemDetails{
-
 		Title: "DNN Resource insufficient",
 
 		Status: http.StatusInternalServerError,
@@ -65,7 +61,6 @@ var (
 	}
 
 	IpAllocError = models.ProblemDetails{
-
 		Title: "IP Allocation Error",
 
 		Status: http.StatusInternalServerError,
@@ -78,7 +73,6 @@ var (
 	}
 
 	SubscriptionDataFetchError = models.ProblemDetails{
-
 		Title: "Subscription Data Fetch error",
 
 		Status: http.StatusInternalServerError,
@@ -91,7 +85,6 @@ var (
 	}
 
 	SubscriptionDataLenError = models.ProblemDetails{
-
 		Title: "Subscription Data Fetch error",
 
 		Status: http.StatusInternalServerError,
@@ -104,7 +97,6 @@ var (
 	}
 
 	UDMDiscoveryFailure = models.ProblemDetails{
-
 		Title: "UDM Discovery Failure",
 
 		Status: http.StatusInternalServerError,
@@ -117,7 +109,6 @@ var (
 	}
 
 	UPFDataPathError = models.ProblemDetails{
-
 		Title: "UPF Data Path Failure",
 
 		Status: http.StatusInternalServerError,
@@ -130,7 +121,6 @@ var (
 	}
 
 	PCFDiscoveryFailure = models.ProblemDetails{
-
 		Title: "PCF Discovery Failure",
 
 		Status: http.StatusInternalServerError,
@@ -143,7 +133,6 @@ var (
 	}
 
 	PCFPolicyCreateFailure = models.ProblemDetails{
-
 		Title: "PCF Discovery Failure",
 
 		Status: http.StatusInternalServerError,
@@ -156,7 +145,6 @@ var (
 	}
 
 	AMFDiscoveryFailure = models.ProblemDetails{
-
 		Title: "AMF Discovery Failure",
 
 		Status: http.StatusInternalServerError,
@@ -169,7 +157,6 @@ var (
 	}
 
 	ApplySMPolicyFailure = models.ProblemDetails{
-
 		Title: "Apply SM Policy Error",
 
 		Status: http.StatusInternalServerError,
@@ -182,7 +169,6 @@ var (
 	}
 
 	PduSessionTypeNotSupported = models.ProblemDetails{
-
 		Title: "PduSession Type Not Supported",
 
 		Status: http.StatusForbidden,
@@ -196,7 +182,6 @@ var (
 )
 
 var ErrorType = map[string]*models.ProblemDetails{
-
 	"DnnDeniedError": &DnnDeniedError,
 
 	"DnnNotSupported": &DnnNotSupported,
@@ -225,7 +210,6 @@ var ErrorType = map[string]*models.ProblemDetails{
 }
 
 var ErrorCause = map[string]uint8{
-
 	"DnnDeniedError": nasMessage.Cause5GMMDNNNotSupportedOrNotSubscribedInTheSlice,
 
 	"DnnNotSupported": nasMessage.Cause5GMMDNNNotSupportedOrNotSubscribedInTheSlice,
