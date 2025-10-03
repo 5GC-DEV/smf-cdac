@@ -39,9 +39,7 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 			change.del[name] = pcfRule // nil
 			continue
 		}
-
 		// match against SM ctxt Rules for add/mod
-
 		if ctxtrule := ctxtPccRules[name]; ctxtrule == nil {
 			logger.PduSessLog.Infof("[GetPccRulesUpdate] PCC rule %q marked for addition", name)
 			change.add[name] = pcfRule
@@ -52,9 +50,7 @@ func GetPccRulesUpdate(pcfPccRules, ctxtPccRules map[string]*models.PccRule) *Pc
 		} else {
 			logger.PduSessLog.Debugf("[GetPccRulesUpdate] PCC rule %q unchanged", name)
 		}
-
 	}
-
 	logger.PduSessLog.Infof("[GetPccRulesUpdate] Summary: add=%d, mod=%d, del=%d",
 		len(change.add), len(change.mod), len(change.del))
 	return &change
@@ -98,7 +94,6 @@ func GetPccRuleChanges(s, d *models.PccRule) bool {
 		s.AppReloc != d.AppReloc ||
 
 		s.RefCondData != d.RefCondData {
-
 		return true
 	}
 
@@ -109,7 +104,6 @@ func GetPccRuleChanges(s, d *models.PccRule) bool {
 		!stringSlicesEqual(s.RefChgData, d.RefChgData) ||
 
 		!stringSlicesEqual(s.RefUmData, d.RefUmData) {
-
 		return true
 	}
 

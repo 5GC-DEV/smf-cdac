@@ -118,13 +118,9 @@ type QosFlowsUpdate struct {
 
 func GetQosFlowIdFromQosId(qosId string) uint8 {
 	id, err := strconv.Atoi(qosId)
-
 	if err != nil {
-
 		logger.CtxLog.Errorf("string can not be converted to integer: %+v", err)
-
 		return 0
-
 	} else {
 		return uint8(id)
 	}
@@ -136,8 +132,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	// Initialize QoS Flow Descriptions structure
 
 	QFDescriptions := QosFlowDescriptionsAuthorized{
-		IeType: nasMessage.PDUSessionEstablishmentAcceptAuthorizedQosFlowDescriptionsType,
-
+		IeType:  nasMessage.PDUSessionEstablishmentAcceptAuthorizedQosFlowDescriptionsType,
 		Content: make([]byte, 0),
 	}
 
@@ -152,20 +147,13 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 	// ===============================
 
 	if smPolicyUpdates == nil || smPolicyUpdates.QosFlowUpdate == nil {
-
 		logger.QosLog.Warn("smPolicyUpdates or QosFlowUpdate is nil, processing PCC rule deletions only")
-
 		for pccRuleID := range smPolicyUpdates.PccRuleUpdate.del {
-
 			logger.QosLog.Infof("Processing deletion for PCC rule ID: %s", pccRuleID)
-
 			qfiVal, err := strconv.Atoi(pccRuleID)
 			if err != nil {
-
 				logger.QosLog.Errorf("Invalid QFI string for PCC rule ID '%s': %v", pccRuleID, err)
-
 				continue
-
 			}
 
 			qfi := uint8(qfiVal)
@@ -175,9 +163,7 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 			// Skip if QFI is zero
 
 			if qfi == 0 {
-
 				logger.QosLog.Warnf("Skipping QoS Flow deletion because QFI=0 for PCC rule ID='%s'", pccRuleID)
-
 				continue
 
 			}
@@ -209,17 +195,11 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 		// Add QoS flows
 
 		if len(qosFlowUpdate.add) > 0 {
-
 			logger.QosLog.Infof("Processing %d QoS flows to add", len(qosFlowUpdate.add))
-
 			for name, qosFlow := range qosFlowUpdate.add {
-
 				logger.QosLog.Infof("Adding QoS Flow Description [%v]", name)
-
 				QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
-
 				hasUpdates = true
-
 			}
 
 		}
@@ -227,46 +207,29 @@ func BuildAuthorizedQosFlowDescriptions(smPolicyUpdates *PolicyUpdate) *QosFlowD
 		// Modify QoS flows
 
 		if len(qosFlowUpdate.mod) > 0 {
-
 			logger.QosLog.Infof("Processing %d QoS flows to modify", len(qosFlowUpdate.mod))
-
 			for name, qosFlow := range qosFlowUpdate.mod {
-
 				logger.QosLog.Infof("Modifying QoS Flow Description [%v]", name)
-
 				QFDescriptions.BuildAddQosFlowDescFromQoSDesc(qosFlow)
-
 				hasUpdates = true
-
 			}
-
 		}
 
 		// Delete QoS flows
 
 		if len(qosFlowUpdate.del) > 0 {
-
 			logger.QosLog.Infof("Processing %d QoS flows to delete", len(qosFlowUpdate.del))
-
 			for qfiStr := range qosFlowUpdate.del {
-
 				qfiVal, err := strconv.Atoi(qfiStr)
 				if err != nil {
-
 					logger.QosLog.Errorf("invalid QFI string: %s, err: %v", qfiStr, err)
-
 					continue
-
 				}
 
 				qfi := uint8(qfiVal)
-
 				logger.QosLog.Infof("Deleting QoS Flow Description [QFI=%v]", qfi)
-
 				QFDescriptions.BuildDelQosFlowDescFromQoSDesc(qfi)
-
 				hasUpdates = true
-
 			}
 
 		}
