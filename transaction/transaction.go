@@ -82,7 +82,6 @@ const (
 
 func (e TxnEvent) String() string {
 	switch e {
-
 	case TxnEventInit:
 
 		return "TxnEventInit"
@@ -146,7 +145,6 @@ func (e TxnEvent) String() string {
 	default:
 
 		return "TxnEventInvalid"
-
 	}
 }
 
@@ -154,7 +152,6 @@ var TxnId uint32
 
 func getNewTxnId() uint32 {
 	atomic.AddUint32(&TxnId, 1)
-
 	return TxnId
 }
 
@@ -172,17 +169,13 @@ func NewTransaction(req, rsp interface{}, msgType svcmsgtypes.SmfMsgType) *Trans
 
 		Status: make(chan bool),
 	}
-
 	t.initLogTags()
-
 	t.TxnFsmLog.Debugf("new txn created")
-
 	return t
 }
 
 func (t *Transaction) TransactionEnd() {
 	t.endTime = time.Now()
-
 	t.TxnFsmLog.Infof("txn ended, execution time [%v]", t.endTime.Sub(t.startTime))
 }
 
@@ -190,23 +183,16 @@ type TxnBus []*Transaction
 
 func (txnBus TxnBus) AddTxn(t *Transaction) TxnBus {
 	// TODO: Keep Txn Bus Priority sorted
-
 	txnBus = append(txnBus, t)
-
 	return txnBus
 }
 
 func (txnBus TxnBus) PopTxn() (*Transaction, TxnBus) {
 	if len(txnBus) != 0 {
-
 		txn := txnBus[0]
-
 		txnBus = txnBus[1:]
-
 		return txn, txnBus
-
 	}
-
 	return nil, txnBus
 }
 
@@ -276,7 +262,6 @@ func (t *Transaction) StartTxnLifeCycle(fsm txnFsm) {
 	for {
 
 		currEvent := nextEvent
-
 		t.TxnFsmLog.Debugf("processing event[%v]", currEvent.String())
 
 		if nextEvent, err = TxnFsmHandler[currEvent](t); err != nil {
@@ -298,13 +283,10 @@ func (t *Transaction) StartTxnLifeCycle(fsm txnFsm) {
 		// so they shall exit FSM and shall wait to run in TxnBus
 
 		if nextEvent == TxnEventExit || nextEvent == TxnEventQueue {
-
 			t.TxnFsmLog.Debugf("TxnFsm [%v]", nextEvent.String())
 
 			return
-
 		}
-
 	}
 }
 
