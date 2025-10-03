@@ -23,7 +23,6 @@ import (
 const DefaultNonGBR5QI = 9
 
 func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error) {
-
 	logger.PduSessLog.Debugf("Building PDUSessionResourceSetupRequestTransfer for SUPI[%s], PDU Session ID[%d]",
 
 		ctx.Supi, ctx.PDUSessionID)
@@ -69,18 +68,14 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		ctx.Supi, ctx.PDUSessionID, sessRule.AuthSessAmbr.Downlink, sessRule.AuthSessAmbr.Uplink)
 
 	ie.Value = ngapType.PDUSessionResourceSetupRequestTransferIEsValue{
-
 		Present: ngapType.PDUSessionResourceSetupRequestTransferIEsPresentPDUSessionAggregateMaximumBitRate,
 
 		PDUSessionAggregateMaximumBitRate: &ngapType.PDUSessionAggregateMaximumBitRate{
-
 			PDUSessionAggregateMaximumBitRateDL: ngapType.BitRate{
-
 				Value: ngapConvert.UEAmbrToInt64(sessRule.AuthSessAmbr.Downlink),
 			},
 
 			PDUSessionAggregateMaximumBitRateUL: ngapType.BitRate{
-
 				Value: ngapConvert.UEAmbrToInt64(sessRule.AuthSessAmbr.Uplink),
 			},
 		},
@@ -127,19 +122,14 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 			ctx.Supi, ctx.PDUSessionID, n3IP, UpNode.NodeID)
 
 		ie.Value = ngapType.PDUSessionResourceSetupRequestTransferIEsValue{
-
 			Present: ngapType.PDUSessionResourceSetupRequestTransferIEsPresentULNGUUPTNLInformation,
 
 			ULNGUUPTNLInformation: &ngapType.UPTransportLayerInformation{
-
 				Present: ngapType.UPTransportLayerInformationPresentGTPTunnel,
 
 				GTPTunnel: &ngapType.GTPTunnel{
-
 					TransportLayerAddress: ngapType.TransportLayerAddress{
-
 						Value: aper.BitString{
-
 							Bytes: n3IP,
 
 							BitLength: uint64(len(n3IP) * 8),
@@ -168,11 +158,9 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	ie.Criticality.Value = ngapType.CriticalityPresentReject
 
 	ie.Value = ngapType.PDUSessionResourceSetupRequestTransferIEsValue{
-
 		Present: ngapType.PDUSessionResourceSetupRequestTransferIEsPresentPDUSessionType,
 
 		PDUSessionType: &ngapType.PDUSessionType{
-
 			Value: ngapType.PDUSessionTypePresentIpv4,
 		},
 	}
@@ -206,19 +194,15 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		smPolicyUpdates := ctx.SmPolicyUpdates[0]
 
 		if smPolicyUpdates.QosFlowUpdate != nil && smPolicyUpdates.QosFlowUpdate.GetAddQosFlowUpdate() != nil {
-
 			qosAddFlows = smPolicyUpdates.QosFlowUpdate.GetAddQosFlowUpdate()
-
 		}
 
 	}
 
 	if len(qosAddFlows) == 0 {
-
 		logger.PduSessLog.Warnf("SUPI[%s], PDUSessionID[%d]: No QoS flows found for PDU session",
 
 			ctx.Supi, ctx.PDUSessionID)
-
 	}
 
 	// QoS Flow Setup Request List
@@ -242,52 +226,39 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 			arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
 
 			if qosFlow.Arp.PreemptCap == models.PreemptionCapability_NOT_PREEMPT {
-
 				arpPreemptCap = ngapType.PreEmptionCapabilityPresentShallNotTriggerPreEmption
-
 			}
 
 			arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
 
 			if qosFlow.Arp.PreemptVuln == models.PreemptionVulnerability_PREEMPTABLE {
-
 				arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
-
 			}
 
 			qosFlowItem := ngapType.QosFlowSetupRequestItem{
-
 				QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qos.GetQosFlowIdFromQosId(qosFlow.QosId))},
 
 				QosFlowLevelQosParameters: ngapType.QosFlowLevelQosParameters{
-
 					QosCharacteristics: ngapType.QosCharacteristics{
-
 						Present: ngapType.QosCharacteristicsPresentNonDynamic5QI,
 
 						NonDynamic5QI: &ngapType.NonDynamic5QIDescriptor{
-
 							FiveQI: ngapType.FiveQI{
-
 								Value: int64(qosFlow.Var5qi),
 							},
 						},
 					},
 
 					AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{
-
 						PriorityLevelARP: ngapType.PriorityLevelARP{
-
 							Value: int64(qosFlow.Arp.PriorityLevel),
 						},
 
 						PreEmptionCapability: ngapType.PreEmptionCapability{
-
 							Value: arpPreemptCap,
 						},
 
 						PreEmptionVulnerability: ngapType.PreEmptionVulnerability{
-
 							Value: arpPreemptVul,
 						},
 					},
@@ -299,11 +270,9 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		}
 
 		ie.Value = ngapType.PDUSessionResourceSetupRequestTransferIEsValue{
-
 			Present: ngapType.PDUSessionResourceSetupRequestTransferIEsPresentQosFlowSetupRequestList,
 
 			QosFlowSetupRequestList: &ngapType.QosFlowSetupRequestList{
-
 				List: qosFlowsList,
 			},
 		}
@@ -329,7 +298,6 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		return buf, nil
 
 	}
-
 }
 
 // BuildPDUSessionResourceModifyRequestTransfer builds and encodes
@@ -341,7 +309,6 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 // 3GPP TS 38.413 8.2.3v16.2.0 (NGAP: PDU Session Resource Modify Request)
 
 func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error) {
-
 	// Start logging with SUPI and Session ID
 
 	ctx.SubPduSessLog.Infof(
@@ -362,7 +329,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	shouldSendReleaseOnly := false
 
 	if len(ctx.SmPolicyUpdates) > 0 && ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
-
 		// If PccRules map is empty → release only
 
 		if len(ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
@@ -372,11 +338,9 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			logger.PduSessLog.Warnln("PccRules map is empty, setting shouldSendReleaseOnly = true")
 
 		} else {
-
 			// If any PCC rule is invalid (nil or empty ID) → release only
 
 			for ruleId, rule := range ctx.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
-
 				if ruleId == "" || rule == nil || rule.PccRuleId == "" {
 
 					shouldSendReleaseOnly = true
@@ -386,11 +350,8 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 					break
 
 				}
-
 			}
-
 		}
-
 	}
 
 	// ----------------------------------------------------
@@ -422,11 +383,9 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		qosFlowToReleaseList := ngapType.QosFlowListWithCause{}
 
 		qosFlowToReleaseList.List = append(qosFlowToReleaseList.List, ngapType.QosFlowWithCauseItem{
-
 			QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
 
 			Cause: ngapType.Cause{
-
 				Present: ngapType.CausePresentNas,
 
 				Nas: &ngapType.CauseNas{Value: ngapType.CauseNasPresentNormalRelease},
@@ -436,13 +395,11 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		// Add IE to NGAP transfer message
 
 		ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
-
 			Id: ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDQosFlowToReleaseList},
 
 			Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 
 			Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
-
 				Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentQosFlowToReleaseList,
 
 				QosFlowToReleaseList: &qosFlowToReleaseList,
@@ -524,7 +481,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	policyDecision := ctx.SmPolicyData.SmCtxtQosData.QosData
 
 	if policyDecision != nil {
-
 		for _, qos := range policyDecision {
 
 			ctx.SubPduSessLog.Infof(
@@ -537,29 +493,20 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			// Override AMBR with GBR if available
 
 			if qos.GbrDl != "" {
-
 				if val, err := StringToBitRate(qos.GbrDl); err == nil {
-
 					gbdownlink = int64(val)
-
 				}
-
 			}
 
 			if qos.GbrUl != "" {
-
 				if val, err := StringToBitRate(qos.GbrUl); err == nil {
-
 					gbuplink = int64(val)
-
 				}
-
 			}
 
 			qi = qos.Var5qi
 
 		}
-
 	}
 
 	ctx.SubPduSessLog.Infof("Using QoS: DL = %d bps, UL = %d bps, qfi = %d , arp = %d ",
@@ -569,17 +516,14 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	// Add AMBR IE to NGAP message
 
 	ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
-
 		Id: ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate},
 
 		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
-
 			Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentPDUSessionAggregateMaximumBitRate,
 
 			PDUSessionAggregateMaximumBitRate: &ngapType.PDUSessionAggregateMaximumBitRate{
-
 				PDUSessionAggregateMaximumBitRateDL: ngapType.BitRate{Value: gbdownlink},
 
 				PDUSessionAggregateMaximumBitRateUL: ngapType.BitRate{Value: gbuplink},
@@ -612,9 +556,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			// Handle modified flows first
 
 			if len(policyUpdate.QosFlowUpdate.GetModified()) > 0 {
-
 				for qosId, qosData := range policyUpdate.QosFlowUpdate.GetModified() {
-
 					if qosData != nil {
 
 						ctx.SubPduSessLog.Infof("Modified QoS data: QosId[%s], Var5QI=%d", qosId, qosData.Var5qi)
@@ -622,21 +564,15 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						// Convert QosId string to int
 
 						if qfiVal, err := strconv.Atoi(qosData.QosId); err == nil {
-
 							qfi = int32(qfiVal)
-
 						} else {
-
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
-
 						}
 
 						// Apply priority and ARP if present
 
 						if qosData.PriorityLevel > 0 {
-
 							priority = qosData.PriorityLevel
-
 						}
 
 						if qosData.Arp != nil {
@@ -644,15 +580,11 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 							priority = qosData.Arp.PriorityLevel
 
 							if qosData.Arp.PreemptCap == models.PreemptionCapability_NOT_PREEMPT {
-
 								arpPreemptCap = ngapType.PreEmptionCapabilityPresentShallNotTriggerPreEmption
-
 							}
 
 							if qosData.Arp.PreemptVuln == models.PreemptionVulnerability_PREEMPTABLE {
-
 								arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
-
 							}
 
 						}
@@ -660,35 +592,25 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						break
 
 					}
-
 				}
-
 			}
 
 			// Handle added flows if no modified ones
 
 			if len(policyUpdate.QosFlowUpdate.GetAdded()) > 0 {
-
 				for qosId, qosData := range policyUpdate.QosFlowUpdate.GetAdded() {
-
 					if qosData != nil {
 
 						ctx.SubPduSessLog.Infof("Added QoS data: QosId[%s], Var5QI=%d", qosId, qosData.Var5qi)
 
 						if qfiVal, err := strconv.Atoi(qosData.QosId); err == nil {
-
 							qfi = int32(qfiVal)
-
 						} else {
-
 							ctx.SubPduSessLog.Errorf("Invalid QosId string: %s", qosData.QosId)
-
 						}
 
 						if qosData.PriorityLevel > 0 {
-
 							priority = qosData.PriorityLevel
-
 						}
 
 						if qosData.Arp != nil {
@@ -696,15 +618,11 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 							priority = qosData.Arp.PriorityLevel
 
 							if qosData.Arp.PreemptCap == models.PreemptionCapability_NOT_PREEMPT {
-
 								arpPreemptCap = ngapType.PreEmptionCapabilityPresentShallNotTriggerPreEmption
-
 							}
 
 							if qosData.Arp.PreemptVuln == models.PreemptionVulnerability_PREEMPTABLE {
-
 								arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
-
 							}
 
 						}
@@ -712,9 +630,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 						break
 
 					}
-
 				}
-
 			}
 
 		}
@@ -724,15 +640,11 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	// Apply ARP defaults from session rule if not overridden
 
 	if sessRule.AuthDefQos.Arp.PreemptCap == models.PreemptionCapability_NOT_PREEMPT {
-
 		arpPreemptCap = ngapType.PreEmptionCapabilityPresentShallNotTriggerPreEmption
-
 	}
 
 	if sessRule.AuthDefQos.Arp.PreemptVuln == models.PreemptionVulnerability_PREEMPTABLE {
-
 		arpPreemptVul = ngapType.PreEmptionVulnerabilityPresentPreEmptable
-
 	}
 
 	ctx.SubPduSessLog.Infof(
@@ -745,35 +657,27 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	// Build QoS AddOrModify IE
 
 	ie = ngapType.PDUSessionResourceModifyRequestTransferIEs{
-
 		Id: ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDQosFlowAddOrModifyRequestList},
 
 		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
-
 			Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentQosFlowAddOrModifyRequestList,
 
 			QosFlowAddOrModifyRequestList: &ngapType.QosFlowAddOrModifyRequestList{
-
 				List: []ngapType.QosFlowAddOrModifyRequestItem{{
-
 					QosFlowIdentifier: ngapType.QosFlowIdentifier{Value: int64(qfi)},
 
 					QosFlowLevelQosParameters: &ngapType.QosFlowLevelQosParameters{
-
 						QosCharacteristics: ngapType.QosCharacteristics{
-
 							Present: ngapType.QosCharacteristicsPresentNonDynamic5QI,
 
 							NonDynamic5QI: &ngapType.NonDynamic5QIDescriptor{
-
 								FiveQI: ngapType.FiveQI{Value: int64(qi)},
 							},
 						},
 
 						AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{
-
 							PriorityLevelARP: ngapType.PriorityLevelARP{Value: int64(priority)},
 
 							PreEmptionCapability: ngapType.PreEmptionCapability{Value: arpPreemptCap},
@@ -809,7 +713,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		return buf, nil
 
 	}
-
 }
 
 // This function is needed because QoS parameters in 3GPP specifications (e.g., GBR, MBR)
@@ -827,17 +730,13 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 //   - "mbps" → megabits per second (multiplied by 1,000,000)
 
 func StringToBitRate(s string) (uint64, error) {
-
 	s = strings.ToLower(strings.TrimSpace(s))
 
 	if strings.HasSuffix(s, "kbps") {
 
 		val, err := strconv.ParseUint(strings.TrimSuffix(s, "kbps"), 10, 64)
-
 		if err != nil {
-
 			return 0, err
-
 		}
 
 		return val * 1000, nil
@@ -847,11 +746,8 @@ func StringToBitRate(s string) (uint64, error) {
 	if strings.HasSuffix(s, "mbps") {
 
 		val, err := strconv.ParseUint(strings.TrimSuffix(s, "mbps"), 10, 64)
-
 		if err != nil {
-
 			return 0, err
-
 		}
 
 		return val * 1000 * 1000, nil
@@ -859,40 +755,30 @@ func StringToBitRate(s string) (uint64, error) {
 	}
 
 	return 0, nil
-
 }
 
 func BuildPDUSessionResourceReleaseCommandTransfer(ctx *SMContext) (buf []byte, err error) {
-
 	resourceReleaseCommandTransfer := ngapType.PDUSessionResourceReleaseCommandTransfer{
-
 		Cause: ngapType.Cause{
-
 			Present: ngapType.CausePresentNas,
 
 			Nas: &ngapType.CauseNas{
-
 				Value: ngapType.CauseNasPresentNormalRelease,
 			},
 		},
 	}
 
 	buf, err = aper.MarshalWithParams(resourceReleaseCommandTransfer, "valueExt")
-
 	if err != nil {
-
 		return nil, err
-
 	}
 
-	return
-
+	return buf, err
 }
 
 // TS 38.413 9.3.4.9
 
 func BuildPathSwitchRequestAcknowledgeTransfer(ctx *SMContext) ([]byte, error) {
-
 	ANUPF := ctx.Tunnel.DataPathPool.GetDefaultPath().FirstDPNode
 
 	UpNode := ANUPF.UPF
@@ -915,9 +801,7 @@ func BuildPathSwitchRequestAcknowledgeTransfer(ctx *SMContext) ([]byte, error) {
 	ULNGUUPTNLInformation.GTPTunnel = new(ngapType.GTPTunnel)
 
 	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
-
 		return nil, err
-
 	} else {
 
 		gtpTunnel := ULNGUUPTNLInformation.GTPTunnel
@@ -925,7 +809,6 @@ func BuildPathSwitchRequestAcknowledgeTransfer(ctx *SMContext) ([]byte, error) {
 		gtpTunnel.GTPTEID.Value = teidOct
 
 		gtpTunnel.TransportLayerAddress.Value = aper.BitString{
-
 			Bytes: n3IP,
 
 			BitLength: uint64(len(n3IP) * 8),
@@ -962,19 +845,13 @@ func BuildPathSwitchRequestAcknowledgeTransfer(ctx *SMContext) ([]byte, error) {
 	}
 
 	if buf, err := aper.MarshalWithParams(pathSwitchRequestAcknowledgeTransfer, "valueExt"); err != nil {
-
 		return nil, err
-
 	} else {
-
 		return buf, nil
-
 	}
-
 }
 
 func BuildPathSwitchRequestUnsuccessfulTransfer(causePresent int, causeValue aper.Enumerated) (buf []byte, err error) {
-
 	pathSwitchRequestUnsuccessfulTransfer := ngapType.PathSwitchRequestUnsuccessfulTransfer{}
 
 	pathSwitchRequestUnsuccessfulTransfer.Cause.Present = causePresent
@@ -1016,19 +893,14 @@ func BuildPathSwitchRequestUnsuccessfulTransfer(causePresent int, causeValue ape
 	}
 
 	buf, err = aper.MarshalWithParams(pathSwitchRequestUnsuccessfulTransfer, "valueExt")
-
 	if err != nil {
-
 		return nil, err
-
 	}
 
-	return
-
+	return buf, err
 }
 
 func BuildHandoverCommandTransfer(ctx *SMContext) ([]byte, error) {
-
 	ANUPF := ctx.Tunnel.DataPathPool.GetDefaultPath().FirstDPNode
 
 	UpNode := ANUPF.UPF
@@ -1046,9 +918,7 @@ func BuildHandoverCommandTransfer(ctx *SMContext) ([]byte, error) {
 	handoverCommandTransfer.DLForwardingUPTNLInformation.GTPTunnel = new(ngapType.GTPTunnel)
 
 	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
-
 		return nil, err
-
 	} else {
 
 		gtpTunnel := handoverCommandTransfer.DLForwardingUPTNLInformation.GTPTunnel
@@ -1056,7 +926,6 @@ func BuildHandoverCommandTransfer(ctx *SMContext) ([]byte, error) {
 		gtpTunnel.GTPTEID.Value = teidOct
 
 		gtpTunnel.TransportLayerAddress.Value = aper.BitString{
-
 			Bytes: n3IP,
 
 			BitLength: uint64(len(n3IP) * 8),
@@ -1065,13 +934,8 @@ func BuildHandoverCommandTransfer(ctx *SMContext) ([]byte, error) {
 	}
 
 	if buf, err := aper.MarshalWithParams(handoverCommandTransfer, "valueExt"); err != nil {
-
 		return nil, err
-
 	} else {
-
 		return buf, nil
-
 	}
-
 }

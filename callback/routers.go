@@ -33,7 +33,6 @@ import (
 // Route is the information for every URI.
 
 type Route struct {
-
 	// Name is the name of this Route.
 
 	Name string
@@ -58,21 +57,17 @@ type Routes []Route
 // NewRouter returns a new router.
 
 func NewRouter() *gin.Engine {
-
 	router := utilLogger.NewGinWithZap(logger.GinLog)
 
 	AddService(router)
 
 	return router
-
 }
 
 func AddService(engine *gin.Engine) *gin.RouterGroup {
-
 	group := engine.Group("/nsmf-callback")
 
 	for _, route := range routes {
-
 		switch route.Method {
 
 		case "GET":
@@ -92,17 +87,13 @@ func AddService(engine *gin.Engine) *gin.RouterGroup {
 			group.DELETE(route.Pattern, route.HandlerFunc)
 
 		}
-
 	}
 
 	return group
-
 }
 
 var routes = Routes{
-
 	{
-
 		"SmPolicyUpdateNotification",
 
 		"POST",
@@ -113,7 +104,6 @@ var routes = Routes{
 	},
 
 	{
-
 		"SmPolicyControlTerminationRequestNotification	",
 
 		"POST",
@@ -124,7 +114,6 @@ var routes = Routes{
 	},
 
 	{
-
 		"N1N2FailureNotification",
 
 		"POST",
@@ -135,7 +124,6 @@ var routes = Routes{
 	},
 
 	{
-
 		"NfStatusNotify",
 
 		"POST",

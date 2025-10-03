@@ -219,7 +219,6 @@ type RouteProfID string
 // RouteProfile maintains the mapping between RouteProfileID and ForwardingPolicyID of UPF
 
 type RouteProfile struct {
-
 	// Forwarding Policy ID of the route profile
 
 	ForwardingPolicyID string `yaml:"forwardingPolicyID,omitempty"`
@@ -228,7 +227,6 @@ type RouteProfile struct {
 // PfdContent represents the flow of the application
 
 type PfdContent struct {
-
 	// Identifies a PFD of an application identifier.
 
 	PfdID string `yaml:"pfdID,omitempty"`
@@ -255,7 +253,6 @@ type PfdContent struct {
 // PfdDataForApp represents the PFDs for an application identifier
 
 type PfdDataForApp struct {
-
 	// Caching time for an application identifier.
 
 	CachingTime *time.Time `yaml:"cachingTime,omitempty"`
@@ -328,37 +325,26 @@ type PCSCFInfo struct {
 var ConfigPodTrigger chan bool
 
 func init() {
-
 	ConfigPodTrigger = make(chan bool, 1)
-
 }
 
 func (c *Config) GetVersion() string {
-
 	if c.Info != nil && c.Info.Version != "" {
-
 		return c.Info.Version
-
 	}
 
 	return ""
-
 }
 
 func (r *RoutingConfig) GetVersion() string {
-
 	if r.Info != nil && r.Info.Version != "" {
-
 		return r.Info.Version
-
 	}
 
 	return ""
-
 }
 
 func (c *Config) UpdateConfig(commChannel chan *protos.NetworkSliceResponse) bool {
-
 	for {
 
 		rsp := <-commChannel
@@ -402,19 +388,15 @@ func (c *Config) UpdateConfig(commChannel chan *protos.NetworkSliceResponse) boo
 		ConfigPodTrigger <- true
 
 	}
-
 }
 
 // Update level-1 Configuration(Not actual SMF config structure used by SMF)
 
 func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
-
 	// Reset previous SNSSAI structure
 
 	if c.SNssaiInfo != nil {
-
 		c.SNssaiInfo = nil
-
 	}
 
 	c.SNssaiInfo = make([]SnssaiInfoItem, 0)
@@ -422,17 +404,13 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 	// Reset existing UP nodes and Links
 
 	if c.UserPlaneInformation.UPNodes != nil {
-
 		c.UserPlaneInformation.UPNodes = nil
-
 	}
 
 	c.UserPlaneInformation.UPNodes = make(map[string]UPNode)
 
 	if c.UserPlaneInformation.Links != nil {
-
 		c.UserPlaneInformation.Links = nil
-
 	}
 
 	c.UserPlaneInformation.Links = make([]UPLink, 0)
@@ -448,17 +426,11 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 	pfcpPortVal := DEFAULT_PFCP_PORT
 
 	if pfcpPortStr != "" {
-
 		if val, err := strconv.ParseUint(pfcpPortStr, 10, 32); err != nil {
-
 			return fmt.Errorf("parse pfcp port failed : %v", pfcpPortStr)
-
 		} else {
-
 			pfcpPortVal = int(val)
-
 		}
-
 	}
 
 	// Iterate through all NS received
@@ -476,11 +448,8 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 		sNssai.Sd = ns.Nssai.Sd
 
 		numSst, err := strconv.Atoi(ns.Nssai.Sst)
-
 		if err != nil {
-
 			logger.CtxLog.Errorf("failed to convert SST to int : %v", ns.Nssai.Sst)
-
 		}
 
 		sNssai.Sst = int32(numSst)
@@ -506,7 +475,6 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 		sNssaiInfoItem.DnnInfos = make([]SnssaiDnnInfoItem, 0)
 
 		for _, devGrp := range ns.DeviceGroup {
-
 			for _, ipDomain := range devGrp.IpDomainDetails { // Iterate over IpDomainDetails slice
 
 				var dnnInfo SnssaiDnnInfoItem
@@ -524,7 +492,6 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 				sNssaiInfoItem.DnnInfos = append(sNssaiInfoItem.DnnInfos, dnnInfo)
 
 			}
-
 		}
 
 		// Update to SMF config structure
@@ -546,25 +513,17 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 		nodeStr := ns.Site.Upf.UpfName
 
 		if strings.Contains(ns.Site.Upf.UpfName, ":") {
-
 			if strings.LastIndex(ns.Site.Upf.UpfName, ":") < len(ns.Site.Upf.UpfName) {
-
 				portStr = ns.Site.Upf.UpfName[strings.LastIndex(ns.Site.Upf.UpfName, ":")+1:]
-
 			}
-
 		}
 
 		if portStr != "" {
 
 			if val, err := strconv.ParseUint(portStr, 10, 32); err != nil {
-
 				logger.CtxLog.Infoln("Parse Upf port failed : ", portStr)
-
 			} else {
-
 				portVal = uint16(val)
-
 			}
 
 			nodeStr = ns.Site.Upf.UpfName[:strings.LastIndex(ns.Site.Upf.UpfName, ":")]
@@ -576,7 +535,6 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 		// iterate through UPFs config received
 
 		upf := UPNode{
-
 			Type: "UPF",
 
 			NodeID: ns.Site.Upf.UpfName,
@@ -589,7 +547,6 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 		}
 
 		snsUpfInfoItem := models.SnssaiUpfInfoItem{
-
 			SNssai: &sNssai,
 
 			DnnUpfInfoList: make([]models.DnnUpfInfoItem, 0),
@@ -598,7 +555,6 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 		// Popoulate DNN names per UPF slice Info
 
 		for _, devGrp := range ns.DeviceGroup {
-
 			for _, ipDomain := range devGrp.IpDomainDetails { // Iterate over IpDomainDetails slice
 
 				// DNN Info in UPF per Slice
@@ -612,7 +568,6 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 				// Populate UPF Interface Info and DNN info in UPF per Interface
 
 				intfUpfInfoItem := InterfaceUpfInfoItem{
-
 					InterfaceType: models.UpInterfaceType_N3,
 
 					Endpoints: make([]string, 0),
@@ -625,7 +580,6 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 				upf.InterfaceUpfInfoList = append(upf.InterfaceUpfInfoList, intfUpfInfoItem)
 
 			}
-
 		}
 
 		upf.SNssaiInfos = append(upf.SNssaiInfos, snsUpfInfoItem)
@@ -655,11 +609,9 @@ func (c *Configuration) parseRocConfig(rsp *protos.NetworkSliceResponse) error {
 	logger.CfgLog.Infof("Parsed SMF config : %+v \n", c)
 
 	return nil
-
 }
 
 func compareAndProcessConfigs(smfCfg, newCfg *Configuration) {
-
 	// compare Network slices
 
 	match, addSlices, modSlices, delSlices := compareNetworkSlices(smfCfg.SNssaiInfo, newCfg.SNssaiInfo)
@@ -699,9 +651,7 @@ func compareAndProcessConfigs(smfCfg, newCfg *Configuration) {
 		}
 
 	} else {
-
 		logger.CfgLog.Infoln("no changes in network slice config")
-
 	}
 
 	// compare Userplane
@@ -743,9 +693,7 @@ func compareAndProcessConfigs(smfCfg, newCfg *Configuration) {
 		}
 
 	} else {
-
 		logger.CfgLog.Infoln("no change in user plane config")
-
 	}
 
 	// compare Links
@@ -775,39 +723,29 @@ func compareAndProcessConfigs(smfCfg, newCfg *Configuration) {
 		}
 
 	} else {
-
 		logger.CfgLog.Infoln("no change in UP nodes links config")
-
 	}
 
 	// Enterprise Name
 
 	UpdatedSmfConfig.EnterpriseList = &newCfg.EnterpriseList
-
 }
 
 func compareNsDnn(c1, c2 interface{}) bool {
-
 	return c1.(SnssaiDnnInfoItem) == c2.(SnssaiDnnInfoItem)
-
 }
 
 func compareUPLinks(c1, c2 interface{}) bool {
-
 	return c1.(UPLink).A == c2.(UPLink).A && c1.(UPLink).B == c2.(UPLink).B
-
 }
 
 func compareUpfDnn(c1, c2 interface{}) bool {
-
 	return c1.(models.DnnUpfInfoItem).Dnn == c2.(models.DnnUpfInfoItem).Dnn
-
 }
 
 // Returns false if there is mismatch
 
 func compareUPNode(u1, u2 UPNode) bool {
-
 	if u1.ANIP == u2.ANIP &&
 
 		u1.Dnn == u2.Dnn &&
@@ -817,9 +755,7 @@ func compareUPNode(u1, u2 UPNode) bool {
 		u1.Type == u2.Type {
 
 		if match, _, _, _ := compareUPNetworkSlices(u1.SNssaiInfos, u2.SNssaiInfos); !match {
-
 			return false
-
 		}
 
 		// Todo: match InterfaceUpfInfoList
@@ -829,11 +765,9 @@ func compareUPNode(u1, u2 UPNode) bool {
 	}
 
 	return false
-
 }
 
 func compareUPNodesConfigs(existingUPNodes, newUPNodes map[string]UPNode) (match bool, add, mod, del map[string]UPNode) {
-
 	match = true
 
 	add, mod, del = make(map[string]UPNode), make(map[string]UPNode), make(map[string]UPNode)
@@ -841,9 +775,7 @@ func compareUPNodesConfigs(existingUPNodes, newUPNodes map[string]UPNode) (match
 	// Check for modifications and deletions in existingUPNodes
 
 	for existingUPNodename, existingUPNode := range existingUPNodes {
-
 		if newUPNode, ok := newUPNodes[existingUPNodename]; ok {
-
 			if !compareUPNode(existingUPNode, newUPNode) {
 
 				mod[existingUPNodename] = newUPNode
@@ -851,7 +783,6 @@ func compareUPNodesConfigs(existingUPNodes, newUPNodes map[string]UPNode) (match
 				match = false
 
 			}
-
 		} else {
 
 			del[existingUPNodename] = existingUPNode
@@ -859,13 +790,11 @@ func compareUPNodesConfigs(existingUPNodes, newUPNodes map[string]UPNode) (match
 			match = false
 
 		}
-
 	}
 
 	// Check for additions in newUPNodes
 
 	for newUPNodename, newUPNode := range newUPNodes {
-
 		if _, ok := existingUPNodes[newUPNodename]; !ok {
 
 			add[newUPNodename] = newUPNode
@@ -873,33 +802,24 @@ func compareUPNodesConfigs(existingUPNodes, newUPNodes map[string]UPNode) (match
 			match = false
 
 		}
-
 	}
 
 	return match, add, mod, del
-
 }
 
 func compareNetworkSliceInstance(s1, s2 SnssaiInfoItem) (match bool) {
-
 	if matching, _, _ := compareGenericSlices(s1.DnnInfos, s2.DnnInfos, compareNsDnn); !matching {
-
 		return false
-
 	}
 
 	if s1.PlmnId != s2.PlmnId {
-
 		return false
-
 	}
 
 	return true
-
 }
 
 func compareNetworkSlices(slice1, slice2 []SnssaiInfoItem) (match bool, add, mod, del []SnssaiInfoItem) {
-
 	match = true
 
 	// Loop two times, first to find slice1 strings not in slice2,
@@ -943,13 +863,9 @@ func compareNetworkSlices(slice1, slice2 []SnssaiInfoItem) (match bool, add, mod
 				match = false
 
 				if i == 0 {
-
 					del = append(del, s1)
-
 				} else {
-
 					add = append(add, s1)
-
 				}
 
 			}
@@ -959,19 +875,15 @@ func compareNetworkSlices(slice1, slice2 []SnssaiInfoItem) (match bool, add, mod
 		// Swap the slices, only if it was the first loop
 
 		if i == 0 {
-
 			slice1, slice2 = slice2, slice1
-
 		}
 
 	}
 
 	return match, add, mod, del
-
 }
 
 func compareUPNetworkSlices(slice1, slice2 []models.SnssaiUpfInfoItem) (match bool, add, mod, del []models.SnssaiUpfInfoItem) {
-
 	match = true
 
 	// Loop two times, first to find slice1 strings not in slice2,
@@ -1015,13 +927,9 @@ func compareUPNetworkSlices(slice1, slice2 []models.SnssaiUpfInfoItem) (match bo
 				match = false
 
 				if i == 0 {
-
 					del = append(del, s1)
-
 				} else {
-
 					add = append(add, s1)
-
 				}
 
 			}
@@ -1031,19 +939,15 @@ func compareUPNetworkSlices(slice1, slice2 []models.SnssaiUpfInfoItem) (match bo
 		// Swap the slices, only if it was the first loop
 
 		if i == 0 {
-
 			slice1, slice2 = slice2, slice1
-
 		}
 
 	}
 
 	return match, add, mod, del
-
 }
 
 func compareGenericSlices(t1, t2 interface{}, compare func(i, j interface{}) bool) (match bool, add, remove interface{}) {
-
 	contentType := reflect.TypeOf(t1)
 
 	logger.CfgLog.Infoln("Comparing slices of type: ", contentType)
@@ -1069,7 +973,6 @@ func compareGenericSlices(t1, t2 interface{}, compare func(i, j interface{}) boo
 			found := false
 
 			for s2 := 0; s2 < slice2.Len(); s2++ {
-
 				if compare(slice1.Index(s1).Interface(), slice2.Index(s2).Interface()) {
 
 					found = true
@@ -1077,7 +980,6 @@ func compareGenericSlices(t1, t2 interface{}, compare func(i, j interface{}) boo
 					break
 
 				}
-
 			}
 
 			// String not found. We add it to return slice
@@ -1087,13 +989,9 @@ func compareGenericSlices(t1, t2 interface{}, compare func(i, j interface{}) boo
 				match = false
 
 				if i == 0 {
-
 					delete = reflect.Append(delete, slice1.Index(s1))
-
 				} else {
-
 					insert = reflect.Append(insert, slice1.Index(s1))
-
 				}
 
 			}
@@ -1103,19 +1001,15 @@ func compareGenericSlices(t1, t2 interface{}, compare func(i, j interface{}) boo
 		// Swap the slices, only if it was the first loop
 
 		if i == 0 {
-
 			slice1, slice2 = slice2, slice1
-
 		}
 
 	}
 
 	return match, insert.Interface(), delete.Interface()
-
 }
 
 func PrettyPrintUPNodes(u map[string]UPNode) (s string) {
-
 	for name, node := range u {
 
 		s += fmt.Sprintf("\n UPNode Name[%v], Type[%v], NodeId[%v], Port[%v], ", name, node.Type, node.NodeID, node.Port)
@@ -1126,12 +1020,10 @@ func PrettyPrintUPNodes(u map[string]UPNode) (s string) {
 
 	}
 
-	return
-
+	return s
 }
 
 func PrettyPrintUPSlices(upSlice []models.SnssaiUpfInfoItem) (s string) {
-
 	for _, slice := range upSlice {
 
 		s += fmt.Sprintf("\n Slice SST[%v] SD[%v] ", slice.SNssai.Sst, slice.SNssai.Sd)
@@ -1140,38 +1032,28 @@ func PrettyPrintUPSlices(upSlice []models.SnssaiUpfInfoItem) (s string) {
 
 	}
 
-	return
-
+	return s
 }
 
 func PrettyPrintUpfDnnSlices(dnnSlice []models.DnnUpfInfoItem) (s string) {
-
 	for _, dnn := range dnnSlice {
-
 		s += fmt.Sprintf("\n DNN name[%v], DNAI[%v], PDU Sess Type[%v] ", dnn.Dnn, dnn.DnaiList, dnn.PduSessionTypes)
-
 	}
 
-	return
-
+	return s
 }
 
 func PrettyPrintUPInterfaces(intfUpf []InterfaceUpfInfoItem) (s string) {
-
 	for _, intf := range intfUpf {
-
 		s += fmt.Sprintf("\n UP interface type[%v], network instance[%v], endpoints[%v], ",
 
 			intf.InterfaceType, intf.NetworkInstance, intf.Endpoints)
-
 	}
 
-	return
-
+	return s
 }
 
 func PrettyPrintNetworkSlices(networkSlice []SnssaiInfoItem) (s string) {
-
 	for _, slice := range networkSlice {
 
 		s += fmt.Sprintf("\n Slice SST[%v] SD[%v] ", slice.SNssai.Sst, slice.SNssai.Sd)
@@ -1180,18 +1062,13 @@ func PrettyPrintNetworkSlices(networkSlice []SnssaiInfoItem) (s string) {
 
 	}
 
-	return
-
+	return s
 }
 
 func PrettyPrintNetworkDnnSlices(dnnSlice []SnssaiDnnInfoItem) (s string) {
-
 	for _, dnn := range dnnSlice {
-
 		s += fmt.Sprintf("\n DNN name[%v], DNS v4[%v], v6[%v], UE-Pool[%v] ", dnn.Dnn, dnn.DNS.IPv4Addr, dnn.DNS.IPv6Addr, dnn.UESubnet)
-
 	}
 
-	return
-
+	return s
 }

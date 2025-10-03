@@ -43,9 +43,7 @@ type Transaction struct {
 }
 
 func (t *Transaction) initLogTags() {
-
 	t.TxnFsmLog = logger.TxnFsmLog.With("txnid", t.TxnId, "txntype", string(t.MsgType), "ctxtkey", t.CtxtKey)
-
 }
 
 type TxnEvent uint
@@ -83,7 +81,6 @@ const (
 )
 
 func (e TxnEvent) String() string {
-
 	switch e {
 
 	case TxnEventInit:
@@ -151,23 +148,18 @@ func (e TxnEvent) String() string {
 		return "TxnEventInvalid"
 
 	}
-
 }
 
 var TxnId uint32
 
 func getNewTxnId() uint32 {
-
 	atomic.AddUint32(&TxnId, 1)
 
 	return TxnId
-
 }
 
 func NewTransaction(req, rsp interface{}, msgType svcmsgtypes.SmfMsgType) *Transaction {
-
 	t := &Transaction{
-
 		Req: req,
 
 		Rsp: rsp,
@@ -186,31 +178,25 @@ func NewTransaction(req, rsp interface{}, msgType svcmsgtypes.SmfMsgType) *Trans
 	t.TxnFsmLog.Debugf("new txn created")
 
 	return t
-
 }
 
 func (t *Transaction) TransactionEnd() {
-
 	t.endTime = time.Now()
 
 	t.TxnFsmLog.Infof("txn ended, execution time [%v]", t.endTime.Sub(t.startTime))
-
 }
 
 type TxnBus []*Transaction
 
 func (txnBus TxnBus) AddTxn(t *Transaction) TxnBus {
-
 	// TODO: Keep Txn Bus Priority sorted
 
 	txnBus = append(txnBus, t)
 
 	return txnBus
-
 }
 
 func (txnBus TxnBus) PopTxn() (*Transaction, TxnBus) {
-
 	if len(txnBus) != 0 {
 
 		txn := txnBus[0]
@@ -222,7 +208,6 @@ func (txnBus TxnBus) PopTxn() (*Transaction, TxnBus) {
 	}
 
 	return nil, txnBus
-
 }
 
 type txnFsm interface {
@@ -258,7 +243,6 @@ type txnFsmHandler [TxnEventExit]func(t *Transaction) (TxnEvent, error)
 var TxnFsmHandler txnFsmHandler
 
 func InitTxnFsm(fsm txnFsm) {
-
 	TxnFsmHandler[TxnEventInit] = fsm.TxnInit
 
 	TxnFsmHandler[TxnEventDecode] = fsm.TxnDecode
@@ -282,11 +266,9 @@ func InitTxnFsm(fsm txnFsm) {
 	TxnFsmHandler[TxnEventSave] = fsm.TxnSave
 
 	TxnFsmHandler[TxnEventEnd] = fsm.TxnEnd
-
 }
 
 func (t *Transaction) StartTxnLifeCycle(fsm txnFsm) {
-
 	nextEvent := TxnEventInit
 
 	var err error
@@ -298,21 +280,15 @@ func (t *Transaction) StartTxnLifeCycle(fsm txnFsm) {
 		t.TxnFsmLog.Debugf("processing event[%v]", currEvent.String())
 
 		if nextEvent, err = TxnFsmHandler[currEvent](t); err != nil {
-
 			t.TxnFsmLog.Errorf("TxnFsm Error, Stage[%s] Err[%v]", currEvent.String(), err.Error())
-
 		}
 
 		// Current active txn is over, Schedule Next Txn if available
 
 		if currEvent == TxnEventEnd && nextEvent == TxnEventRun {
-
 			if t.NextTxn != nil {
-
 				t = t.NextTxn
-
 			}
-
 		} else
 
 		// Finish FSM
@@ -330,11 +306,8 @@ func (t *Transaction) StartTxnLifeCycle(fsm txnFsm) {
 		}
 
 	}
-
 }
 
 func (t Transaction) String() string {
-
 	return fmt.Sprintf(" txn-id [%v], txn-type [%v], txn-key [%v]", t.TxnId, t.MsgType, t.CtxtKey)
-
 }

@@ -32,7 +32,6 @@ import (
 )
 
 func SendNFRegistration() (*models.NfProfile, error) {
-
 	var rep models.NfProfile
 
 	sNssais := []models.Snssai{}
@@ -46,15 +45,12 @@ func SendNFRegistration() (*models.NfProfile, error) {
 	}
 
 	for _, snssaiSmfInfo := range *smf_context.SmfInfo.SNssaiSmfInfoList {
-
 		sNssais = append(sNssais, *snssaiSmfInfo.SNssai)
-
 	}
 
 	// set nfProfile
 
 	profile := models.NfProfile{
-
 		NfInstanceId: smf_context.SMF_Self().NfInstanceID,
 
 		NfType: models.NfType_SMF,
@@ -98,17 +94,11 @@ func SendNFRegistration() (*models.NfProfile, error) {
 	}
 
 	if res != nil {
-
 		defer func() {
-
 			if resCloseErr := res.Body.Close(); resCloseErr != nil {
-
 				logger.ConsumerLog.Errorf("RegisterNFInstance response body cannot close: %+v", resCloseErr)
-
 			}
-
 		}()
-
 	}
 
 	metrics.IncrementSvcNrfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFRegister), "In", http.StatusText(res.StatusCode), "")
@@ -148,11 +138,9 @@ func SendNFRegistration() (*models.NfProfile, error) {
 	logger.InitLog.Infof("SMF Registration to NRF %v", rep)
 
 	return &rep, nil
-
 }
 
 func ReSendNFRegistration() (profile *models.NfProfile) {
-
 	for {
 
 		var err error
@@ -170,11 +158,9 @@ func ReSendNFRegistration() (profile *models.NfProfile) {
 		return profile
 
 	}
-
 }
 
 var SendUpdateNFInstance = func(patchItem []models.PatchItem) (nfProfile *models.NfProfile, problemDetails *models.ProblemDetails, err error) {
-
 	logger.ConsumerLog.Debugln("send Update NFInstance")
 
 	smfSelf := smf_context.SMF_Self()
@@ -192,19 +178,13 @@ var SendUpdateNFInstance = func(patchItem []models.PatchItem) (nfProfile *models
 	nf, res, err = client.NFInstanceIDDocumentApi.UpdateNFInstance(context.Background(), smfSelf.NfInstanceID, patchItem)
 
 	if err == nil {
-
 		return &nf, nil, nil
-
 	} else if res != nil {
 
 		defer func() {
-
 			if resCloseErr := res.Body.Close(); resCloseErr != nil {
-
 				logger.ConsumerLog.Errorf("UpdateNFInstance response cannot close: %+v", resCloseErr)
-
 			}
-
 		}()
 
 		if res.Status != err.Error() {
@@ -220,17 +200,13 @@ var SendUpdateNFInstance = func(patchItem []models.PatchItem) (nfProfile *models
 		problemDetails = &problem
 
 	} else {
-
 		err = openapi.ReportError("server no response")
-
 	}
 
 	return &nf, problemDetails, err
-
 }
 
 func SendNFDeregistration() error {
-
 	// Check data (Use RESTful DELETE)
 
 	res, localErr := smf_context.SMF_Self().
@@ -251,13 +227,9 @@ func SendNFDeregistration() error {
 	}
 
 	defer func() {
-
 		if resCloseErr := res.Body.Close(); resCloseErr != nil {
-
 			logger.ConsumerLog.Errorf("DeregisterNFInstance response body cannot close: %+v", resCloseErr)
-
 		}
-
 	}()
 
 	if res != nil {
@@ -275,11 +247,9 @@ func SendNFDeregistration() error {
 	}
 
 	return nil
-
 }
 
 func getSvcMsgType(nfType models.NfType) svcmsgtypes.SmfMsgType {
-
 	var svcMsgType svcmsgtypes.SmfMsgType
 
 	switch nfType {
@@ -299,15 +269,12 @@ func getSvcMsgType(nfType models.NfType) svcmsgtypes.SmfMsgType {
 	}
 
 	return svcMsgType
-
 }
 
 func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfType,
 
 	param *Nnrf_NFDiscovery.SearchNFInstancesParamOpts,
-
 ) (models.SearchResult, error) {
-
 	result, httpResp, localErr := smf_context.SMF_Self().
 		NFDiscoveryClient.
 		NFInstancesStoreApi.
@@ -322,9 +289,7 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 		if result.NfInstances == nil {
 
 			if status := httpResp.StatusCode; status != http.StatusOK {
-
 				logger.ConsumerLog.Warnln("handler returned wrong status code", status)
-
 			}
 
 			logger.ConsumerLog.Warnln("NfInstances is nil")
@@ -340,25 +305,17 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 	} else if httpResp != nil {
 
 		defer func() {
-
 			if resCloseErr := httpResp.Body.Close(); resCloseErr != nil {
-
 				logger.ConsumerLog.Errorf("SearchNFInstances response body cannot close: %+v", resCloseErr)
-
 			}
-
 		}()
 
 		logger.ConsumerLog.Warnln("handler returned wrong status code", httpResp.Status)
 
 		if httpResp.Status != localErr.Error() {
-
 			metrics.IncrementSvcNrfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcMsgType), "In", http.StatusText(httpResp.StatusCode), httpResp.Status)
-
 		} else {
-
 			metrics.IncrementSvcNrfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcMsgType), "In", http.StatusText(httpResp.StatusCode), localErr.Error())
-
 		}
 
 	} else {
@@ -372,11 +329,9 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 	smfSelf := smf_context.SMF_Self()
 
 	for _, nfProfile := range result.NfInstances {
-
 		if _, ok := smfSelf.NfStatusSubscriptions.Load(nfProfile.NfInstanceId); !ok {
 
 			nrfSubscriptionData := models.NrfSubscriptionData{
-
 				NfStatusNotificationUri: fmt.Sprintf("%s://%s:%d/nsmf-callback/v1/nf-status-notify",
 
 					smfSelf.URIScheme,
@@ -393,27 +348,20 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 			nrfSubData, problemDetails, err := SendCreateSubscription(nrfUri, nrfSubscriptionData, targetNfType)
 
 			if problemDetails != nil {
-
 				logger.ConsumerLog.Errorf("SendCreateSubscription to NRF, Problem[%+v]", problemDetails)
-
 			} else if err != nil {
-
 				logger.ConsumerLog.Errorf("SendCreateSubscription error[%+v]", err)
-
 			}
 
 			smfSelf.NfStatusSubscriptions.Store(nfProfile.NfInstanceId, nrfSubData.SubscriptionId)
 
 		}
-
 	}
 
 	return result, localErr
-
 }
 
 func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
-
 	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
 
 	var result models.SearchResult
@@ -421,13 +369,9 @@ func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
 	var localErr error
 
 	if smf_context.SMF_Self().EnableNrfCaching {
-
 		result, localErr = nrfCache.SearchNFInstances(smf_context.SMF_Self().NrfUri, models.NfType_UDM, models.NfType_SMF, &localVarOptionals)
-
 	} else {
-
 		result, localErr = SendNrfForNfInstance(smf_context.SMF_Self().NrfUri, models.NfType_UDM, models.NfType_SMF, &localVarOptionals)
-
 	}
 
 	if localErr == nil {
@@ -435,7 +379,6 @@ func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
 		smf_context.SMF_Self().UDMProfile = result.NfInstances[0]
 
 		for _, service := range *smf_context.SMF_Self().UDMProfile.NfServices {
-
 			if service.ServiceName == models.ServiceName_NUDM_SDM {
 
 				SDMConf := Nudm_SubscriberDataManagement.NewConfiguration()
@@ -445,13 +388,10 @@ func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
 				smf_context.SMF_Self().SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
 
 			}
-
 		}
 
 		if smf_context.SMF_Self().SubscriberDataManagementClient == nil {
-
 			logger.ConsumerLog.Warnln("sdm client failed")
-
 		}
 
 	} else {
@@ -471,11 +411,9 @@ func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
 	}
 
 	return nil, nil
-
 }
 
 func SendNFDiscoveryPCF() (problemDetails *models.ProblemDetails, err error) {
-
 	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
 
 	var result models.SearchResult
@@ -483,19 +421,13 @@ func SendNFDiscoveryPCF() (problemDetails *models.ProblemDetails, err error) {
 	var localErr error
 
 	if smf_context.SMF_Self().EnableNrfCaching {
-
 		result, localErr = nrfCache.SearchNFInstances(smf_context.SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
-
 	} else {
-
 		result, localErr = SendNrfForNfInstance(smf_context.SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
-
 	}
 
 	if localErr == nil {
-
 		logger.ConsumerLog.Debugln(result.NfInstances)
-
 	} else {
 
 		apiError, ok := localErr.(openapi.GenericOpenAPIError)
@@ -513,11 +445,9 @@ func SendNFDiscoveryPCF() (problemDetails *models.ProblemDetails, err error) {
 	}
 
 	return problemDetails, err
-
 }
 
 func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.ProblemDetails, error) {
-
 	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
 
 	localVarOptionals.TargetNfInstanceId = optional.NewInterface(smContext.ServingNfId)
@@ -527,21 +457,15 @@ func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.Proble
 	var localErr error
 
 	if smf_context.SMF_Self().EnableNrfCaching {
-
 		result, localErr = nrfCache.SearchNFInstances(smf_context.SMF_Self().NrfUri, models.NfType_AMF, models.NfType_SMF, &localVarOptionals)
-
 	} else {
-
 		result, localErr = SendNrfForNfInstance(smf_context.SMF_Self().NrfUri, models.NfType_AMF, models.NfType_SMF, &localVarOptionals)
-
 	}
 
 	if localErr == nil {
 
 		if result.NfInstances == nil {
-
 			return nil, openapi.ReportError("NfInstances is nil")
-
 		}
 
 		smContext.SubConsumerLog.Info("send NF Discovery Serving AMF Successful")
@@ -565,11 +489,9 @@ func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.Proble
 	}
 
 	return nil, nil
-
 }
 
 func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
-
 	logger.ConsumerLog.Infof("send deregister NFInstance")
 
 	smfSelf := smf_context.SMF_Self()
@@ -592,13 +514,9 @@ func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 	} else if res != nil {
 
 		defer func() {
-
 			if resCloseErr := res.Body.Close(); resCloseErr != nil {
-
 				logger.ConsumerLog.Errorf("DeregisterNFInstance response body cannot close: %+v", resCloseErr)
-
 			}
-
 		}()
 
 		if res.Status != err.Error() {
@@ -622,11 +540,9 @@ func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 		return nil, openapi.ReportError("server no response")
 
 	}
-
 }
 
 func SendCreateSubscription(nrfUri string, nrfSubscriptionData models.NrfSubscriptionData, targetNfType models.NfType) (nrfSubData models.NrfSubscriptionData, problemDetails *models.ProblemDetails, err error) {
-
 	logger.ConsumerLog.Debugf("send Create Subscription for %v", targetNfType)
 
 	var res *http.Response
@@ -634,26 +550,20 @@ func SendCreateSubscription(nrfUri string, nrfSubscriptionData models.NrfSubscri
 	nrfSubData, res, err = smf_context.SMF_Self().NFManagementClient.SubscriptionsCollectionApi.CreateSubscription(context.TODO(), nrfSubscriptionData)
 
 	if err == nil {
-
-		return
-
+		return nrfSubData, problemDetails, err
 	} else if res != nil {
 
 		defer func() {
-
 			if resCloseErr := res.Body.Close(); resCloseErr != nil {
-
 				logger.ConsumerLog.Errorf("SendCreateSubscription response cannot close: %+v", resCloseErr)
-
 			}
-
 		}()
 
 		if res.Status != err.Error() {
 
 			logger.ConsumerLog.Errorf("SendCreateSubscription received error response: %v", res.Status)
 
-			return
+			return nrfSubData, problemDetails, err
 
 		}
 
@@ -662,17 +572,13 @@ func SendCreateSubscription(nrfUri string, nrfSubscriptionData models.NrfSubscri
 		problemDetails = &problem
 
 	} else {
-
 		err = openapi.ReportError("server no response")
-
 	}
 
-	return
-
+	return nrfSubData, problemDetails, err
 }
 
 func SendRemoveSubscriptionProcedure(notificationData models.NotificationData) {
-
 	logger.ConsumerLog.Infoln("[SMF] Send Remove Subscription Procedure")
 
 	nfInstanceId := notificationData.NfInstanceUri[strings.LastIndex(notificationData.NfInstanceUri, "/")+1:]
@@ -684,13 +590,9 @@ func SendRemoveSubscriptionProcedure(notificationData models.NotificationData) {
 		problemDetails, err := SendRemoveSubscription(subscriptionId.(string))
 
 		if problemDetails != nil {
-
 			logger.ConsumerLog.Errorf("Remove NF Subscription Failed Problem[%+v]", problemDetails)
-
 		} else if err != nil {
-
 			logger.ConsumerLog.Errorf("Remove NF Subscription Error[%+v]", err)
-
 		} else {
 
 			logger.ConsumerLog.Infoln("[SMF] Remove NF Subscription successful")
@@ -700,15 +602,11 @@ func SendRemoveSubscriptionProcedure(notificationData models.NotificationData) {
 		}
 
 	} else {
-
 		logger.ConsumerLog.Infof("nfinstance %v not found in map", nfInstanceId)
-
 	}
-
 }
 
 func SendRemoveSubscription(subscriptionId string) (problemDetails *models.ProblemDetails, err error) {
-
 	logger.ConsumerLog.Infof("[SMF] Send Remove Subscription for Subscription Id: %v", subscriptionId)
 
 	var res *http.Response
@@ -716,25 +614,17 @@ func SendRemoveSubscription(subscriptionId string) (problemDetails *models.Probl
 	res, err = smf_context.SMF_Self().NFManagementClient.SubscriptionIDDocumentApi.RemoveSubscription(context.Background(), subscriptionId)
 
 	if err == nil {
-
-		return
-
+		return problemDetails, err
 	} else if res != nil {
 
 		defer func() {
-
 			if bodyCloseErr := res.Body.Close(); bodyCloseErr != nil {
-
 				err = fmt.Errorf("RemoveSubscription' response body cannot close: %+w", bodyCloseErr)
-
 			}
-
 		}()
 
 		if res.Status != err.Error() {
-
-			return
-
+			return problemDetails, err
 		}
 
 		problem := err.(openapi.GenericOpenAPIError).Model().(models.ProblemDetails)
@@ -742,11 +632,8 @@ func SendRemoveSubscription(subscriptionId string) (problemDetails *models.Probl
 		problemDetails = &problem
 
 	} else {
-
 		err = openapi.ReportError("server no response")
-
 	}
 
-	return
-
+	return problemDetails, err
 }

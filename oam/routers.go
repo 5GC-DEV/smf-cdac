@@ -17,7 +17,6 @@ import (
 // Route is the information for every URI.
 
 type Route struct {
-
 	// Name is the name of this Route.
 
 	Name string
@@ -42,47 +41,35 @@ type Routes []Route
 // NewRouter returns a new router.
 
 func NewRouter() *gin.Engine {
-
 	router := utilLogger.NewGinWithZap(logger.GinLog)
 
 	AddService(router)
 
 	return router
-
 }
 
 func AddService(engine *gin.Engine) *gin.RouterGroup {
-
 	group := engine.Group("/nsmf-oam/v1")
 
 	for _, route := range routes {
-
 		switch route.Method {
-
 		case "GET":
 
 			group.GET(route.Pattern, route.HandlerFunc)
-
 		}
-
 	}
 
 	return group
-
 }
 
 // Index is the index handler.
 
 func Index(c *gin.Context) {
-
 	c.String(http.StatusOK, "Hello World!")
-
 }
 
 var routes = Routes{
-
 	{
-
 		"Index",
 
 		"GET",
@@ -93,7 +80,6 @@ var routes = Routes{
 	},
 
 	{
-
 		"Get UE PDU Session Info",
 
 		"GET",

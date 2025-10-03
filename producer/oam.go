@@ -40,13 +40,11 @@ type PDUSessionInfo struct {
 }
 
 func HandleOAMGetUEPDUSessionInfo(smContextRef string) *httpwrapper.Response {
-
 	smContext := context.GetSMContext(smContextRef)
 
 	if smContext == nil {
 
 		httpResponse := &httpwrapper.Response{
-
 			Header: nil,
 
 			Status: http.StatusNotFound,
@@ -59,13 +57,11 @@ func HandleOAMGetUEPDUSessionInfo(smContextRef string) *httpwrapper.Response {
 	}
 
 	httpResponse := &httpwrapper.Response{
-
 		Header: nil,
 
 		Status: http.StatusOK,
 
 		Body: PDUSessionInfo{
-
 			Supi: smContext.Supi,
 
 			PDUSessionID: strconv.Itoa(int(smContext.PDUSessionID)),
@@ -94,5 +90,4 @@ func HandleOAMGetUEPDUSessionInfo(smContextRef string) *httpwrapper.Response {
 	}
 
 	return httpResponse
-
 }

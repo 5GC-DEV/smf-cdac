@@ -42,23 +42,16 @@ import (
 // SubscriptionsPost -
 
 func HTTPSmPolicyUpdateNotification(c *gin.Context) {
-
 	var request models.SmPolicyNotification
 
 	reqBody, err := c.GetRawData()
-
 	if err != nil {
-
 		logger.PduSessLog.Errorf("error: %v", err)
-
 	}
 
 	err = openapi.Deserialize(&request, reqBody, c.ContentType())
-
 	if err != nil {
-
 		logger.PduSessLog.Errorln("deserialize request failed")
-
 	}
 
 	reqWrapper := httpwrapper.NewRequest(c.Request, request)
@@ -82,39 +75,27 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	// HTTPResponse := producer.HandleSMPolicyUpdateNotify(smContextRef, reqWrapper.Body.(models.SmPolicyNotification))
 
 	for key, val := range HTTPResponse.Header {
-
 		c.Header(key, val[0])
-
 	}
 
 	resBody, err := openapi.Serialize(HTTPResponse.Body, "application/json")
-
 	if err != nil {
-
 		logger.PduSessLog.Errorln(err)
-
 	}
 
 	_, err = c.Writer.Write(resBody)
-
 	if err != nil {
-
 		logger.PduSessLog.Errorf("error: %v", err)
-
 	}
 
 	c.Status(HTTPResponse.Status)
-
 }
 
 func SmPolicyControlTerminationRequestNotification(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }
 
 func N1N2FailureNotification(c *gin.Context) {
-
 	logger.PduSessLog.Info("receive N1N2 Failure Notification")
 
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.N1N2MessageTransferFailureNotification), "In", "", "")
@@ -138,5 +119,4 @@ func N1N2FailureNotification(c *gin.Context) {
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.N1N2MessageTransferFailureNotification), "Out", http.StatusText(http.StatusNoContent), "")
 
 	c.Status(http.StatusNoContent)
-
 }

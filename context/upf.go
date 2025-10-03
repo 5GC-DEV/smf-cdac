@@ -54,7 +54,6 @@ const (
 )
 
 func (s UPFStatus) String() string {
-
 	switch s {
 
 	case NotAssociated:
@@ -74,7 +73,6 @@ func (s UPFStatus) String() string {
 		return "invalid"
 
 	}
-
 }
 
 type RecoveryTimeStamp struct {
@@ -152,7 +150,6 @@ type UPFInterfaceInfo struct {
 // NewUPFInterfaceInfo parse the InterfaceUpfInfoItem to generate UPFInterfaceInfo
 
 func NewUPFInterfaceInfo(i *factory.InterfaceUpfInfoItem) *UPFInterfaceInfo {
-
 	interfaceInfo := new(UPFInterfaceInfo)
 
 	interfaceInfo.IPv4EndPointAddresses = make([]net.IP, 0)
@@ -166,17 +163,11 @@ func NewUPFInterfaceInfo(i *factory.InterfaceUpfInfoItem) *UPFInterfaceInfo {
 		eIP := net.ParseIP(endpoint)
 
 		if eIP == nil {
-
 			interfaceInfo.EndpointFQDN = endpoint
-
 		} else if eIPv4 := eIP.To4(); eIPv4 == nil {
-
 			interfaceInfo.IPv6EndPointAddresses = append(interfaceInfo.IPv6EndPointAddresses, eIP)
-
 		} else {
-
 			interfaceInfo.IPv4EndPointAddresses = append(interfaceInfo.IPv4EndPointAddresses, eIPv4)
-
 		}
 
 	}
@@ -184,7 +175,6 @@ func NewUPFInterfaceInfo(i *factory.InterfaceUpfInfoItem) *UPFInterfaceInfo {
 	interfaceInfo.NetworkInstance = i.NetworkInstance
 
 	return interfaceInfo
-
 }
 
 // *** add unit test ***//
@@ -192,27 +182,18 @@ func NewUPFInterfaceInfo(i *factory.InterfaceUpfInfoItem) *UPFInterfaceInfo {
 // IP returns the IP of the user plane IP information of the pduSessType
 
 func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
-
 	if (pduSessType == nasMessage.PDUSessionTypeIPv4 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) && len(i.IPv4EndPointAddresses) != 0 {
-
 		return i.IPv4EndPointAddresses[0].To4(), nil
-
 	}
 
 	if (pduSessType == nasMessage.PDUSessionTypeIPv6 || pduSessType == nasMessage.PDUSessionTypeIPv4IPv6) && len(i.IPv6EndPointAddresses) != 0 {
-
 		return i.IPv6EndPointAddresses[0], nil
-
 	}
 
 	if i.EndpointFQDN != "" {
-
 		if resolvedAddr, err := net.ResolveIPAddr("ip", i.EndpointFQDN); err != nil {
-
 			logger.CtxLog.Errorf("resolve addr [%s] failed", i.EndpointFQDN)
-
 		} else {
-
 			switch pduSessType {
 
 			case nasMessage.PDUSessionTypeIPv4:
@@ -228,31 +209,21 @@ func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 				v4addr := resolvedAddr.IP.To4()
 
 				if v4addr != nil {
-
 					return v4addr, nil
-
 				} else {
-
 					return resolvedAddr.IP.To16(), nil
-
 				}
 
 			}
-
 		}
-
 	}
 
 	return nil, errors.New("not matched ip address")
-
 }
 
 func (upfSelectionParams *UPFSelectionParams) String() string {
-
 	if upfSelectionParams == nil {
-
 		return "UPFSelectionParams is nil"
-
 	}
 
 	str := ""
@@ -264,37 +235,28 @@ func (upfSelectionParams *UPFSelectionParams) String() string {
 		str += "Dnn List: "
 
 		for _, dnn := range upfSelectionParams.DnnList {
-
 			str += fmt.Sprintf("%s ", dnn)
-
 		}
 
 		str += "\n"
 
 	} else {
-
 		str += "Dnn List is empty\n"
-
 	}
 
 	SNssai := upfSelectionParams.SNssai
 
 	if SNssai != nil {
-
 		str += fmt.Sprintf("Sst: %d, Sd: %s\n", int(SNssai.Sst), SNssai.Sd)
-
 	}
 
 	Dnai := upfSelectionParams.Dnai
 
 	if Dnai != "" {
-
 		str += fmt.Sprintf("DNAI: %s\n", Dnai)
-
 	}
 
 	return str
-
 }
 
 // UUID return this UPF UUID (allocate by SMF in this time)
@@ -302,32 +264,25 @@ func (upfSelectionParams *UPFSelectionParams) String() string {
 // Maybe allocate by UPF in future
 
 func (upf *UPF) UUID() string {
-
 	uuid := upf.uuid.String()
 
 	return uuid
-
 }
 
 func NewUPTunnel() (tunnel *UPTunnel) {
-
 	tunnel = &UPTunnel{
-
 		DataPathPool: make(DataPathPool),
 
 		PathIDGenerator: idgenerator.NewGenerator(1, 2147483647),
 	}
 
-	return
-
+	return tunnel
 }
 
 // *** add unit test ***//
 
 func (upTunnel *UPTunnel) AddDataPath(dataPath *DataPath) {
-
 	pathID, err := upTunnel.PathIDGenerator.Allocate()
-
 	if err != nil {
 
 		logger.CtxLog.Warnf("allocate pathID error: %+v", err)
@@ -337,7 +292,6 @@ func (upTunnel *UPTunnel) AddDataPath(dataPath *DataPath) {
 	}
 
 	upTunnel.DataPathPool[pathID] = dataPath
-
 }
 
 // *** add unit test ***//
@@ -345,7 +299,6 @@ func (upTunnel *UPTunnel) AddDataPath(dataPath *DataPath) {
 // NewUPF returns a new UPF context in SMF
 
 func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
-
 	upf = new(UPF)
 
 	upf.uuid = uuid.New()
@@ -391,7 +344,6 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 	}
 
 	return upf
-
 }
 
 // *** add unit test ***//
@@ -399,7 +351,6 @@ func NewUPF(nodeID *NodeID, ifaces []factory.InterfaceUpfInfoItem) (upf *UPF) {
 // GetInterface return the UPFInterfaceInfo that match input cond
 
 func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *UPFInterfaceInfo {
-
 	logger.CtxLog.Infof("DNN: %v", dnn)
 
 	switch interfaceType {
@@ -417,13 +368,9 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 			dnnList := strings.Split(iface.NetworkInstance, ",")
 
 			for _, d := range dnnList {
-
 				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
-
 					return &upf.N3Interfaces[i]
-
 				}
-
 			}
 
 		}
@@ -441,13 +388,9 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 			dnnList := strings.Split(iface.NetworkInstance, ",")
 
 			for _, d := range dnnList {
-
 				if strings.TrimSpace(d) == strings.TrimSpace(dnn) {
-
 					return &upf.N9Interfaces[i]
-
 				}
-
 			}
 
 		}
@@ -457,28 +400,22 @@ func (upf *UPF) GetInterface(interfaceType models.UpInterfaceType, dnn string) *
 	logger.CtxLog.Warnf("No matching UPF interface found for type [%v] and DNN [%v]", interfaceType, dnn)
 
 	return nil
-
 }
 
 func (upf *UPF) PFCPAddr() *net.UDPAddr {
-
 	return &net.UDPAddr{
-
 		IP: upf.NodeID.ResolveNodeIdToIp(),
 
 		Port: factory.DEFAULT_PFCP_PORT,
 	}
-
 }
 
 // *** add unit test ***//
 
 func RetrieveUPFNodeByNodeID(nodeID NodeID) *UPF {
-
 	var targetUPF *UPF = nil
 
 	upfPool.Range(func(key, value interface{}) bool {
-
 		curUPF := value.(*UPF)
 
 		if curUPF.NodeID.NodeIdType != nodeID.NodeIdType &&
@@ -508,21 +445,17 @@ func RetrieveUPFNodeByNodeID(nodeID NodeID) *UPF {
 		}
 
 		return true
-
 	})
 
 	return targetUPF
-
 }
 
 // *** add unit test ***//
 
 func RemoveUPFNodeByNodeID(nodeID NodeID) bool {
-
 	upfID := ""
 
 	upfPool.Range(func(key, value interface{}) bool {
-
 		upfID = key.(string)
 
 		upf := value.(*UPF)
@@ -538,21 +471,16 @@ func RemoveUPFNodeByNodeID(nodeID NodeID) bool {
 			logger.CtxLog.Debugf("removeUPF - upfNodeIdIP:[%+v], nodeIdIP:[%+v]", upfNodeIdIP, nodeIdIP)
 
 			if reflect.DeepEqual(upfNodeIdIP, nodeIdIP) {
-
 				return false
-
 			}
 
 		} else if reflect.DeepEqual(upf.NodeID, nodeID) {
-
 			return false
-
 		}
 
 		upfID = ""
 
 		return true
-
 	})
 
 	if upfID != "" {
@@ -564,29 +492,23 @@ func RemoveUPFNodeByNodeID(nodeID NodeID) bool {
 	}
 
 	return false
-
 }
 
 func (upf *UPF) GetUPFIP() string {
-
 	upfIP := upf.NodeID.ResolveNodeIdToIp().String()
 
 	return upfIP
-
 }
 
 func (upf *UPF) GetUPFID() string {
-
 	upInfo := GetUserPlaneInformation()
 
 	upfIP := upf.NodeID.ResolveNodeIdToIp().String()
 
 	return upInfo.GetUPFIDByIP(upfIP)
-
 }
 
 func (upf *UPF) pdrID() (uint16, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf not associate with smf")
@@ -598,21 +520,15 @@ func (upf *UPF) pdrID() (uint16, error) {
 	var pdrID uint16
 
 	if tmpID, err := upf.pdrIDGenerator.Allocate(); err != nil {
-
 		return 0, err
-
 	} else {
-
 		pdrID = uint16(tmpID)
-
 	}
 
 	return pdrID, nil
-
 }
 
 func (upf *UPF) farID() (uint32, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf not associate with smf")
@@ -624,21 +540,15 @@ func (upf *UPF) farID() (uint32, error) {
 	var farID uint32
 
 	if tmpID, err := upf.farIDGenerator.Allocate(); err != nil {
-
 		return 0, err
-
 	} else {
-
 		farID = uint32(tmpID)
-
 	}
 
 	return farID, nil
-
 }
 
 func (upf *UPF) barID() (uint8, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf not associate with smf")
@@ -650,21 +560,15 @@ func (upf *UPF) barID() (uint8, error) {
 	var barID uint8
 
 	if tmpID, err := upf.barIDGenerator.Allocate(); err != nil {
-
 		return 0, err
-
 	} else {
-
 		barID = uint8(tmpID)
-
 	}
 
 	return barID, nil
-
 }
 
 func (upf *UPF) qerID() (uint32, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf not associate with smf")
@@ -676,21 +580,15 @@ func (upf *UPF) qerID() (uint32, error) {
 	var qerID uint32
 
 	if tmpID, err := upf.qerIDGenerator.Allocate(); err != nil {
-
 		return 0, err
-
 	} else {
-
 		qerID = uint32(tmpID)
-
 	}
 
 	return qerID, nil
-
 }
 
 func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
-
 	var pdr *PDR
 
 	var err error
@@ -698,9 +596,7 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	// create empty PDR
 
 	if pdr, err = upf.AddPDR(); err != nil {
-
 		return nil, err
-
 	}
 
 	// SDF Filter
@@ -722,13 +618,9 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 		sdfFilter.LengthOfFlowDescription = uint16(len(sdfFilter.FlowDescription))
 
 		if id, err := strconv.ParseUint(flow.PackFiltId, 10, 32); err != nil {
-
 			return nil, err
-
 		} else {
-
 			sdfFilter.SdfFilterId = uint32(id)
-
 		}
 
 	}
@@ -764,7 +656,6 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	}
 
 	pdi := PDI{
-
 		SDFFilter: &sdfFilter,
 	}
 
@@ -773,11 +664,9 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 	pdr.Precedence = uint32(rule.Precedence)
 
 	return pdr, nil
-
 }
 
 func (upf *UPF) AddPDR() (*PDR, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf do not associate with smf")
@@ -789,9 +678,7 @@ func (upf *UPF) AddPDR() (*PDR, error) {
 	pdr := new(PDR)
 
 	if PDRID, err := upf.pdrID(); err != nil {
-
 		return nil, err
-
 	} else {
 
 		pdr.PDRID = PDRID
@@ -801,21 +688,15 @@ func (upf *UPF) AddPDR() (*PDR, error) {
 	}
 
 	if newFAR, err := upf.AddFAR(); err != nil {
-
 		return nil, err
-
 	} else {
-
 		pdr.FAR = newFAR
-
 	}
 
 	return pdr, nil
-
 }
 
 func (upf *UPF) AddFAR() (*FAR, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf do not associate with smf")
@@ -831,9 +712,7 @@ func (upf *UPF) AddFAR() (*FAR, error) {
 	far.ApplyAction.Drop = true
 
 	if FARID, err := upf.farID(); err != nil {
-
 		return nil, err
-
 	} else {
 
 		far.FARID = FARID
@@ -843,11 +722,9 @@ func (upf *UPF) AddFAR() (*FAR, error) {
 	}
 
 	return far, nil
-
 }
 
 func (upf *UPF) AddBAR() (*BAR, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf do not associate with smf")
@@ -859,7 +736,6 @@ func (upf *UPF) AddBAR() (*BAR, error) {
 	bar := new(BAR)
 
 	if BARID, err := upf.barID(); err != nil {
-
 	} else {
 
 		bar.BARID = BARID
@@ -869,11 +745,9 @@ func (upf *UPF) AddBAR() (*BAR, error) {
 	}
 
 	return bar, nil
-
 }
 
 func (upf *UPF) AddQER() (*QER, error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err := fmt.Errorf("this upf do not associate with smf")
@@ -885,7 +759,6 @@ func (upf *UPF) AddQER() (*QER, error) {
 	qer := new(QER)
 
 	if QERID, err := upf.qerID(); err != nil {
-
 	} else {
 
 		qer.QERID = QERID
@@ -895,13 +768,11 @@ func (upf *UPF) AddQER() (*QER, error) {
 	}
 
 	return qer, nil
-
 }
 
 // *** add unit test ***//
 
 func (upf *UPF) RemovePDR(pdr *PDR) (err error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err = fmt.Errorf("this upf not associate with smf")
@@ -915,13 +786,11 @@ func (upf *UPF) RemovePDR(pdr *PDR) (err error) {
 	upf.pdrPool.Delete(pdr.PDRID)
 
 	return nil
-
 }
 
 // *** add unit test ***//
 
 func (upf *UPF) RemoveFAR(far *FAR) (err error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err = fmt.Errorf("this upf not associate with smf")
@@ -935,13 +804,11 @@ func (upf *UPF) RemoveFAR(far *FAR) (err error) {
 	upf.farPool.Delete(far.FARID)
 
 	return nil
-
 }
 
 // *** add unit test ***//
 
 func (upf *UPF) RemoveBAR(bar *BAR) (err error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err = fmt.Errorf("this upf not associate with smf")
@@ -955,13 +822,11 @@ func (upf *UPF) RemoveBAR(bar *BAR) (err error) {
 	upf.barPool.Delete(bar.BARID)
 
 	return nil
-
 }
 
 // *** add unit test ***//
 
 func (upf *UPF) RemoveQER(qer *QER) (err error) {
-
 	if upf.UPFStatus != AssociatedSetUpSuccess {
 
 		err = fmt.Errorf("this upf not associate with smf")
@@ -975,59 +840,41 @@ func (upf *UPF) RemoveQER(qer *QER) (err error) {
 	upf.qerPool.Delete(qer.QERID)
 
 	return nil
-
 }
 
 func (upf *UPF) isSupportSnssai(snssai *SNssai) bool {
-
 	for _, snssaiInfo := range upf.SNssaiInfos {
-
 		if snssaiInfo.SNssai.Equal(snssai) {
-
 			return true
-
 		}
-
 	}
 
 	return false
-
 }
 
 func (upf *UPF) IsDnnConfigured(sDnn string) bool {
-
 	// iterate through slices and check if DNN is configured
 
 	for _, slice := range upf.SNssaiInfos {
-
 		for _, dnn := range slice.DnnList {
-
 			if dnn.Dnn == sDnn {
-
 				return true
-
 			}
-
 		}
-
 	}
 
 	return false
-
 }
 
 // IsUpfSupportUeIpAddrAlloc UE IP addr alloc by UPF supported
 
 func (upf *UPF) IsUpfSupportUeIpAddrAlloc() bool {
-
 	if upf.UPFunctionFeatures != nil &&
 
 		(upf.UPFunctionFeatures.SupportedFeatures1&UpFunctionFeatures1Ueip) == UpFunctionFeatures1Ueip {
 
 		return true
-
 	}
 
 	return false
-
 }

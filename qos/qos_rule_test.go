@@ -15,7 +15,6 @@ import (
 )
 
 var flowDesc = []string{
-
 	"permit out ip from 1.1.1.1 1000 to 2.2.2.2 2000",
 
 	"permit out ip from 1.1.1.1/24 1000 to 2.2.2.2/24 2000",
@@ -28,7 +27,6 @@ var flowDesc = []string{
 }
 
 func TestDecodeFlowDescToIPFilters(t *testing.T) {
-
 	for i, flow := range flowDesc {
 
 		ipf := qos.DecodeFlowDescToIPFilters(flow)
@@ -36,11 +34,9 @@ func TestDecodeFlowDescToIPFilters(t *testing.T) {
 		t.Logf("flow: %v %v", i, ipf.String())
 
 	}
-
 }
 
 func TestGetPfContent(t *testing.T) {
-
 	pf := &qos.PacketFilter{}
 
 	for i, flow := range flowDesc {
@@ -50,17 +46,13 @@ func TestGetPfContent(t *testing.T) {
 		t.Logf("Flow: %v", i)
 
 		for _, pfc := range pf.Content {
-
 			t.Logf("%v", pfc.String())
-
 		}
 
 	}
-
 }
 
 func TestBuildQosRules(t *testing.T) {
-
 	// make SM Policy Decision
 
 	smPolicyDecision := &models.SmPolicyDecision{}
@@ -82,15 +74,12 @@ func TestBuildQosRules(t *testing.T) {
 	t.Logf("QosRules: %v", qosRules)
 
 	if bytes, err := qosRules.MarshalBinary(); err != nil {
-
 		t.Logf("marshal Error: %v", err.Error())
-
 	} else {
 
 		t.Logf("encoded Bytes: %v", bytes)
 
 		expectedBytes := []byte{
-
 			0x1, 0x0, 0x37, 0x32, 0x31, 0x18, 0x10,
 
 			0x1, 0x1, 0x1, 0x1, 0xff, 0xff, 0xff, 0xff, 0x50, 0x3, 0xe8,
@@ -107,13 +96,10 @@ func TestBuildQosRules(t *testing.T) {
 		require.Equal(t, expectedBytes, bytes)
 
 	}
-
 }
 
 func makeSamplePccRules() map[string]*models.PccRule {
-
 	pccRule1 := models.PccRule{
-
 		PccRuleId: "1",
 
 		Precedence: 200,
@@ -124,9 +110,7 @@ func makeSamplePccRules() map[string]*models.PccRule {
 	}
 
 	flowInfos := []models.FlowInformation{
-
 		{
-
 			FlowDescription: "permit out ip from 1.1.1.1 1000 to 2.2.2.2 2000",
 
 			PackFiltId: "1",
@@ -137,7 +121,6 @@ func makeSamplePccRules() map[string]*models.PccRule {
 		},
 
 		{
-
 			FlowDescription: "permit out ip from 3.3.3.3 3000 to 4.4.4.4 4000",
 
 			PackFiltId: "2",
@@ -151,13 +134,10 @@ func makeSamplePccRules() map[string]*models.PccRule {
 	pccRule1.FlowInfos = append(pccRule1.FlowInfos, flowInfos...)
 
 	return map[string]*models.PccRule{"PccRule1": &pccRule1}
-
 }
 
 func makeSampleQosData() map[string]*models.QosData {
-
 	qosData1 := models.QosData{
-
 		QosId: "5",
 
 		Var5qi: 5,
@@ -200,32 +180,25 @@ func makeSampleQosData() map[string]*models.QosData {
 	*/
 
 	return map[string]*models.QosData{
-
 		"QosData1": &qosData1,
 
 		//		"QosData2": &qosData2,
 
 	}
-
 }
 
 func makeSampleSessionRule() map[string]*models.SessionRule {
-
 	sessRule1 := models.SessionRule{
-
 		AuthSessAmbr: &models.Ambr{
-
 			Uplink: "77 Mbps",
 
 			Downlink: "99 Mbps",
 		},
 
 		AuthDefQos: &models.AuthorizedDefaultQos{
-
 			Var5qi: 9,
 
 			Arp: &models.Arp{
-
 				PriorityLevel: 8,
 
 				PreemptCap: models.PreemptionCapability_MAY_PREEMPT,
@@ -238,20 +211,16 @@ func makeSampleSessionRule() map[string]*models.SessionRule {
 	}
 
 	sessRule2 := models.SessionRule{
-
 		AuthSessAmbr: &models.Ambr{
-
 			Uplink: "55 Mbps",
 
 			Downlink: "33 Mbps",
 		},
 
 		AuthDefQos: &models.AuthorizedDefaultQos{
-
 			Var5qi: 8,
 
 			Arp: &models.Arp{
-
 				PriorityLevel: 7,
 
 				PreemptCap: models.PreemptionCapability_MAY_PREEMPT,
@@ -264,10 +233,8 @@ func makeSampleSessionRule() map[string]*models.SessionRule {
 	}
 
 	return map[string]*models.SessionRule{
-
 		"SessRule1": &sessRule1,
 
 		"SessRule2": &sessRule2,
 	}
-
 }

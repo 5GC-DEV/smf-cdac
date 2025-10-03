@@ -31,15 +31,11 @@ import (
 // ReleasePduSession - Release
 
 func ReleasePduSession(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }
 
 // UpdatePduSession - Update (initiated by V-SMF)
 
 func UpdatePduSession(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }

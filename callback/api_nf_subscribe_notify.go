@@ -23,17 +23,14 @@ import (
 )
 
 func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
-
 	var nfSubscriptionStatusNotification models.NotificationData
 
 	requestBody, err := c.GetRawData()
-
 	if err != nil {
 
 		logger.PduSessLog.Errorf("Get Request Body error: %+v", err)
 
 		problemDetail := models.ProblemDetails{
-
 			Title: "System failure",
 
 			Status: http.StatusInternalServerError,
@@ -50,13 +47,11 @@ func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
 	}
 
 	err = openapi.Deserialize(&nfSubscriptionStatusNotification, requestBody, "application/json")
-
 	if err != nil {
 
 		problemDetail := "[Request Body] " + err.Error()
 
 		rsp := models.ProblemDetails{
-
 			Title: "Malformed request syntax",
 
 			Status: http.StatusBadRequest,
@@ -83,7 +78,6 @@ func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
 		logger.PduSessLog.Errorf("Error fetching response for HTTPNfSubscriptionStatusNotify : %+v\n", err)
 
 		problemDetails := models.ProblemDetails{
-
 			Status: http.StatusInternalServerError,
 
 			Cause: "SYSTEM_FAILURE",
@@ -100,5 +94,4 @@ func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
 		consumer.SendRemoveSubscriptionProcedure(nfSubscriptionStatusNotification)
 
 	}
-
 }

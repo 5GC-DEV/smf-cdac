@@ -25,17 +25,12 @@ var (
 )
 
 func setupTest() {
-
 	if err := factory.InitConfigFactory("../config/smfcfg.yaml"); err != nil {
-
 		fmt.Printf("Could not InitConfigFactory: %+v", err)
-
 	}
-
 }
 
 func TestNfSubscriptionStatusNotify(t *testing.T) {
-
 	t.Logf("test cases fore NfSubscriptionStatusNotify")
 
 	callCountSendRemoveSubscription := 0
@@ -47,39 +42,30 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 	origNRFCacheRemoveNfProfileFromNrfCache := NRFCacheRemoveNfProfileFromNrfCache
 
 	defer func() {
-
 		SendRemoveSubscription = origSendRemoveSubscription
 
 		NRFCacheRemoveNfProfileFromNrfCache = origNRFCacheRemoveNfProfileFromNrfCache
-
 	}()
 
 	SendRemoveSubscription = func(subscriptionId string) (problemDetails *models.ProblemDetails, err error) {
-
 		t.Logf("test SendRemoveSubscription called")
 
 		callCountSendRemoveSubscription++
 
 		return nil, nil
-
 	}
 
 	NRFCacheRemoveNfProfileFromNrfCache = func(nfInstanceId string) bool {
-
 		t.Logf("test NRFCacheRemoveNfProfileFromNrfCache called")
 
 		callCountNRFCacheRemoveNfProfileFromNrfCache++
 
 		return true
-
 	}
 
 	udmProfile := models.NfProfileNotificationData{
-
 		UdrInfo: &models.UdrInfo{
-
 			SupportedDataSets: []models.DataSetId{
-
 				models.DataSetId_SUBSCRIPTION,
 			},
 		},
@@ -92,7 +78,6 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 	}
 
 	badRequestProblem := models.ProblemDetails{
-
 		Status: http.StatusBadRequest,
 
 		Cause: "MANDATORY_IE_MISSING",
@@ -121,9 +106,7 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 
 		enableNrfCaching bool
 	}{
-
 		{
-
 			nil,
 
 			"Notification event type DEREGISTERED NRF caching is enabled",
@@ -146,7 +129,6 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 		},
 
 		{
-
 			nil,
 
 			"Notification event type DEREGISTERED NRF caching is enabled Subscription is not found",
@@ -169,7 +151,6 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 		},
 
 		{
-
 			nil,
 
 			"Notification event type DEREGISTERED NRF caching is disabled",
@@ -192,7 +173,6 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 		},
 
 		{
-
 			nil,
 
 			"Notification event type REGISTERED NRF caching is enabled",
@@ -215,7 +195,6 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 		},
 
 		{
-
 			nil,
 
 			"Notification event type DEREGISTERED NRF caching is enabled NfInstanceUri in notificationData is different",
@@ -238,7 +217,6 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 		},
 
 		{
-
 			&badRequestProblem,
 
 			"Notification event type DEREGISTERED NRF caching is enabled NfInstanceUri in notificationData is empty",
@@ -261,7 +239,6 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 		},
 
 		{
-
 			&badRequestProblem,
 
 			"Notification event type empty NRF caching is enabled",
@@ -285,15 +262,12 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 	}
 
 	for i := range parameters {
-
 		t.Run(fmt.Sprintf("NfSubscriptionStatusNotify testname %v result %v", parameters[i].testName, parameters[i].result), func(t *testing.T) {
-
 			smfContext.SMF_Self().EnableNrfCaching = parameters[i].enableNrfCaching
 
 			smfContext.SMF_Self().NfStatusSubscriptions.Store(parameters[i].nfInstanceIdForSubscription, parameters[i].subscriptionID)
 
 			notificationData := models.NotificationData{
-
 				Event: models.NotificationEventType(parameters[i].notificationEventType),
 
 				NfInstanceUri: parameters[i].nfInstanceId,
@@ -320,19 +294,14 @@ func TestNfSubscriptionStatusNotify(t *testing.T) {
 			callCountNRFCacheRemoveNfProfileFromNrfCache = 0
 
 			smfContext.SMF_Self().NfStatusSubscriptions.Delete(parameters[i].nfInstanceIdForSubscription)
-
 		})
-
 	}
-
 }
 
 func TestMain(m *testing.M) {
-
 	setupTest()
 
 	exitVal := m.Run()
 
 	os.Exit(exitVal)
-
 }

@@ -37,7 +37,6 @@ import (
 var SMF = &service.SMF{}
 
 func main() {
-
 	app := &cli.Command{}
 
 	app.Name = "smf"
@@ -53,15 +52,11 @@ func main() {
 	app.Flags = SMF.GetCliCmd()
 
 	if err := app.Run(context.Background(), os.Args); err != nil {
-
 		logger.AppLog.Fatalf("SMF run error: %v", err)
-
 	}
-
 }
 
 func action(ctx context.Context, c *cli.Command) error {
-
 	if err := SMF.Initialize(c); err != nil {
 
 		logger.CfgLog.Errorf("%+v", err)
@@ -73,5 +68,4 @@ func action(ctx context.Context, c *cli.Command) error {
 	SMF.Start()
 
 	return nil
-
 }

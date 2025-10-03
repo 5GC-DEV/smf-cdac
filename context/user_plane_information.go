@@ -34,7 +34,6 @@ type UserPlaneInformation struct {
 	UPFsIPtoID map[string]string // ip->id table, for speed optimization
 
 	DefaultUserPlanePath map[string][]*UPNode // DNN to Default Path
-
 }
 
 type UPNodeType string
@@ -68,7 +67,6 @@ type UPNode struct {
 type UPPath []*UPNode
 
 func AllocateUPFID() {
-
 	UPFsID := smfContext.UserPlaneInformation.UPFsID
 
 	UPFsIPtoID := smfContext.UserPlaneInformation.UPFsIPtoID
@@ -84,15 +82,12 @@ func AllocateUPFID() {
 		UPFsIPtoID[upfip] = upfid
 
 	}
-
 }
 
 // NewUserPlaneInformation process the configuration then returns a new instance of UserPlaneInformation
 
 func NewUserPlaneInformation(upTopology *factory.UserPlaneInformation) *UserPlaneInformation {
-
 	userplaneInformation := &UserPlaneInformation{
-
 		UPNodes: make(map[string]*UPNode),
 
 		UPFs: make(map[string]*UPNode),
@@ -113,11 +108,8 @@ func NewUserPlaneInformation(upTopology *factory.UserPlaneInformation) *UserPlan
 	for name, node := range upTopology.UPNodes {
 
 		err := userplaneInformation.InsertSmfUserPlaneNode(name, &node)
-
 		if err != nil {
-
 			logger.UPNodeLog.Errorf("failed to insert UP Node[%v]", node)
-
 		}
 
 	}
@@ -127,55 +119,40 @@ func NewUserPlaneInformation(upTopology *factory.UserPlaneInformation) *UserPlan
 	for _, link := range upTopology.Links {
 
 		err := userplaneInformation.InsertUPNodeLinks(&link)
-
 		if err != nil {
-
 			logger.UPNodeLog.Errorf("failed to insert UP Node link[%v]", link)
-
 		}
 
 	}
 
 	return userplaneInformation
-
 }
 
 func (upi *UserPlaneInformation) GetUPFNameByIp(ip string) string {
-
 	return upi.UPFIPToName[ip]
-
 }
 
 func (upi *UserPlaneInformation) GetUPFNodeIDByName(name string) NodeID {
-
 	return upi.UPFs[name].NodeID
-
 }
 
 func (upi *UserPlaneInformation) GetUPFNodeByIP(ip string) *UPNode {
-
 	upfName := upi.GetUPFNameByIp(ip)
 
 	return upi.UPFs[upfName]
-
 }
 
 func (upi *UserPlaneInformation) GetUPFIDByIP(ip string) string {
-
 	return upi.UPFsIPtoID[ip]
-
 }
 
 func (upi *UserPlaneInformation) ResetDefaultUserPlanePath() {
-
 	logger.UPNodeLog.Infof("resetting the default user plane paths [%v]", upi.DefaultUserPlanePath)
 
 	upi.DefaultUserPlanePath = make(map[string][]*UPNode)
-
 }
 
 func (upi *UserPlaneInformation) GetDefaultUserPlanePathByDNN(selection *UPFSelectionParams) (path UPPath) {
-
 	path, pathExist := upi.DefaultUserPlanePath[selection.String()]
 
 	logger.CtxLog.Debugln("in GetDefaultUserPlanePathByDNN")
@@ -183,35 +160,27 @@ func (upi *UserPlaneInformation) GetDefaultUserPlanePathByDNN(selection *UPFSele
 	logger.CtxLog.Debugln("selection:", selection.String())
 
 	if pathExist {
-
-		return
-
+		return path
 	} else {
 
 		pathExist = upi.GenerateDefaultPath(selection)
 
 		if pathExist {
-
 			return upi.DefaultUserPlanePath[selection.String()]
-
 		}
 
 	}
 
 	return nil
-
 }
 
 func (upi *UserPlaneInformation) ExistDefaultPath(dnn string) bool {
-
 	_, exist := upi.DefaultUserPlanePath[dnn]
 
 	return exist
-
 }
 
 func GenerateDataPath(upPath UPPath, smContext *SMContext) *DataPath {
-
 	if len(upPath) < 1 {
 
 		logger.CtxLog.Errorf("Invalid data path")
@@ -245,9 +214,7 @@ func GenerateDataPath(upPath UPPath, smContext *SMContext) *DataPath {
 		}
 
 		if idx == upperBound {
-
 			curDataPathNode.AddNext(nil)
-
 		}
 
 		if prevDataPathNode != nil {
@@ -263,9 +230,7 @@ func GenerateDataPath(upPath UPPath, smContext *SMContext) *DataPath {
 	}
 
 	dataPath := &DataPath{
-
 		Destination: Destination{
-
 			DestinationIP: "",
 
 			DestinationPort: "",
@@ -277,11 +242,9 @@ func GenerateDataPath(upPath UPPath, smContext *SMContext) *DataPath {
 	}
 
 	return dataPath
-
 }
 
 func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionParams) (pathExist bool) {
-
 	var source *UPNode
 
 	var destinations []*UPNode
@@ -299,25 +262,19 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 	if len(destinations) == 0 {
 
 		for _, dnn := range selection.DnnList {
-
 			logger.CtxLog.Errorf("Can't find UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", dnn,
 
 				selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)
-
 		}
 
 		return false
 
 	} else {
-
 		for _, dnn := range selection.DnnList {
-
 			logger.CtxLog.Infof("Found UPF with DNN[%s] S-NSSAI[sst: %d sd: %s] DNAI[%s]\n", dnn,
 
 				selection.SNssai.Sst, selection.SNssai.Sd, selection.Dnai)
-
 		}
-
 	}
 
 	// Run DFS
@@ -325,13 +282,10 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 	visited := make(map[*UPNode]bool)
 
 	for _, upNode := range upi.UPNodes {
-
 		visited[upNode] = false
-
 	}
 
 	for anName, node := range upi.AccessNetwork {
-
 		if node.Type == UPNODE_AN {
 
 			source = node
@@ -343,9 +297,7 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 			if pathExist {
 
 				if path[0].Type == UPNODE_AN {
-
 					path = path[1:]
-
 				}
 
 				upi.DefaultUserPlanePath[selection.String()] = path
@@ -361,15 +313,12 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 			}
 
 		}
-
 	}
 
 	return pathExist
-
 }
 
 func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) []*UPNode {
-
 	upList := make([]*UPNode, 0)
 
 	logger.CtxLog.Infof("Selecting matching UPFs for DNNs[%v] and S-NSSAI[sst: %d, sd: %s]", selection.DnnList, selection.SNssai.Sst, selection.SNssai.Sd)
@@ -389,11 +338,9 @@ func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) [
 				logger.CtxLog.Infof("Found matching S-NSSAI: [%v] for UPF: %v", currentSnssai, upNode)
 
 				for _, dnnInfo := range snssaiInfo.DnnList {
-
 					// Check against each DNN in the selection
 
 					for _, dnn := range selection.DnnList {
-
 						if dnnInfo.Dnn == dnn && dnnInfo.ContainsDNAI(selection.Dnai) {
 
 							upList = append(upList, upNode)
@@ -403,9 +350,7 @@ func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) [
 							break
 
 						}
-
 					}
-
 				}
 
 			}
@@ -415,15 +360,12 @@ func (upi *UserPlaneInformation) selectMatchUPF(selection *UPFSelectionParams) [
 	}
 
 	return upList
-
 }
 
 func getPathBetween(cur *UPNode, dest *UPNode, visited map[*UPNode]bool,
 
 	selection *UPFSelectionParams,
-
 ) (path []*UPNode, pathExist bool) {
-
 	visited[cur] = true
 
 	if reflect.DeepEqual(*cur, *dest) {
@@ -441,7 +383,6 @@ func getPathBetween(cur *UPNode, dest *UPNode, visited map[*UPNode]bool,
 	selectedSNssai := selection.SNssai
 
 	for _, nodes := range cur.Links {
-
 		if !visited[nodes] {
 
 			if !nodes.UPF.isSupportSnssai(selectedSNssai) {
@@ -469,17 +410,14 @@ func getPathBetween(cur *UPNode, dest *UPNode, visited map[*UPNode]bool,
 			}
 
 		}
-
 	}
 
 	return nil, false
-
 }
 
 // insert new UPF (only N3)
 
 func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *factory.UPNode) error {
-
 	logger.UPNodeLog.Infof("UPNode[%v] to insert, content[%v]", name, node)
 
 	logger.UPNodeLog.Debugf("content of map[UPNodes] %v", upi.UPNodes)
@@ -513,7 +451,6 @@ func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *facto
 		// Find IP
 
 		if ip = net.ParseIP(node.NodeID); ip != nil {
-
 			// v4 or v6
 
 			if ip.To4() != nil {
@@ -533,7 +470,6 @@ func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *facto
 				nodeIdType = NodeIdTypeIpv6Address
 
 			}
-
 		} else {
 
 			// FQDN
@@ -547,7 +483,6 @@ func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *facto
 		// Populate outcome
 
 		upNode.NodeID = NodeID{
-
 			NodeIdType: nodeIdType,
 
 			NodeIdValue: []byte(ip),
@@ -562,9 +497,7 @@ func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *facto
 		for _, snssaiInfoConfig := range node.SNssaiInfos {
 
 			snssaiInfo := SnssaiUPFInfo{
-
 				SNssai: SNssai{
-
 					Sst: snssaiInfoConfig.SNssai.Sst,
 
 					Sd: snssaiInfoConfig.SNssai.Sd,
@@ -574,16 +507,13 @@ func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *facto
 			}
 
 			for _, dnnInfoConfig := range snssaiInfoConfig.DnnUpfInfoList {
-
 				snssaiInfo.DnnList = append(snssaiInfo.DnnList, DnnUPFInfoItem{
-
 					Dnn: dnnInfoConfig.Dnn,
 
 					DnaiList: dnnInfoConfig.DnaiList,
 
 					PduSessionTypes: dnnInfoConfig.PduSessionTypes,
 				})
-
 			}
 
 			snssaiInfos = append(snssaiInfos, snssaiInfo)
@@ -607,7 +537,6 @@ func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *facto
 	upi.UPFIPToName[ipStr] = name
 
 	return nil
-
 }
 
 // Update an existing User Plane Node.
@@ -617,15 +546,12 @@ func (upi *UserPlaneInformation) InsertSmfUserPlaneNode(name string, node *facto
 // If the node is of type UPF, then the node is updated with the new port and the new UPF information.
 
 func (upi *UserPlaneInformation) UpdateSmfUserPlaneNode(name string, newNode *factory.UPNode) error {
-
 	logger.UPNodeLog.Infof("UPNode [%v] to update, content[%v]", name, newNode)
 
 	existingNode, exists := upi.UPNodes[name]
 
 	if !exists {
-
 		return fmt.Errorf("UPNode [%s] does not exist", name)
-
 	}
 
 	existingNode.Port = newNode.Port
@@ -663,7 +589,6 @@ func (upi *UserPlaneInformation) UpdateSmfUserPlaneNode(name string, newNode *fa
 		}
 
 		newNodeID := NodeID{
-
 			NodeIdType: nodeIdType,
 
 			NodeIdValue: []byte(ip),
@@ -682,9 +607,7 @@ func (upi *UserPlaneInformation) UpdateSmfUserPlaneNode(name string, newNode *fa
 		for i, snssaiInfoConfig := range newNode.SNssaiInfos {
 
 			existingNode.UPF.SNssaiInfos[i] = SnssaiUPFInfo{
-
 				SNssai: SNssai{
-
 					Sst: snssaiInfoConfig.SNssai.Sst,
 
 					Sd: snssaiInfoConfig.SNssai.Sd,
@@ -694,16 +617,13 @@ func (upi *UserPlaneInformation) UpdateSmfUserPlaneNode(name string, newNode *fa
 			}
 
 			for j, dnnInfoConfig := range snssaiInfoConfig.DnnUpfInfoList {
-
 				existingNode.UPF.SNssaiInfos[i].DnnList[j] = DnnUPFInfoItem{
-
 					Dnn: dnnInfoConfig.Dnn,
 
 					DnaiList: dnnInfoConfig.DnaiList,
 
 					PduSessionTypes: dnnInfoConfig.PduSessionTypes,
 				}
-
 			}
 
 		}
@@ -725,13 +645,11 @@ func (upi *UserPlaneInformation) UpdateSmfUserPlaneNode(name string, newNode *fa
 	logger.CtxLog.Infof("UPNode [%s] updated successfully", name)
 
 	return nil
-
 }
 
 // delete UPF
 
 func (upi *UserPlaneInformation) DeleteSmfUserPlaneNode(name string, node *factory.UPNode) error {
-
 	logger.UPNodeLog.Infof("UPNode[%v] to delete, content[%v]", name, node)
 
 	logger.UPNodeLog.Debugf("content of map[UPNodes] %v", upi.UPNodes)
@@ -777,13 +695,9 @@ func (upi *UserPlaneInformation) DeleteSmfUserPlaneNode(name string, node *facto
 			logger.UPNodeLog.Debugf("content of map[UPFsIPtoID] %v", upi.UPFsIPtoID)
 
 			for ipStr, nodeId := range upi.UPFsIPtoID {
-
 				if nodeId == upNode.UPF.UUID() {
-
 					delete(upi.UPFsIPtoID, ipStr)
-
 				}
-
 			}
 
 			// UserPlane UPF pool
@@ -811,7 +725,6 @@ func (upi *UserPlaneInformation) DeleteSmfUserPlaneNode(name string, node *facto
 		logger.UPNodeLog.Debugf("content of map[UPFIPToName] %v", upi.UPFIPToName)
 
 		for ipStr, nodeName := range upi.UPFIPToName {
-
 			if nodeName == name {
 
 				delete(upi.UPFIPToName, ipStr)
@@ -819,7 +732,6 @@ func (upi *UserPlaneInformation) DeleteSmfUserPlaneNode(name string, node *facto
 				logger.UPNodeLog.Infof("UPNode[%v] deleted from table[UPFIPToName]", name)
 
 			}
-
 		}
 
 	}
@@ -827,11 +739,9 @@ func (upi *UserPlaneInformation) DeleteSmfUserPlaneNode(name string, node *facto
 	// also clean up default paths to UPFs
 
 	return nil
-
 }
 
 func (upi *UserPlaneInformation) InsertUPNodeLinks(link *factory.UPLink) error {
-
 	// Update Links
 
 	logger.UPNodeLog.Infof("inserting UP Node link[%v] ", link)
@@ -855,11 +765,9 @@ func (upi *UserPlaneInformation) InsertUPNodeLinks(link *factory.UPLink) error {
 	nodeB.Links = append(nodeB.Links, nodeA)
 
 	return nil
-
 }
 
 func (upi *UserPlaneInformation) DeleteUPNodeLinks(link *factory.UPLink) error {
-
 	logger.UPNodeLog.Infof("deleting UP Node link[%v]", link)
 
 	logger.UPNodeLog.Debugf("current UP Nodes [%+v]", upi.UPNodes)
@@ -871,9 +779,7 @@ func (upi *UserPlaneInformation) DeleteUPNodeLinks(link *factory.UPLink) error {
 	// Iterate through node-A links and remove Node-B
 
 	if nodeA != nil {
-
 		for index, upNode := range nodeA.Links {
-
 			if bytes.Equal(upNode.NodeID.NodeIdValue, nodeB.NodeID.NodeIdValue) {
 
 				// skip nodeB from Links
@@ -883,17 +789,13 @@ func (upi *UserPlaneInformation) DeleteUPNodeLinks(link *factory.UPLink) error {
 				break
 
 			}
-
 		}
-
 	}
 
 	// Iterate through node-B links and remove Node-A
 
 	if nodeB != nil {
-
 		for index, upNode := range nodeB.Links {
-
 			if bytes.Equal(upNode.NodeID.NodeIdValue, nodeA.NodeID.NodeIdValue) {
 
 				// skip nodeA from Links
@@ -903,11 +805,8 @@ func (upi *UserPlaneInformation) DeleteUPNodeLinks(link *factory.UPLink) error {
 				break
 
 			}
-
 		}
-
 	}
 
 	return nil
-
 }

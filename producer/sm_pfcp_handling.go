@@ -16,7 +16,6 @@ import (
 )
 
 func SendPfcpSessionModifyReq(smContext *smf_context.SMContext, pfcpParam *pfcpParam) error {
-
 	defaultPath := smContext.Tunnel.DataPathPool.GetDefaultPath()
 
 	ANUPF := defaultPath.FirstDPNode
@@ -24,11 +23,8 @@ func SendPfcpSessionModifyReq(smContext *smf_context.SMContext, pfcpParam *pfcpP
 	err := pfcp_message.SendPfcpSessionModificationRequest(ANUPF.UPF.NodeID, smContext,
 
 		pfcpParam.pdrList, pfcpParam.farList, pfcpParam.barList, pfcpParam.qerList, pfcpParam.removePDR, pfcpParam.removeFAR, pfcpParam.removeQER, ANUPF.UPF.Port)
-
 	if err != nil {
-
 		smContext.SubCtxLog.Errorf("pfcp session modification failure: %+v", err)
-
 	}
 
 	PFCPResponseStatus := <-smContext.SBIPFCPCommunicationChan
@@ -56,11 +52,9 @@ func SendPfcpSessionModifyReq(smContext *smf_context.SMContext, pfcpParam *pfcpP
 	}
 
 	return nil
-
 }
 
 func SendPfcpSessionReleaseReq(smContext *smf_context.SMContext) error {
-
 	// release UPF data tunnel
 
 	releaseTunnel(smContext)
@@ -90,5 +84,4 @@ func SendPfcpSessionReleaseReq(smContext *smf_context.SMContext) error {
 	}
 
 	return nil
-
 }

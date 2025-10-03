@@ -42,7 +42,6 @@ import (
 // HTTPPostSmContexts - Create SM Context
 
 func HTTPPostSmContexts(c *gin.Context) {
-
 	logger.PduSessLog.Infoln("receive create SM Context Request")
 
 	var err error
@@ -52,7 +51,6 @@ func HTTPPostSmContexts(c *gin.Context) {
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "In", "", "")
 
 	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_req)
-
 	if err != nil {
 
 		logger.PduSessLog.Errorf("error: %v", err)
@@ -86,7 +84,6 @@ func HTTPPostSmContexts(c *gin.Context) {
 		problemDetail := "[Request Body] " + err.Error()
 
 		rsp := models.ProblemDetails{
-
 			Title: "Malformed request syntax",
 
 			Status: http.StatusBadRequest,
@@ -119,17 +116,13 @@ func HTTPPostSmContexts(c *gin.Context) {
 	errStr := ""
 
 	if txn.Err != nil {
-
 		errStr = txn.Err.Error()
-
 	}
 
 	// Http Response to AMF
 
 	for key, val := range HTTPResponse.Header {
-
 		c.Header(key, val[0])
-
 	}
 
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "Out", http.StatusText(HTTPResponse.Status), errStr)
@@ -159,7 +152,6 @@ func HTTPPostSmContexts(c *gin.Context) {
 	}
 
 	go func(smContext *smf_context.SMContext) {
-
 		var txn *transaction.Transaction
 
 		if HTTPResponse.Status == http.StatusCreated {
@@ -173,11 +165,7 @@ func HTTPPostSmContexts(c *gin.Context) {
 			<-txn.Status
 
 		} else {
-
 			smf_context.RemoveSMContext(smContext.Ref)
-
 		}
-
 	}(smContext)
-
 }

@@ -35,28 +35,22 @@ import (
 )
 
 func formContextCreateErrRsp(httpStatus int, problemBody *models.ProblemDetails, n1SmMsg *models.RefToBinaryData) *httpwrapper.Response {
-
 	return &httpwrapper.Response{
-
 		Header: nil,
 
 		Status: httpStatus,
 
 		Body: models.PostSmContextsErrorResponse{
-
 			JsonData: &models.SmContextCreateError{
-
 				Error: problemBody,
 
 				N1SmMsg: n1SmMsg,
 			},
 		},
 	}
-
 }
 
 func HandlePduSessionContextReplacement(smCtxtRef string) error {
-
 	smCtxt := smf_context.GetSMContext(smCtxtRef)
 
 	if smCtxt != nil {
@@ -80,9 +74,7 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 		// Check if UPF session set, send release
 
 		if smCtxt.Tunnel != nil {
-
 			releaseTunnel(smCtxt)
-
 		}
 
 		smCtxt.SMLock.Unlock()
@@ -90,11 +82,9 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 	}
 
 	return nil
-
 }
 
 func HandlePDUSessionSMContextCreate(eventData interface{}) error {
-
 	txn := eventData.(*transaction.Transaction)
 
 	request := txn.Req.(models.PostSmContextsRequest)
@@ -188,9 +178,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		return fmt.Errorf("UdmError")
 
 	} else {
-
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, send NF Discovery Serving UDM Successful")
-
 	}
 
 	// IP Allocation
@@ -220,9 +208,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	var smPlmnID *models.PlmnId
 
 	if createData.ServingNetwork != nil {
-
 		smPlmnID = createData.ServingNetwork
-
 	} else {
 
 		smContext.SubPduSessLog.Infof("ServingNetwork not received from AMF, so taking from guami")
@@ -232,7 +218,6 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	}
 
 	smDataParams := &Nudm_SubscriberDataManagement.GetSmDataParamOpts{
-
 		Dnn: optional.NewString(createData.Dnn),
 
 		PlmnId: optional.NewInterface(smPlmnID.Mcc + smPlmnID.Mnc),
@@ -261,13 +246,9 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	} else {
 
 		defer func() {
-
 			if rspCloseErr := rsp.Body.Close(); rspCloseErr != nil {
-
 				smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, GetSmData response body cannot close: %+v", rspCloseErr)
-
 			}
-
 		}()
 
 		if len(sessSubData) > 0 {
@@ -393,11 +374,9 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	var defaultPath *smf_context.DataPath
 
 	upfSelectionParams := &smf_context.UPFSelectionParams{
-
 		DnnList: []string{createData.Dnn}, // Wrap the single DNN in a slice
 
 		SNssai: &smf_context.SNssai{
-
 			Sst: createData.SNssai.Sst,
 
 			Sd: createData.SNssai.Sd,
@@ -417,11 +396,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		defaultPath = smContext.Tunnel.DataPathPool.GetDefaultPath()
 
 		err := defaultPath.ActivateTunnelAndPDR(smContext, 255)
-
 		if err != nil {
-
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, data path error: %v", err.Error())
-
 		}
 
 		smContext.BPManager = smf_context.NewBPManager(createData.Supi)
@@ -499,13 +475,10 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		return fmt.Errorf("AmfError")
 
 	} else {
-
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextCreate, Send NF Discovery Serving AMF success")
-
 	}
 
 	for _, service := range *smContext.AMFProfile.NfServices {
-
 		if service.ServiceName == models.ServiceName_NAMF_COMM {
 
 			communicationConf := Namf_Communication.NewConfiguration()
@@ -515,15 +488,12 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			smContext.CommunicationClient = Namf_Communication.NewAPIClient(communicationConf)
 
 		}
-
 	}
 
 	response.JsonData = smContext.BuildCreatedData()
 
 	txn.Rsp = &httpwrapper.Response{
-
 		Header: http.Header{
-
 			"Location": {smContext.Ref},
 		},
 
@@ -539,11 +509,9 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	return nil
 
 	// TODO: UECM registration
-
 }
 
 func pduSessionTypeToString(pduType uint8) string {
-
 	switch pduType {
 
 	case nasMessage.PDUSessionTypeIPv4:
@@ -571,11 +539,9 @@ func pduSessionTypeToString(pduType uint8) string {
 		return "IPv4"
 
 	}
-
 }
 
 func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
-
 	txn := eventData.(*transaction.Transaction)
 
 	smContext := txn.Ctxt.(*smf_context.SMContext)
@@ -595,13 +561,10 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 	// N1 Msg Handling
 
 	if err := HandleUpdateN1Msg(txn, &response, pfcpAction); err != nil {
-
 		return err
-
 	}
 
 	pfcpParam := &pfcpParam{
-
 		pdrList: []*smf_context.PDR{},
 
 		farList: []*smf_context.FAR{},
@@ -614,33 +577,25 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 	// UP Cnx State handling
 
 	if err := HandleUpCnxState(txn, &response, pfcpAction, pfcpParam); err != nil {
-
 		return err
-
 	}
 
 	// N2 Msg Handling
 
 	if err := HandleUpdateN2Msg(txn, &response, pfcpAction, pfcpParam); err != nil {
-
 		return err
-
 	}
 
 	// Ho state handling
 
 	if err := HandleUpdateHoState(txn, &response, pfcpAction, pfcpParam); err != nil {
-
 		return err
-
 	}
 
 	// Cause handling
 
 	if err := HandleUpdateCause(txn, &response, pfcpAction); err != nil {
-
 		return err
-
 	}
 
 	var httpResponse *httpwrapper.Response
@@ -668,9 +623,7 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 			// Initiate PFCP Release
 
 			if err = SendPfcpSessionReleaseReq(smContext); err != nil {
-
 				smContext.SubCtxLog.Errorf("pfcp session release error: %v ", err.Error())
-
 			}
 
 			// Change state to InactivePending
@@ -682,7 +635,6 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 			// Update response to success
 
 			httpResponse = &httpwrapper.Response{
-
 				Status: http.StatusOK,
 
 				Body: response,
@@ -733,7 +685,6 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 				// Modify Success
 
 				httpResponse = &httpwrapper.Response{
-
 					Status: http.StatusOK,
 
 					Body: response,
@@ -756,7 +707,6 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusOK,
 
 			Body: response,
@@ -767,7 +717,6 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, ctxt in SmStateInit, SmStateInActivePending")
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusOK,
 
 			Body: response,
@@ -778,7 +727,6 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 		smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SM Context State [%s] shouldn't be here\n", smContext.SMContextState)
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusOK,
 
 			Body: response,
@@ -789,13 +737,10 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 	txn.Rsp = httpResponse
 
 	return nil
-
 }
 
 func makePduCtxtModifyErrRsp(smContext *smf_context.SMContext, errStr string) *httpwrapper.Response {
-
 	problemDetail := models.ProblemDetails{
-
 		Title: errStr,
 
 		Status: http.StatusInternalServerError,
@@ -810,27 +755,20 @@ func makePduCtxtModifyErrRsp(smContext *smf_context.SMContext, errStr string) *h
 	var err error
 
 	if n1buf, err = smf_context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
-
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
-
 	}
 
 	if n2buf, err = smf_context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
-
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
-
 	}
 
 	// It is just a template
 
 	httpResponse := &httpwrapper.Response{
-
 		Status: http.StatusServiceUnavailable,
 
 		Body: models.UpdateSmContextErrorResponse{
-
 			JsonData: &models.SmContextUpdateError{
-
 				Error: &problemDetail,
 
 				N1SmMsg: &models.RefToBinaryData{ContentId: smf_context.PDU_SESS_REL_CMD},
@@ -848,7 +786,6 @@ func makePduCtxtModifyErrRsp(smContext *smf_context.SMContext, errStr string) *h
 	}
 
 	return httpResponse
-
 }
 
 /*
@@ -896,7 +833,6 @@ func makePduCtxtModifyErrRsp(smContext *smf_context.SMContext, errStr string) *h
 */
 
 func HandlePDUSessionSMContextRelease(eventData interface{}) error {
-
 	txn := eventData.(*transaction.Transaction)
 
 	body := txn.Req.(models.ReleaseSmContextRequest)
@@ -930,11 +866,8 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 	// Release UE IP-Address
 
 	err := smContext.ReleaseUeIpAddr()
-
 	if err != nil {
-
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, release UE IP address failed: %v", err)
-
 	}
 
 	// Initiate PFCP release
@@ -952,7 +885,6 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		// already released
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusNoContent,
 
 			Body: nil,
@@ -979,7 +911,6 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusNoContent,
 
 			Body: nil,
@@ -992,7 +923,6 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		smContext.ChangeState(smf_context.SmStateActive)
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: int(http.StatusInternalServerError),
 		}
 
@@ -1005,14 +935,12 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, PFCP SessionReleaseFailed")
 
 		problemDetail := models.ProblemDetails{
-
 			Status: http.StatusInternalServerError,
 
 			Cause: "SYSTEM_FAILULE",
 		}
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: int(problemDetail.Status),
 		}
 
@@ -1021,21 +949,15 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
 
 		errResponse := models.UpdateSmContextErrorResponse{
-
 			JsonData: &models.SmContextUpdateError{
-
 				Error: &problemDetail,
 			},
 		}
 
 		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
-
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
-
 		} else {
-
 			errResponse.BinaryDataN1SmMessage = buf
-
 		}
 
 		errResponse.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
@@ -1049,14 +971,12 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, in case Unknown")
 
 		problemDetail := models.ProblemDetails{
-
 			Status: http.StatusInternalServerError,
 
 			Cause: "SYSTEM_FAILULE",
 		}
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: int(problemDetail.Status),
 		}
 
@@ -1065,21 +985,15 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
 
 		errResponse := models.UpdateSmContextErrorResponse{
-
 			JsonData: &models.SmContextUpdateError{
-
 				Error: &problemDetail,
 			},
 		}
 
 		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
-
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
-
 		} else {
-
 			errResponse.BinaryDataN1SmMessage = buf
-
 		}
 
 		errResponse.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
@@ -1093,11 +1007,9 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 	smf_context.RemoveSMContext(smContext.Ref)
 
 	return nil
-
 }
 
 func releaseTunnel(smContext *smf_context.SMContext) bool {
-
 	if smContext.Tunnel == nil {
 
 		smContext.SubPduSessLog.Errorf("releaseTunnel, pfcp tunnel already released")
@@ -1117,7 +1029,6 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 		for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
 
 			curUPFID, err := curDataPathNode.GetUPFID()
-
 			if err != nil {
 
 				smContext.SubPduSessLog.Error(err)
@@ -1129,11 +1040,8 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 			if _, exist := deletedPFCPNode[curUPFID]; !exist {
 
 				err := pfcp_message.SendPfcpSessionDeletionRequest(curDataPathNode.UPF.NodeID, smContext, curDataPathNode.UPF.Port)
-
 				if err != nil {
-
 					smContext.SubPduSessLog.Errorf("releaseTunnel, send PFCP session deletion request failed: %v", err)
-
 				}
 
 				deletedPFCPNode[curUPFID] = true
@@ -1149,11 +1057,9 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 	smContext.Tunnel = nil
 
 	return true
-
 }
 
 func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) error {
-
 	// N1N2 Request towards AMF
 
 	n1n2Request := models.N1N2MessageTransferRequest{}
@@ -1161,19 +1067,15 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 	// N2 Container Info
 
 	n2InfoContainer := models.N2InfoContainer{
-
 		N2InformationClass: models.N2InformationClass_SM,
 
 		SmInfo: &models.N2SmInformation{
-
 			PduSessionId: smContext.PDUSessionID,
 
 			N2InfoContent: &models.N2InfoContent{
-
 				NgapIeType: models.NgapIeType_PDU_RES_SETUP_REQ,
 
 				NgapData: &models.RefToBinaryData{
-
 					ContentId: "N2SmInformation",
 				},
 			},
@@ -1185,7 +1087,6 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 	// N1 Container Info
 
 	n1MsgContainer := models.N1MessageContainer{
-
 		N1MessageClass: "SM",
 
 		N1MessageContent: &models.RefToBinaryData{ContentId: "GSM_NAS"},
@@ -1246,13 +1147,10 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 			smContext.Supi, smContext.PDUSessionID)
 
 	} else {
-
 		if smNasBuf, err := smf_context.BuildGSMPDUSessionEstablishmentReject(smContext,
 
 			nasMessage.Cause5GSMRequestRejectedUnspecified); err != nil {
-
 			logger.PduSessLog.Errorf("build GSM PDUSessionEstablishmentReject failed: %s", err)
-
 		} else {
 
 			n1n2Request.BinaryDataN1Message = smNasBuf
@@ -1260,7 +1158,6 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 			n1n2Request.JsonData.N1MessageContainer = &n1MsgContainer
 
 		}
-
 	}
 
 	smContext.SubPduSessLog.Infof("N1N2 transfer initiated")
@@ -1273,17 +1170,13 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 		CommunicationClient.
 		N1N2MessageCollectionDocumentApi.
 		N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
-
 	if err != nil {
 
 		smContext.SubPfcpLog.Warnf("send N1N2Transfer failed, %v ", err.Error())
 
 		err = smContext.CommitSmPolicyDecision(false)
-
 		if err != nil {
-
 			smContext.SubPfcpLog.Errorf("CommitSmPolicyDecision failed, %v", err)
-
 		}
 
 		return err
@@ -1295,11 +1188,8 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 		smContext.SubPfcpLog.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
 
 		err = smContext.CommitSmPolicyDecision(false)
-
 		if err != nil {
-
 			smContext.SubPfcpLog.Errorf("CommitSmPolicyDecision failed, %v", err)
-
 		}
 
 		return fmt.Errorf("N1N2MessageTransfer failure, %v", rspData.Cause)
@@ -1307,21 +1197,16 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 	}
 
 	err = smContext.CommitSmPolicyDecision(true)
-
 	if err != nil {
-
 		smContext.SubPfcpLog.Errorf("CommitSmPolicyDecision failed, %v", err)
-
 	}
 
 	smContext.SubPduSessLog.Infof("N1N2 Transfer completed")
 
 	return nil
-
 }
 
 func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
-
 	txn := eventData.(*transaction.Transaction)
 
 	smContext := txn.Ctxt.(*smf_context.SMContext)
@@ -1347,7 +1232,6 @@ func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
 			ANUPF := dataPath.FirstDPNode
 
 			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
-
 				if DLPDR == nil {
 
 					smContext.SubPduSessLog.Errorln("AN Release Error")
@@ -1365,7 +1249,6 @@ func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
 					farList = append(farList, DLPDR.FAR)
 
 				}
-
 			}
 
 		}
@@ -1377,11 +1260,8 @@ func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
 		// Sending PFCP modification with flag set to DROP the packets.
 
 		err := pfcp_message.SendPfcpSessionModificationRequest(ANUPF.UPF.NodeID, smContext, pdrList, farList, barList, qerList, nil, nil, nil, ANUPF.UPF.Port)
-
 		if err != nil {
-
 			smContext.SubPduSessLog.Errorf("pfcp Session Modification Request failed: %v", err)
-
 		}
 
 	}
@@ -1395,7 +1275,6 @@ func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
 	txn.Rsp = httpResponse
 
 	return nil
-
 }
 
 // Handles PFCP response depending upon response cause recevied.
@@ -1403,9 +1282,7 @@ func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
 func HandlePFCPResponse(smContext *smf_context.SMContext,
 
 	PFCPResponseStatus smf_context.PFCPSessionResponseStatus,
-
 ) *httpwrapper.Response {
-
 	smContext.SubPfcpLog.Debugln("in HandlePFCPResponse")
 
 	var httpResponse *httpwrapper.Response
@@ -1421,7 +1298,6 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 		smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusNoContent,
 
 			Body: nil,
@@ -1438,13 +1314,10 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 		// It is just a template
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusForbidden,
 
 			Body: models.UpdateSmContextErrorResponse{
-
 				JsonData: &models.SmContextUpdateError{
-
 					Error: &Nsmf_PDUSession.N1SmError,
 				},
 			}, // Depends on the reason why N4 fail
@@ -1462,7 +1335,6 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 		*/
 
 		problemDetail := models.ProblemDetails{
-
 			Title: "PFCP Session Mod Timeout",
 
 			Status: http.StatusInternalServerError,
@@ -1477,15 +1349,11 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 		var err error
 
 		if n1buf, err = smf_context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
-
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
-
 		}
 
 		if n2buf, err = smf_context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
-
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
-
 		}
 
 		smContext.ChangeState(smf_context.SmStatePfcpModify)
@@ -1495,13 +1363,10 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 		// It is just a template
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusServiceUnavailable,
 
 			Body: models.UpdateSmContextErrorResponse{
-
 				JsonData: &models.SmContextUpdateError{
-
 					Error: &problemDetail,
 
 					N1SmMsg: &models.RefToBinaryData{ContentId: smf_context.PDU_SESS_REL_CMD},
@@ -1519,11 +1384,8 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 		}
 
 		err = SendPfcpSessionReleaseReq(smContext)
-
 		if err != nil {
-
 			smContext.SubCtxLog.Errorf("pfcp session release error: %v ", err.Error())
-
 		}
 
 	default:
@@ -1531,7 +1393,6 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 		smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SM Context State [%s] shouldn't be here\n", smContext.SMContextState)
 
 		httpResponse = &httpwrapper.Response{
-
 			Status: http.StatusNoContent,
 
 			Body: nil,
@@ -1542,5 +1403,4 @@ func HandlePFCPResponse(smContext *smf_context.SMContext,
 	smContext.SubPfcpLog.Debugln("out HandlePFCPResponse")
 
 	return httpResponse
-
 }

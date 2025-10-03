@@ -22,17 +22,13 @@ type TransactionType uint8
 
 type TxTable struct {
 	m sync.Map // map[uint32]*Transaction
-
 }
 
 func (t *TxTable) Store(sequenceNumber uint32, tx *Transaction) {
-
 	t.m.Store(sequenceNumber, tx)
-
 }
 
 func (t *TxTable) Load(sequenceNumber uint32) (*Transaction, bool) {
-
 	if t == nil {
 
 		logger.PfcpLog.Warnf("TxTable is nil")
@@ -44,19 +40,14 @@ func (t *TxTable) Load(sequenceNumber uint32) (*Transaction, bool) {
 	tx, ok := t.m.Load(sequenceNumber)
 
 	if ok {
-
 		return tx.(*Transaction), ok
-
 	}
 
 	return nil, false
-
 }
 
 func (t *TxTable) Delete(sequenceNumber uint32) {
-
 	t.m.Delete(sequenceNumber)
-
 }
 
 const (
@@ -96,9 +87,7 @@ type Transaction struct {
 }
 
 func NewTransaction(pfcpMSG message.Message, binaryMSG []byte, Conn *net.UDPConn, DestAddr *net.UDPAddr, eventData interface{}) *Transaction {
-
 	tx := &Transaction{
-
 		SendMsg: binaryMSG,
 
 		SequenceNumber: pfcpMSG.Sequence(),
@@ -131,11 +120,9 @@ func NewTransaction(pfcpMSG message.Message, binaryMSG []byte, Conn *net.UDPConn
 	logger.PfcpLog.Debugf("new Transaction SEQ[%d] DestAddr[%s]", tx.SequenceNumber, DestAddr.String())
 
 	return tx
-
 }
 
 func (transaction *Transaction) Start() error {
-
 	logger.PfcpLog.Debugf("start transaction [%d]", transaction.SequenceNumber)
 
 	if transaction.TxType == SendingRequest {
@@ -145,7 +132,6 @@ func (transaction *Transaction) Start() error {
 			timer := time.NewTimer(ResendRequestTimeOutPeriod * time.Second)
 
 			_, err := transaction.Conn.WriteToUDP(transaction.SendMsg, transaction.DestAddr)
-
 			if err != nil {
 
 				logger.PfcpLog.Warnf("request transaction [%d]: %s", transaction.SequenceNumber, err)
@@ -191,7 +177,6 @@ func (transaction *Transaction) Start() error {
 		for iter := 0; iter < NumOfResend; iter++ {
 
 			_, err := transaction.Conn.WriteToUDP(transaction.SendMsg, transaction.DestAddr)
-
 			if err != nil {
 
 				logger.PfcpLog.Warnf("response transaction [%d]: sending error", transaction.SequenceNumber)
@@ -227,5 +212,4 @@ func (transaction *Transaction) Start() error {
 	}
 
 	return nil
-
 }

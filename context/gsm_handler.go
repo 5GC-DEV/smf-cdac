@@ -16,7 +16,6 @@ import (
 )
 
 func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage.PDUSessionEstablishmentRequest) {
-
 	// Retrieve PDUSessionID
 
 	smContext.PDUSessionID = int32(req.GetPDUSessionID())
@@ -40,7 +39,6 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 		}
 
 	} else {
-
 		// Set to default supported PDU Session Type
 
 		switch SMF_Self().SupportedPDUSessionType {
@@ -66,7 +64,6 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 			smContext.SelectedPDUSessionType = nasMessage.PDUSessionTypeIPv4
 
 		}
-
 	}
 
 	if req.ExtendedProtocolConfigurationOptions != nil {
@@ -78,9 +75,7 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 		unmarshalErr := protocolConfigurationOptions.UnMarshal(EPCOContents)
 
 		if unmarshalErr != nil {
-
 			smContext.SubGsmLog.Errorf("parsing PCO failed: %s", unmarshalErr)
-
 		}
 
 		smContext.SubGsmLog.Infoln("protocol Configuration Options")
@@ -254,11 +249,9 @@ func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage
 		}
 
 	}
-
 }
 
 func (smContext *SMContext) HandlePDUSessionReleaseRequest(req *nasMessage.PDUSessionReleaseRequest) {
-
 	smContext.SubGsmLog.Infof("Handle Pdu Session Release Request")
 
 	// Retrieve PTI (Procedure transaction identity)
@@ -268,11 +261,7 @@ func (smContext *SMContext) HandlePDUSessionReleaseRequest(req *nasMessage.PDUSe
 	// Release UE IP Addr
 
 	err := smContext.ReleaseUeIpAddr()
-
 	if err != nil {
-
 		smContext.SubGsmLog.Errorf("release UE IP Addr failed: %s", err)
-
 	}
-
 }

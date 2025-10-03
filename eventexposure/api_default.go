@@ -31,31 +31,23 @@ import (
 // SubscriptionsPost -
 
 func SubscriptionsPost(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }
 
 // SubscriptionsSubIdDelete -
 
 func SubscriptionsSubIdDelete(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }
 
 // SubscriptionsSubIdGet -
 
 func SubscriptionsSubIdGet(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }
 
 // SubscriptionsSubIdPut -
 
 func SubscriptionsSubIdPut(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }

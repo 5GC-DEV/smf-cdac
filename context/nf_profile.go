@@ -27,7 +27,6 @@ type SmfSnssaiPlmnIdInfo map[string]models.PlmnId
 var SmfPlmnInfo SmfSnssaiPlmnIdInfo
 
 func SetupNFProfile(config *factory.Config) {
-
 	// Set time
 
 	nfSetupTime := time.Now()
@@ -35,9 +34,7 @@ func SetupNFProfile(config *factory.Config) {
 	// set NfServiceVersion
 
 	NfServiceVersion = &[]models.NfServiceVersion{
-
 		{
-
 			ApiVersionInUri: "v1",
 
 			ApiFullVersion: fmt.Sprintf("https://%s:%d/nsmf-pdusession/v1", SMF_Self().RegisterIPv4, SMF_Self().SBIPort),
@@ -49,7 +46,6 @@ func SetupNFProfile(config *factory.Config) {
 	// set smfInfo/PlmnInfo
 
 	SmfInfo = &models.SmfInfo{
-
 		SNssaiSmfInfoList: SNssaiSmfInfo(),
 	}
 
@@ -58,9 +54,7 @@ func SetupNFProfile(config *factory.Config) {
 	NFServices = new([]models.NfService)
 
 	for _, serviceName := range config.Configuration.ServiceNameList {
-
 		*NFServices = append(*NFServices, models.NfService{
-
 			ServiceInstanceId: SMF_Self().NfInstanceID + serviceName,
 
 			ServiceName: models.ServiceName(serviceName),
@@ -75,19 +69,14 @@ func SetupNFProfile(config *factory.Config) {
 
 			AllowedPlmns: SmfPlmnConfig(),
 		})
-
 	}
-
 }
 
 func SmfPlmnConfig() *[]models.PlmnId {
-
 	plmns := make([]models.PlmnId, 0)
 
 	for _, plmn := range SmfPlmnInfo {
-
 		plmns = append(plmns, plmn)
-
 	}
 
 	if len(plmns) > 0 {
@@ -99,11 +88,9 @@ func SmfPlmnConfig() *[]models.PlmnId {
 	}
 
 	return nil
-
 }
 
 func SNssaiSmfInfo() *[]models.SnssaiSmfInfoItem {
-
 	snssaiInfo := make([]models.SnssaiSmfInfoItem, 0)
 
 	SmfPlmnInfo = make(SmfSnssaiPlmnIdInfo)
@@ -113,7 +100,6 @@ func SNssaiSmfInfo() *[]models.SnssaiSmfInfoItem {
 		var snssaiInfoModel models.SnssaiSmfInfoItem
 
 		snssaiInfoModel.SNssai = &models.Snssai{
-
 			Sst: snssai.Snssai.Sst,
 
 			Sd: snssai.Snssai.Sd,
@@ -122,20 +108,15 @@ func SNssaiSmfInfo() *[]models.SnssaiSmfInfoItem {
 		// Plmn Info
 
 		if snssai.PlmnId.Mcc != "" && snssai.PlmnId.Mnc != "" {
-
 			SmfPlmnInfo[strconv.Itoa(int(snssai.Snssai.Sst))+snssai.Snssai.Sd] = snssai.PlmnId
-
 		}
 
 		dnnModelList := make([]models.DnnSmfInfoItem, 0)
 
 		for dnn := range snssai.DnnInfos {
-
 			dnnModelList = append(dnnModelList, models.DnnSmfInfoItem{
-
 				Dnn: dnn,
 			})
-
 		}
 
 		snssaiInfoModel.DnnSmfInfoList = &dnnModelList
@@ -145,5 +126,4 @@ func SNssaiSmfInfo() *[]models.SnssaiSmfInfoItem {
 	}
 
 	return &snssaiInfo
-
 }

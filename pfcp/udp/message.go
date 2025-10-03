@@ -23,7 +23,6 @@ type Message struct {
 }
 
 func NewMessage(remoteAddr *net.UDPAddr, pfcpMessage message.Message, eventData interface{}) (msg Message) {
-
 	msg = Message{}
 
 	msg.RemoteAddr = remoteAddr
@@ -32,6 +31,5 @@ func NewMessage(remoteAddr *net.UDPAddr, pfcpMessage message.Message, eventData 
 
 	msg.EventData = eventData
 
-	return
-
+	return msg
 }

@@ -31,7 +31,6 @@ var (
 )
 
 func HandleSMPolicyUpdateNotify(eventData interface{}) error {
-
 	txn := eventData.(*transaction.Transaction)
 
 	request := txn.Req.(models.SmPolicyNotification)
@@ -47,11 +46,9 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	pcfPolicyDecision := request.SmPolicyDecision
 
 	if smContext.SMContextState != smf_context.SmStateActive {
-
 		logger.PduSessLog.Warnf("SMContext[%s-%02d] should be SmStateActive, but actual %s",
 
 			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
-
 	}
 
 	// Derive QoS change
@@ -129,7 +126,6 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	smContext.SubCtxLog.Info("PFCP Modify success and N1N2 Msg sent, new state:", smContext.SMContextState.String())
 
 	httpResponse := &httpwrapper.Response{
-
 		Status: http.StatusOK,
 
 		Body: nil,
@@ -138,7 +134,6 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	txn.Rsp = httpResponse
 
 	return nil
-
 }
 
 // BuildPfcpParam constructs the PFCP parameters (PDRs, FARs, QERs,) for a given SMContext.
@@ -156,11 +151,9 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 // This function returns a pfcpParam structure containing lists of rules to add or remove for PFCP session management.
 
 func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
-
 	// Initialize PFCP parameter container
 
 	pfcpParam := &pfcpParam{
-
 		pdrList: []*smfContext.PDR{},
 
 		farList: []*smfContext.FAR{},
@@ -185,13 +178,9 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	ruleid := "0"
 
 	if len(smContext.SmPolicyUpdates) > 0 && smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules != nil {
-
 		if len(smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules) == 0 {
-
 			shouldSendReleaseOnly = true
-
 		} else {
-
 			for ruleId, rule := range smContext.SmPolicyUpdates[0].SmPolicyDecision.PccRules {
 
 				logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s, Rule=%+v", ruleId, rule)
@@ -209,9 +198,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				}
 
 			}
-
 		}
-
 	}
 
 	logger.PduSessLog.Infof("[BuildPfcpParam] Checking PCC RuleId=%s", ruleid)
@@ -245,19 +232,13 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			dedQER, err = ANUPF.CreateDedicatedQosQer(smContext)
 
 			if err != nil {
-
 				logger.PduSessLog.Warnf("[BuildPfcpParam] CreateSessRuleQer failed: %v", err)
-
 			} else {
-
 				logger.PduSessLog.Infof("[BuildPfcpParam] Created default QER: %+v", dedQER)
-
 			}
 
 			if err := dataPath.ActivateUlDlTunnel(smContext); err != nil {
-
 				logger.PduSessLog.Errorf("activate UL/DL tunnel error %v", err.Error())
-
 			}
 
 		}
@@ -281,15 +262,11 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				pfcpParam.removePDR = append(pfcpParam.removePDR, dlPDR)
 
 				if dlPDR.FAR != nil {
-
 					pfcpParam.removeFAR = append(pfcpParam.removeFAR, dlPDR.FAR)
-
 				}
 
 				if dlPDR.QER != nil {
-
 					pfcpParam.removeQER = append(pfcpParam.removeQER, dlPDR.QER...)
-
 				}
 
 				continue
@@ -301,9 +278,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			dlPDR.QER = []*smf_context.QER{dedQER}
 
 			if dlPDR.Precedence == 0 {
-
 				dlPDR.Precedence = 1
-
 			}
 
 			// Set PDI fields for core interface
@@ -317,7 +292,6 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			dlFAR := dlPDR.FAR
 
 			dlFAR.ApplyAction = smf_context.ApplyAction{
-
 				Buff: true, Drop: false, Dupl: false, Forw: false, Nocp: true,
 			}
 
@@ -326,15 +300,11 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			pfcpParam.pdrList = append(pfcpParam.pdrList, dlPDR)
 
 			if dlFAR != nil {
-
 				pfcpParam.farList = append(pfcpParam.farList, dlFAR)
-
 			}
 
 			if dedQER != nil {
-
 				pfcpParam.qerList = append(pfcpParam.qerList, dedQER)
-
 			}
 
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
@@ -356,15 +326,11 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				pfcpParam.removePDR = append(pfcpParam.removePDR, ulPDR)
 
 				if ulPDR.FAR != nil {
-
 					pfcpParam.removeFAR = append(pfcpParam.removeFAR, ulPDR.FAR)
-
 				}
 
 				if ulPDR.QER != nil {
-
 					pfcpParam.removeQER = append(pfcpParam.removeQER, ulPDR.QER...)
-
 				}
 
 				continue
@@ -376,9 +342,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			ulPDR.QER = []*smf_context.QER{dedQER}
 
 			if ulPDR.Precedence == 0 {
-
 				ulPDR.Precedence = 1
-
 			}
 
 			// Set PDI and outer header removal for access interface
@@ -390,7 +354,6 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
 
 			ulPDR.OuterHeaderRemoval = &smf_context.OuterHeaderRemoval{
-
 				OuterHeaderRemovalDescription: smf_context.OuterHeaderRemovalGtpUUdpIpv4,
 			}
 
@@ -401,9 +364,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			ulFAR.ApplyAction = smf_context.ApplyAction{Forw: true}
 
 			ulFAR.ForwardingParameters = &smf_context.ForwardingParameters{
-
 				DestinationInterface: smf_context.DestinationInterface{
-
 					InterfaceValue: smf_context.DestinationInterfaceCore,
 				},
 
@@ -415,9 +376,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			pfcpParam.pdrList = append(pfcpParam.pdrList, ulPDR)
 
 			if ulFAR != nil {
-
 				pfcpParam.farList = append(pfcpParam.farList, ulFAR)
-
 			}
 
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
@@ -429,13 +388,11 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 	}
 
 	return pfcpParam
-
 }
 
 // 3GPP Reference: TS 23.502 §4.3.3.4 – "PDU Session Modification" procedure
 
 func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
-
 	// -------------------------------
 
 	// Initialize N1N2 Message Transfer Request
@@ -451,19 +408,15 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	// -------------------------------
 
 	n2InfoContainer := models.N2InfoContainer{
-
 		N2InformationClass: models.N2InformationClass_SM, // SM information for NGAP
 
 		SmInfo: &models.N2SmInformation{
-
 			PduSessionId: smContext.PDUSessionID, // PDU session ID
 
 			N2InfoContent: &models.N2InfoContent{
-
 				NgapIeType: models.NgapIeType_PDU_RES_MOD_REQ, // NGAP IE type for PDUSessionResourceModifyRequest
 
 				NgapData: &models.RefToBinaryData{
-
 					ContentId: "N2SmInformation", // Reference ID for binary data
 
 				},
@@ -481,7 +434,6 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	// -------------------------------
 
 	n1MsgContainer := models.N1MessageContainer{
-
 		N1MessageClass: "SM", // Session Management NAS message
 
 		N1MessageContent: &models.RefToBinaryData{ContentId: "GSM_NAS"}, // Binary content reference
@@ -495,7 +447,6 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	// -------------------------------
 
 	n1n2Request.JsonData = &models.N1N2MessageTransferReqData{
-
 		PduSessionId: smContext.PDUSessionID,
 	}
 
@@ -506,9 +457,7 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	// -------------------------------
 
 	if smNasBuf, err := smfContext.BuildGSMPDUSessionModificationCommand(smContext); err != nil {
-
 		logger.PduSessLog.Errorf("BuildGSMPDUSessionModificationCommand failed: %s", err)
-
 	} else {
 
 		n1n2Request.BinaryDataN1Message = smNasBuf // Attach binary NAS message
@@ -526,9 +475,7 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	n2Pdu, err := smfContext.BuildPDUSessionResourceModifyRequestTransfer(smContext)
 
 	if err != nil {
-
 		smContext.SubPduSessLog.Errorf("Build PDUSessionResourceModifyRequestTransfer failed: %s", err.Error())
-
 	} else {
 
 		n1n2Request.BinaryDataN2Information = n2Pdu // Attach binary NGAP message
@@ -548,7 +495,6 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	rspData, _, err := smContext.CommunicationClient.
 		N1N2MessageCollectionDocumentApi.
 		N1N2MessageTransfer(context.Background(), smContext.Supi, n1n2Request)
-
 	if err != nil {
 
 		smContext.SubPfcpLog.Warnf("Send N1N2Transfer failed: %v", err.Error())
@@ -574,11 +520,9 @@ func BuildAndSendQosN1N2TransferMsg(smContext *smfContext.SMContext) error {
 	smContext.SubPduSessLog.Infoln("QoS N1N2 Transfer completed")
 
 	return nil
-
 }
 
 func HandleNfSubscriptionStatusNotify(request *httpwrapper.Request) *httpwrapper.Response {
-
 	logger.PduSessLog.Debugln("[SMF] Handle NF Status Notify")
 
 	notificationData := request.Body.(models.NotificationData)
@@ -586,15 +530,10 @@ func HandleNfSubscriptionStatusNotify(request *httpwrapper.Request) *httpwrapper
 	problemDetails := NfSubscriptionStatusNotifyProcedure(notificationData)
 
 	if problemDetails != nil {
-
 		return httpwrapper.NewResponse(int(problemDetails.Status), nil, problemDetails)
-
 	} else {
-
 		return httpwrapper.NewResponse(http.StatusNoContent, nil, nil)
-
 	}
-
 }
 
 // NfSubscriptionStatusNotifyProcedure is handler method of notification procedure.
@@ -604,13 +543,11 @@ func HandleNfSubscriptionStatusNotify(request *httpwrapper.Request) *httpwrapper
 // For example, if event type is deregistered, it deletes cached NF profile and performs an NF discovery.
 
 func NfSubscriptionStatusNotifyProcedure(notificationData models.NotificationData) *models.ProblemDetails {
-
 	logger.ProducerLog.Debugf("NfSubscriptionStatusNotify: %+v", notificationData)
 
 	if notificationData.Event == "" || notificationData.NfInstanceUri == "" {
 
 		problemDetails := &models.ProblemDetails{
-
 			Status: http.StatusBadRequest,
 
 			Cause: "MANDATORY_IE_MISSING", // Defined in TS 29.510 6.1.6.2.17
@@ -647,13 +584,9 @@ func NfSubscriptionStatusNotifyProcedure(notificationData models.NotificationDat
 			problemDetails, err := SendRemoveSubscription(subscriptionId.(string))
 
 			if problemDetails != nil {
-
 				logger.ConsumerLog.Errorf("Remove NF Subscription Failed Problem[%+v]", problemDetails)
-
 			} else if err != nil {
-
 				logger.ConsumerLog.Errorf("Remove NF Subscription Error[%+v]", err)
-
 			} else {
 
 				logger.ConsumerLog.Infoln("Remove NF Subscription successful")
@@ -663,13 +596,10 @@ func NfSubscriptionStatusNotifyProcedure(notificationData models.NotificationDat
 			}
 
 		} else {
-
 			logger.ProducerLog.Infof("nfinstance %v not found in map", nfInstanceId)
-
 		}
 
 	}
 
 	return nil
-
 }

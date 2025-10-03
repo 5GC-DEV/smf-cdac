@@ -52,7 +52,7 @@ func NewBPManager(supi string) (bpManager *BPManager) {
 		PendingUPF:            make(PendingUPF),
 	}
 
-	return
+	return bpManager
 }
 
 func (bpMGR *BPManager) SelectPSA2(smContext *SMContext) {

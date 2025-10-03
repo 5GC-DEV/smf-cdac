@@ -24,48 +24,35 @@ type NodeID struct {
 	NodeIdValue []byte
 
 	NodeIdType uint8 // 0x00001111
-
 }
 
 var dnsHostIpCache map[string]net.IP
 
 func NewNodeID(nodeID string) *NodeID {
-
 	ip := net.ParseIP(nodeID)
 
 	if ip == nil {
-
 		return &NodeID{
-
 			NodeIdType: NodeIdTypeFqdn,
 
 			NodeIdValue: []byte(nodeID),
 		}
-
 	} else if ip.To4() != nil {
-
 		return &NodeID{
-
 			NodeIdType: NodeIdTypeIpv4Address,
 
 			NodeIdValue: ip.To4(),
 		}
-
 	} else {
-
 		return &NodeID{
-
 			NodeIdType: NodeIdTypeIpv6Address,
 
 			NodeIdValue: ip.To16(),
 		}
-
 	}
-
 }
 
 func (n *NodeID) ResolveNodeIdToIp() net.IP {
-
 	switch n.NodeIdType {
 
 	case NodeIdTypeIpv4Address, NodeIdTypeIpv6Address:
@@ -107,17 +94,14 @@ func (n *NodeID) ResolveNodeIdToIp() net.IP {
 		return net.IPv4zero
 
 	}
-
 }
 
 func init() {
-
 	dnsHostIpCache = make(map[string]net.IP)
 
 	ticker := time.NewTicker(time.Minute)
 
 	go func() {
-
 		for {
 
 			<-ticker.C
@@ -125,13 +109,10 @@ func init() {
 			RefreshDnsHostIpCache()
 
 		}
-
 	}()
-
 }
 
 func RefreshDnsHostIpCache() {
-
 	for hostName := range dnsHostIpCache {
 
 		logger.CtxLog.Debugf("refreshing DNS for host [%v] ", hostName)
@@ -153,31 +134,20 @@ func RefreshDnsHostIpCache() {
 		}
 
 	}
-
 }
 
 func getDnsHostIp(hostName string) (net.IP, error) {
-
 	if ip, ok := dnsHostIpCache[hostName]; !ok {
-
 		return nil, fmt.Errorf("host [%v] not found in smf dns cache", hostName)
-
 	} else {
-
 		return ip, nil
-
 	}
-
 }
 
 func InsertDnsHostIp(hostName string, ip net.IP) {
-
 	dnsHostIpCache[hostName] = ip
-
 }
 
 func deleteDnsHost(hostName string) {
-
 	delete(dnsHostIpCache, hostName)
-
 }

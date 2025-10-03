@@ -22,7 +22,6 @@ import (
 type Flag uint8
 
 func BuildPfcpHeartbeatRequest(sequenceNumber uint32, recoveryTimeStamp time.Time) *message.HeartbeatRequest {
-
 	return message.NewHeartbeatRequest(
 
 		sequenceNumber,
@@ -31,22 +30,18 @@ func BuildPfcpHeartbeatRequest(sequenceNumber uint32, recoveryTimeStamp time.Tim
 
 		nil,
 	)
-
 }
 
 func BuildPfcpHeartbeatResponse(sequenceNumber uint32, recoveryTimeStamp time.Time) *message.HeartbeatResponse {
-
 	return message.NewHeartbeatResponse(
 
 		sequenceNumber,
 
 		ie.NewRecoveryTimeStamp(recoveryTimeStamp),
 	)
-
 }
 
 func BuildPfcpAssociationSetupRequest(sequenceNumber uint32, recoveryTimeStamp time.Time, nodeID string) *message.AssociationSetupRequest {
-
 	return message.NewAssociationSetupRequest(
 
 		sequenceNumber,
@@ -57,11 +52,9 @@ func BuildPfcpAssociationSetupRequest(sequenceNumber uint32, recoveryTimeStamp t
 
 		ie.NewCPFunctionFeatures(0),
 	)
-
 }
 
 func BuildPfcpAssociationSetupResponse(cause uint8, recoveryTimeStamp time.Time, nodeID string) *message.AssociationSetupResponse {
-
 	return message.NewAssociationSetupResponse(
 
 		1,
@@ -74,11 +67,9 @@ func BuildPfcpAssociationSetupResponse(cause uint8, recoveryTimeStamp time.Time,
 
 		ie.NewCPFunctionFeatures(0),
 	)
-
 }
 
 func BuildPfcpAssociationReleaseResponse(cause uint8, nodeID string) *message.AssociationReleaseResponse {
-
 	return message.NewAssociationReleaseResponse(
 
 		1,
@@ -87,7 +78,6 @@ func BuildPfcpAssociationReleaseResponse(cause uint8, nodeID string) *message.As
 
 		ie.NewCause(cause),
 	)
-
 }
 
 // setBit sets the bit at the given position to the specified value (true or false)
@@ -95,27 +85,18 @@ func BuildPfcpAssociationReleaseResponse(cause uint8, nodeID string) *message.As
 // Positions go from 1 to 8
 
 func (f *Flag) setBit(position uint8, value bool) {
-
 	if position < 1 || position > 8 {
-
 		return
-
 	}
 
 	if value {
-
 		*f |= 1 << (position - 1)
-
 	} else {
-
 		*f &= ^(1 << (position - 1))
-
 	}
-
 }
 
 func createPDIIE(pdi *context.PDI) *ie.IE {
-
 	createPDIIes := make([]*ie.IE, 0)
 
 	createPDIIes = append(createPDIIes,
@@ -193,13 +174,10 @@ func createPDIIE(pdi *context.PDI) *ie.IE {
 	}
 
 	if pdi.ApplicationID != "" {
-
 		createPDIIes = append(createPDIIes, ie.NewApplicationID(pdi.ApplicationID))
-
 	}
 
 	if pdi.SDFFilter != nil {
-
 		createPDIIes = append(createPDIIes, ie.NewSDFFilter(
 
 			string(pdi.SDFFilter.FlowDescription),
@@ -213,15 +191,12 @@ func createPDIIE(pdi *context.PDI) *ie.IE {
 			0,
 		),
 		)
-
 	}
 
 	return ie.NewPDI(createPDIIes...)
-
 }
 
 func pdrToCreatePDR(pdr *context.PDR) *ie.IE {
-
 	ies := make([]*ie.IE, 0)
 
 	ies = append(ies, ie.NewPDRID(pdr.PDRID))
@@ -231,33 +206,23 @@ func pdrToCreatePDR(pdr *context.PDR) *ie.IE {
 	ies = append(ies, createPDIIE(&pdr.PDI))
 
 	if pdr.OuterHeaderRemoval != nil {
-
 		ies = append(ies, ie.NewOuterHeaderRemoval(pdr.OuterHeaderRemoval.OuterHeaderRemovalDescription, 0))
-
 	}
 
 	if pdr.FAR != nil {
-
 		ies = append(ies, ie.NewFARID(pdr.FAR.FARID))
-
 	}
 
 	for _, qer := range pdr.QER {
-
 		if qer != nil {
-
 			ies = append(ies, ie.NewQERID(qer.QERID))
-
 		}
-
 	}
 
 	return ie.NewCreatePDR(ies...)
-
 }
 
 func farToCreateFAR(far *context.FAR) *ie.IE {
-
 	createFARies := make([]*ie.IE, 0)
 
 	createFARies = append(createFARies, ie.NewFARID(far.FARID))
@@ -277,9 +242,7 @@ func farToCreateFAR(far *context.FAR) *ie.IE {
 	createFARies = append(createFARies, ie.NewApplyAction(uint8(*applyActionflag)))
 
 	if far.BAR != nil {
-
 		createFARies = append(createFARies, ie.NewBARID(far.BAR.BARID))
-
 	}
 
 	if far.ForwardingParameters != nil {
@@ -291,7 +254,6 @@ func farToCreateFAR(far *context.FAR) *ie.IE {
 		forwardingParametersIEs = append(forwardingParametersIEs, ie.NewNetworkInstance(string(far.ForwardingParameters.NetworkInstance)))
 
 		if far.ForwardingParameters.OuterHeaderCreation != nil {
-
 			forwardingParametersIEs = append(forwardingParametersIEs, ie.NewOuterHeaderCreation(
 
 				far.ForwardingParameters.OuterHeaderCreation.OuterHeaderCreationDescription,
@@ -308,13 +270,10 @@ func farToCreateFAR(far *context.FAR) *ie.IE {
 
 				0,
 			))
-
 		}
 
 		if far.ForwardingParameters.ForwardingPolicyID != "" {
-
 			forwardingParametersIEs = append(forwardingParametersIEs, ie.NewForwardingPolicy(far.ForwardingParameters.ForwardingPolicyID))
-
 		}
 
 		createFARies = append(createFARies, ie.NewForwardingParameters(forwardingParametersIEs...))
@@ -322,41 +281,31 @@ func farToCreateFAR(far *context.FAR) *ie.IE {
 	}
 
 	return ie.NewCreateFAR(createFARies...)
-
 }
 
 func qerToCreateQER(qer *context.QER) *ie.IE {
-
 	createQERies := make([]*ie.IE, 0)
 
 	createQERies = append(createQERies, ie.NewQERID(qer.QERID))
 
 	if qer.GateStatus != nil {
-
 		createQERies = append(createQERies, ie.NewGateStatus(qer.GateStatus.ULGate, qer.GateStatus.DLGate))
-
 	}
 
 	createQERies = append(createQERies, ie.NewQFI(qer.QFI.QFI))
 
 	if qer.MBR != nil {
-
 		createQERies = append(createQERies, ie.NewMBR(qer.MBR.ULMBR, qer.MBR.DLMBR))
-
 	}
 
 	if qer.GBR != nil {
-
 		createQERies = append(createQERies, ie.NewGBR(qer.GBR.ULGBR, qer.GBR.DLGBR))
-
 	}
 
 	return ie.NewCreateQER(createQERies...)
-
 }
 
 func pdrToUpdatePDR(pdr *context.PDR) *ie.IE {
-
 	updatePDRies := make([]*ie.IE, 0)
 
 	updatePDRies = append(updatePDRies, ie.NewPDRID(pdr.PDRID))
@@ -366,41 +315,29 @@ func pdrToUpdatePDR(pdr *context.PDR) *ie.IE {
 	updatePDRies = append(updatePDRies, createPDIIE(&pdr.PDI))
 
 	if pdr.OuterHeaderRemoval != nil {
-
 		updatePDRies = append(updatePDRies, ie.NewOuterHeaderRemoval(pdr.OuterHeaderRemoval.OuterHeaderRemovalDescription, 0))
-
 	}
 
 	if pdr.FAR != nil {
-
 		updatePDRies = append(updatePDRies, ie.NewFARID(pdr.FAR.FARID))
-
 	}
 
 	for _, qer := range pdr.QER {
-
 		if qer != nil {
-
 			updatePDRies = append(updatePDRies, ie.NewQERID(qer.QERID))
-
 		}
-
 	}
 
 	return ie.NewUpdatePDR(updatePDRies...)
-
 }
 
 func farToUpdateFAR(far *context.FAR) *ie.IE {
-
 	updateFARies := make([]*ie.IE, 0)
 
 	updateFARies = append(updateFARies, ie.NewFARID(far.FARID))
 
 	if far.BAR != nil {
-
 		updateFARies = append(updateFARies, ie.NewBARID(far.BAR.BARID))
-
 	}
 
 	applyActionflag := new(Flag)
@@ -426,7 +363,6 @@ func farToUpdateFAR(far *context.FAR) *ie.IE {
 		forwardingParametersIEs = append(forwardingParametersIEs, ie.NewNetworkInstance(string(far.ForwardingParameters.NetworkInstance)))
 
 		if far.ForwardingParameters.OuterHeaderCreation != nil {
-
 			forwardingParametersIEs = append(forwardingParametersIEs, ie.NewOuterHeaderCreation(
 
 				far.ForwardingParameters.OuterHeaderCreation.OuterHeaderCreationDescription,
@@ -443,7 +379,6 @@ func farToUpdateFAR(far *context.FAR) *ie.IE {
 
 				0,
 			))
-
 		}
 
 		if far.ForwardingParameters.PFCPSMReqFlags != nil {
@@ -465,9 +400,7 @@ func farToUpdateFAR(far *context.FAR) *ie.IE {
 		}
 
 		if far.ForwardingParameters.ForwardingPolicyID != "" {
-
 			forwardingParametersIEs = append(forwardingParametersIEs, ie.NewForwardingPolicy(far.ForwardingParameters.ForwardingPolicyID))
-
 		}
 
 		updateFARies = append(updateFARies, ie.NewUpdateForwardingParameters(forwardingParametersIEs...))
@@ -475,11 +408,9 @@ func farToUpdateFAR(far *context.FAR) *ie.IE {
 	}
 
 	return ie.NewUpdateFAR(updateFARies...)
-
 }
 
 func BuildPfcpSessionEstablishmentRequest(
-
 	sequenceNumber uint32,
 
 	nodeID string,
@@ -493,9 +424,7 @@ func BuildPfcpSessionEstablishmentRequest(
 	farList []*context.FAR,
 
 	qerList []*context.QER,
-
 ) (*message.SessionEstablishmentRequest, error) {
-
 	ies := make([]*ie.IE, 0)
 
 	ies = append(ies, ie.NewNodeIDHeuristic(nodeID))
@@ -503,21 +432,15 @@ func BuildPfcpSessionEstablishmentRequest(
 	ies = append(ies, ie.NewFSEID(localSeid, fseidIpv4Address, nil))
 
 	for _, pdr := range pdrList {
-
 		if pdr.State == context.RULE_INITIAL {
-
 			ies = append(ies, pdrToCreatePDR(pdr))
-
 		}
-
 	}
 
 	for _, far := range farList {
 
 		if far.State == context.RULE_INITIAL {
-
 			ies = append(ies, farToCreateFAR(far))
-
 		}
 
 		far.State = context.RULE_CREATE
@@ -527,17 +450,13 @@ func BuildPfcpSessionEstablishmentRequest(
 	qerMap := make(map[uint32]*context.QER)
 
 	for _, qer := range qerList {
-
 		qerMap[qer.QERID] = qer
-
 	}
 
 	for _, filteredQER := range qerMap {
 
 		if filteredQER.State == context.RULE_INITIAL {
-
 			ies = append(ies, qerToCreateQER(filteredQER))
-
 		}
 
 		filteredQER.State = context.RULE_CREATE
@@ -560,13 +479,11 @@ func BuildPfcpSessionEstablishmentRequest(
 
 		ies...,
 	), nil
-
 }
 
 // TODO: Replace dummy value in PFCP message
 
 func BuildPfcpSessionModificationRequest(
-
 	sequenceNumber uint32,
 
 	localSEID uint64,
@@ -586,9 +503,7 @@ func BuildPfcpSessionModificationRequest(
 	removeFAR []*context.FAR,
 
 	removeQER []*context.QER,
-
 ) (*message.SessionModificationRequest, error) {
-
 	ies := make([]*ie.IE, 0)
 
 	ies = append(ies, ie.NewFSEID(localSEID, fseidIPv4Address, nil))
@@ -640,11 +555,9 @@ func BuildPfcpSessionModificationRequest(
 	for _, qer := range qerList {
 
 		switch qer.State {
-
 		case context.RULE_INITIAL:
 
 			ies = append(ies, qerToCreateQER(qer))
-
 		}
 
 		qer.State = context.RULE_CREATE
@@ -652,21 +565,15 @@ func BuildPfcpSessionModificationRequest(
 	}
 
 	for _, pdr := range removePDR {
-
 		ies = append(ies, buildRemovePDRIE(pdr))
-
 	}
 
 	for _, far := range removeFAR {
-
 		ies = append(ies, buildRemoveFARIE(far))
-
 	}
 
 	for _, qer := range removeQER {
-
 		ies = append(ies, buildRemoveQERIE(qer))
-
 	}
 
 	return message.NewSessionModificationRequest(
@@ -683,11 +590,9 @@ func BuildPfcpSessionModificationRequest(
 
 		ies...,
 	), nil
-
 }
 
 func BuildPfcpSessionDeletionRequest(
-
 	sequenceNumber uint32,
 
 	localSEID uint64,
@@ -695,9 +600,7 @@ func BuildPfcpSessionDeletionRequest(
 	remoteSEID uint64,
 
 	fseidIPv4Address net.IP,
-
 ) *message.SessionDeletionRequest {
-
 	return message.NewSessionDeletionRequest(
 
 		1,
@@ -712,17 +615,13 @@ func BuildPfcpSessionDeletionRequest(
 
 		ie.NewFSEID(localSEID, fseidIPv4Address, nil),
 	)
-
 }
 
 func BuildPfcpSessionReportResponse(cause uint8, drobu bool, seqFromUPF uint32, seid uint64) *message.SessionReportResponse {
-
 	flag := new(Flag)
 
 	if drobu {
-
 		flag.setBit(1, true)
-
 	}
 
 	return message.NewSessionReportResponse(
@@ -741,23 +640,16 @@ func BuildPfcpSessionReportResponse(cause uint8, drobu bool, seqFromUPF uint32, 
 
 		ie.NewPFCPSRRspFlags(uint8(*flag)),
 	)
-
 }
 
 func buildRemovePDRIE(pdr *context.PDR) *ie.IE {
-
 	return ie.NewRemovePDR(ie.NewPDRID(pdr.PDRID))
-
 }
 
 func buildRemoveFARIE(far *context.FAR) *ie.IE {
-
 	return ie.NewRemoveFAR(ie.NewFARID(far.FARID))
-
 }
 
 func buildRemoveQERIE(qer *context.QER) *ie.IE {
-
 	return ie.NewRemoveQER(ie.NewQERID(qer.QERID))
-
 }

@@ -17,13 +17,11 @@ import (
 )
 
 func SendSMContextStatusNotification(uri string) (*models.ProblemDetails, error) {
-
 	if uri != "" {
 
 		request := models.SmContextStatusNotification{}
 
 		request.StatusInfo = &models.StatusInfo{
-
 			ResourceStatus: models.ResourceStatus_RELEASED,
 		}
 
@@ -40,9 +38,7 @@ func SendSMContextStatusNotification(uri string) (*models.ProblemDetails, error)
 		if localErr == nil {
 
 			if httpResp.StatusCode != http.StatusNoContent {
-
 				return nil, openapi.ReportError("Send SMContextStatus Notification Failed")
-
 			}
 
 			logger.PduSessLog.Debugln("send SMContextStatus Notification Success")
@@ -50,21 +46,15 @@ func SendSMContextStatusNotification(uri string) (*models.ProblemDetails, error)
 		} else if httpResp != nil {
 
 			defer func() {
-
 				if resCloseErr := httpResp.Body.Close(); resCloseErr != nil {
-
 					logger.ConsumerLog.Errorf("SMContextNotification response body cannot close: %+v", resCloseErr)
-
 				}
-
 			}()
 
 			logger.PduSessLog.Warnf("Send SMContextStatus Notification Error[%s]", httpResp.Status)
 
 			if httpResp.Status != localErr.Error() {
-
 				return nil, localErr
-
 			}
 
 			problem := localErr.(openapi.GenericOpenAPIError).Model().(models.ProblemDetails)
@@ -82,5 +72,4 @@ func SendSMContextStatusNotification(uri string) (*models.ProblemDetails, error)
 	}
 
 	return nil, nil
-
 }

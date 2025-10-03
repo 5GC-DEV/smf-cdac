@@ -45,21 +45,16 @@ const (
 )
 
 func SetupSmfCollection() {
-
 	dbName := "sdcore_smf"
 
 	dbUrl := "mongodb://mongodb-arbiter-headless"
 
 	if factory.SmfConfig.Configuration.Mongodb.Url != "" {
-
 		dbUrl = factory.SmfConfig.Configuration.Mongodb.Url
-
 	}
 
 	if factory.SmfConfig.Configuration.SmfDbName != "" {
-
 		dbName = factory.SmfConfig.Configuration.SmfDbName
-
 	}
 
 	logger.CfgLog.Infof("initialising db name [%v] url [%v]", dbName, dbUrl)
@@ -69,21 +64,15 @@ func SetupSmfCollection() {
 	mongoapi.ConnectMongo(dbUrl, dbName)
 
 	_, err := mongoapi.CommonDBClient.CreateIndex(SmContextDataColl, "ref")
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorln("create index failed on ref field")
-
 	}
 
 	// SEID Table
 
 	_, err = mongoapi.CommonDBClient.CreateIndex(SeidSmContextCol, "seid")
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorln("create index failed on TxnId field")
-
 	}
 
 	smfCount := mongoapi.CommonDBClient.GetUniqueIdentity("smfCount")
@@ -95,25 +84,19 @@ func SetupSmfCollection() {
 	setEnvErr := os.Setenv("SMF_COUNT", strconv.Itoa(int(smfCount)))
 
 	if setEnvErr != nil {
-
 		logger.DataRepoLog.Errorln("setting SMF_COUNT env variable is failed")
-
 	}
-
 }
 
 // print out sm context
 
 func (smContext *SMContext) String() string {
-
 	return fmt.Sprintf("smContext content: Ref:[%v],\nSupi: [%v],\nPei:[%v],\nGpsi:[%v],\nPDUSessionID:[%v],\nDnn:[%v],Snssai: [%v],\nHplmnSnssai: [%v],\nServingNetwork: [%v],\nServingNfId: [%v],\nUpCnxState: [%v],\nAnType: [%v],\nRatType: [%v],\nPDUAddress: [%v],\nSelectedPDUSessionType: [%v],\nSmStatusNotifyUri: [%v],\nSelectedPCFProfile: [%v],\nSMContextState: [%v],\nTunnel: [%v],\nPFCPContext: [%v],\nIdentifier: [%v],\nDNNInfo: [%v],\nSmPolicyData: [%v],\nEstAcceptCause5gSMValue: [%v]\n", smContext.Ref, smContext.Supi, smContext.Pei, smContext.Gpsi, smContext.PDUSessionID, smContext.Dnn, smContext.Snssai, smContext.HplmnSnssai, smContext.ServingNetwork, smContext.ServingNfId, smContext.UpCnxState, smContext.AnType, smContext.RatType, smContext.PDUAddress, smContext.SelectedPDUSessionType, smContext.SmStatusNotifyUri, smContext.SelectedPCFProfile, smContext.SMContextState, smContext.Tunnel, smContext.PFCPContext, smContext.Identifier, smContext.DNNInfo, smContext.SmPolicyData, smContext.EstAcceptCause5gSMValue)
-
 }
 
 // MarshalJSON customized marshaller for sm context
 
 func (smContext *SMContext) MarshalJSON() ([]byte, error) {
-
 	type Alias SMContext
 
 	dataPathPoolInDBVal := make(map[int64]*DataPathInDB)
@@ -145,7 +128,6 @@ func (smContext *SMContext) MarshalJSON() ([]byte, error) {
 				dataPathNodeInDBVal := StoreDataPathNode(dataPathNode)
 
 				newDataPathInDB := &DataPathInDB{
-
 					Activated: dataPath.Activated,
 
 					IsDefaultPath: dataPath.IsDefaultPath,
@@ -194,20 +176,17 @@ func (smContext *SMContext) MarshalJSON() ([]byte, error) {
 
 		Tunnel UPTunnelInDB `json:"tunnel"`
 	}{
-
 		Alias: (*Alias)(smContext),
 
 		PFCPContext: PFCPContextVal,
 
 		Tunnel: upTunnelVal,
 	})
-
 }
 
 // UnmarshalJSON customized unmarshaller for sm context
 
 func (smContext *SMContext) UnmarshalJSON(data []byte) error {
-
 	logger.DataRepoLog.Infoln("db - in UnmarshalJSON")
 
 	type Alias SMContext
@@ -219,7 +198,6 @@ func (smContext *SMContext) UnmarshalJSON(data []byte) error {
 
 		Tunnel UPTunnelInDB `json:"tunnel"`
 	}{
-
 		Alias: (*Alias)(smContext),
 	}
 
@@ -244,21 +222,15 @@ func (smContext *SMContext) UnmarshalJSON(data []byte) error {
 		smContext.PFCPContext[key].PDRs = pfcpCtxInDB.PDRs
 
 		localSeid, err := strconv.ParseUint(pfcpCtxInDB.LocalSEID, 16, 64)
-
 		if err != nil {
-
 			logger.DataRepoLog.Errorf("localSEID unmarshall error: %v", err)
-
 		}
 
 		smContext.PFCPContext[key].LocalSEID = localSeid
 
 		remoteSeid, err := strconv.ParseUint(pfcpCtxInDB.RemoteSEID, 16, 64)
-
 		if err != nil {
-
 			logger.DataRepoLog.Errorf("remoteSEID unmarshall error: %v", err)
-
 		}
 
 		smContext.PFCPContext[key].RemoteSEID = remoteSeid
@@ -320,67 +292,49 @@ func (smContext *SMContext) UnmarshalJSON(data []byte) error {
 	smContext.SBIPFCPCommunicationChan = make(chan PFCPSessionResponseStatus, 1)
 
 	return nil
-
 }
 
 func ToBsonMSeidRef(data SeidSmContextRef) (ret bson.M) {
-
 	// Marshal data into json format
 
 	tmp, err := json.Marshal(data)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("SMContext marshall error: %v", err)
-
 	}
 
 	// unmarshal data into bson format
 
 	err = json.Unmarshal(tmp, &ret)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("SMContext unmarshall error: %v", err)
-
 	}
 
-	return
-
+	return ret
 }
 
 func ToBsonM(data *SMContext) (ret bson.M) {
-
 	// Marshal data into json format
 
 	logger.DataRepoLog.Infoln("db - in ToBsonM before marshal")
 
 	tmp, err := json.Marshal(data)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("SMContext marshall error: %v", err)
-
 	}
 
 	// unmarshal data into bson format
 
 	err = json.Unmarshal(tmp, &ret)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("SMContext unmarshall error: %v", err)
-
 	}
 
-	return
-
+	return ret
 }
 
 // StoreSmContextInDB Store SmContext In DB
 
 func StoreSmContextInDB(smContext *SMContext) {
-
 	logger.DataRepoLog.Infoln("db - Store SMContext In DB w ref")
 
 	smContext.SMLock.Lock()
@@ -396,11 +350,8 @@ func StoreSmContextInDB(smContext *SMContext) {
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
 
 	if postErr != nil {
-
 		logger.DataRepoLog.Warnln(postErr)
-
 	}
-
 }
 
 type SeidSmContextRef struct {
@@ -410,21 +361,17 @@ type SeidSmContextRef struct {
 }
 
 func SeidConv(seid uint64) (seidStr string) {
-
 	seidStr = strconv.FormatUint(seid, 16)
 
 	return seidStr
-
 }
 
 // StoreSeidContextInDB Store Context by SEID In DB
 
 func StoreSeidContextInDB(seidUint uint64, smContext *SMContext) {
-
 	seid := SeidConv(seidUint)
 
 	item := SeidSmContextRef{
-
 		Ref: smContext.Ref,
 
 		Seid: seid,
@@ -439,21 +386,16 @@ func StoreSeidContextInDB(seidUint uint64, smContext *SMContext) {
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
 
 	if postErr != nil {
-
 		logger.DataRepoLog.Warnln(postErr)
-
 	}
-
 }
 
 // StoreRefToSeidInDB store mapping ref to seid in db
 
 func StoreRefToSeidInDB(seidUint uint64, smContext *SMContext) {
-
 	seid := SeidConv(seidUint)
 
 	item := SeidSmContextRef{
-
 		Ref: smContext.Ref,
 
 		Seid: seid,
@@ -468,15 +410,11 @@ func StoreRefToSeidInDB(seidUint uint64, smContext *SMContext) {
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
 
 	if postErr != nil {
-
 		logger.DataRepoLog.Warnln(postErr)
-
 	}
-
 }
 
 func GetSeidByRefInDB(ref string) (seid uint64) {
-
 	filter := bson.M{}
 
 	filter["ref"] = ref
@@ -484,29 +422,22 @@ func GetSeidByRefInDB(ref string) (seid uint64) {
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(RefSeidCol, filter)
 
 	if getOneErr != nil {
-
 		logger.DataRepoLog.Warnln(getOneErr)
-
 	}
 
 	seidStr := result["seid"].(string)
 
 	seid, err := strconv.ParseUint(seidStr, 16, 64)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("seid unmarshall error: %v", err)
-
 	}
 
-	return
-
+	return seid
 }
 
 // GetSMContextByRefInDB GetSMContext By Ref from DB
 
 func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
-
 	logger.DataRepoLog.Debugf("GetSMContextByRefInDB: Ref in DB %v", ref)
 
 	smContext = &SMContext{}
@@ -518,15 +449,12 @@ func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(SmContextDataColl, filter)
 
 	if getOneErr != nil {
-
 		logger.DataRepoLog.Warnln(getOneErr)
-
 	}
 
 	if result != nil {
 
 		err := json.Unmarshal(mapToByte(result), smContext)
-
 		if err != nil {
 
 			logger.DataRepoLog.Errorf("smContext unmarshall error: %v", err)
@@ -544,13 +472,11 @@ func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
 	}
 
 	return smContext
-
 }
 
 // GetSMContextBySEIDInDB GetSMContext By SEID from DB
 
 func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
-
 	seid := SeidConv(seidUint)
 
 	filter := bson.M{}
@@ -560,9 +486,7 @@ func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(SeidSmContextCol, filter)
 
 	if getOneErr != nil {
-
 		logger.DataRepoLog.Warnln(getOneErr)
-
 	}
 
 	if result != nil {
@@ -580,13 +504,11 @@ func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
 		return nil
 
 	}
-
 }
 
 // DeleteSmContextInDBBySEID Delete SMContext By SEID from DB
 
 func DeleteSmContextInDBBySEID(seidUint uint64) {
-
 	seid := SeidConv(seidUint)
 
 	logger.DataRepoLog.Infoln("db - delete SMContext In DB by seid")
@@ -598,9 +520,7 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(SeidSmContextCol, filter)
 
 	if getOneErr != nil {
-
 		logger.DataRepoLog.Warnln(getOneErr)
-
 	}
 
 	if result != nil {
@@ -610,25 +530,19 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 		delOneErr := mongoapi.CommonDBClient.RestfulAPIDeleteOne(SeidSmContextCol, filter)
 
 		if delOneErr != nil {
-
 			logger.DataRepoLog.Warnln(delOneErr)
-
 		}
 
 		DeleteSmContextInDBByRef(ref)
 
 	} else {
-
 		logger.DataRepoLog.Infof("DB entry doesn't exist with seid: %v", seid)
-
 	}
-
 }
 
 // DeleteSmContextInDBByRef Delete SMContext By ref from DB
 
 func DeleteSmContextInDBByRef(ref string) {
-
 	logger.DataRepoLog.Infoln("db - delete SMContext In DB w ref")
 
 	filter := bson.M{"ref": ref}
@@ -638,17 +552,13 @@ func DeleteSmContextInDBByRef(ref string) {
 	delOneErr := mongoapi.CommonDBClient.RestfulAPIDeleteOne(SmContextDataColl, filter)
 
 	if delOneErr != nil {
-
 		logger.DataRepoLog.Warnln(delOneErr)
-
 	}
-
 }
 
 // ClearSMContextInMem Delete SMContext in smContextPool and seidSMContextMap, for test
 
 func ClearSMContextInMem(ref string) {
-
 	smContext := GetSMContext(ref)
 
 	smContextPool.Delete(ref)
@@ -658,73 +568,48 @@ func ClearSMContextInMem(ref string) {
 	seidSMContextMap.Delete(seid)
 
 	canonicalRef.Delete(canonicalName(smContext.Identifier, smContext.PDUSessionID))
-
 }
 
 func mapToByte(data map[string]interface{}) (ret []byte) {
-
 	ret, err := json.Marshal(data)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("map to byte error: %v", err)
-
 	}
 
-	return
-
+	return ret
 }
 
 func ShowSmContextPool() {
-
 	smContextPool.Range(func(k, v interface{}) bool {
-
 		logger.DataRepoLog.Infoln("db - iterate:", k, v)
 
 		return true
-
 	})
-
 }
 
 func GetSmContextPool() *sync.Map {
-
 	return &smContextPool
-
 }
 
 func StoreSmContextPool(smContext *SMContext) {
-
 	smContextPool.Store(smContext.Ref, smContext)
-
 }
 
 func GetLocalIP() string {
-
 	addrs, err := net.InterfaceAddrs()
-
 	if err != nil {
-
 		return ""
-
 	}
 
 	for _, address := range addrs {
-
 		// check the address type and if it is not a loopback the display it
 
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-
 			if ipnet.IP.To4() != nil {
-
 				return ipnet.IP.String()
-
 			}
-
 		}
-
 	}
 
 	return ""
-
 }

@@ -68,9 +68,7 @@ var refreshNrfRegistration bool
 var config Config
 
 var smfCLi = []cli.Flag{
-
 	&cli.StringFlag{
-
 		Name: "cfg",
 
 		Usage: "smf config file",
@@ -79,7 +77,6 @@ var smfCLi = []cli.Flag{
 	},
 
 	&cli.StringFlag{
-
 		Name: "uerouting",
 
 		Usage: "uerouting config file",
@@ -103,28 +100,21 @@ type OneInstance struct {
 var nrfRegInProgress OneInstance
 
 func init() {
-
 	nrfRegInProgress = OneInstance{}
-
 }
 
 func (*SMF) GetCliCmd() (flags []cli.Flag) {
-
 	return smfCLi
-
 }
 
 func (smf *SMF) Initialize(c *cli.Command) error {
-
 	config = Config{
-
 		cfg: c.String("cfg"),
 
 		uerouting: c.String("uerouting"),
 	}
 
 	absPath, err := filepath.Abs(config.cfg)
-
 	if err != nil {
 
 		logger.CfgLog.Errorln(err)
@@ -134,15 +124,12 @@ func (smf *SMF) Initialize(c *cli.Command) error {
 	}
 
 	if err = factory.InitConfigFactory(absPath); err != nil {
-
 		return err
-
 	}
 
 	factory.SmfConfig.CfgLocation = absPath
 
 	ueRoutingPath, err := filepath.Abs(config.uerouting)
-
 	if err != nil {
 
 		logger.CfgLog.Errorln(err)
@@ -152,17 +139,13 @@ func (smf *SMF) Initialize(c *cli.Command) error {
 	}
 
 	if err := factory.InitRoutingConfigFactory(ueRoutingPath); err != nil {
-
 		return err
-
 	}
 
 	smf.setLogLevel()
 
 	if err := factory.CheckConfigVersion(); err != nil {
-
 		return err
-
 	}
 
 	// Initiating a server for profiling
@@ -172,15 +155,10 @@ func (smf *SMF) Initialize(c *cli.Command) error {
 		addr := fmt.Sprintf(":%d", factory.SmfConfig.Configuration.DebugProfilePort)
 
 		go func() {
-
 			err := http.ListenAndServe(addr, nil)
-
 			if err != nil {
-
 				logger.InitLog.Warnf("start profiling server failed: %+v", err)
-
 			}
-
 		}()
 
 	}
@@ -194,7 +172,6 @@ func (smf *SMF) Initialize(c *cli.Command) error {
 	}
 
 	return nil
-
 }
 
 // manageGrpcClient connects the config pod GRPC server and subscribes the config changes.
@@ -202,7 +179,6 @@ func (smf *SMF) Initialize(c *cli.Command) error {
 // Then it updates SMF configuration.
 
 func manageGrpcClient(webuiUri string) {
-
 	var configChannel chan *protos.NetworkSliceResponse
 
 	var client grpcClient.ConfClient
@@ -214,7 +190,6 @@ func manageGrpcClient(webuiUri string) {
 	count := 0
 
 	for {
-
 		if client != nil {
 
 			if client.CheckGrpcConnectivity() != "READY" {
@@ -226,11 +201,8 @@ func manageGrpcClient(webuiUri string) {
 				if count > 5 {
 
 					err = client.GetConfigClientConn().Close()
-
 					if err != nil {
-
 						logger.InitLog.Infof("failing ConfigClient is not closed properly: %+v", err)
-
 					}
 
 					client = nil
@@ -248,7 +220,6 @@ func manageGrpcClient(webuiUri string) {
 			if stream == nil {
 
 				stream, err = client.SubscribeToConfigServer()
-
 				if err != nil {
 
 					logger.InitLog.Infof("failing SubscribeToConfigServer: %+v", err)
@@ -284,21 +255,16 @@ func manageGrpcClient(webuiUri string) {
 			logger.InitLog.Infoln("connecting to config server")
 
 			if err != nil {
-
 				logger.InitLog.Errorf("%+v", err)
-
 			}
 
 			continue
 
 		}
-
 	}
-
 }
 
 func (smf *SMF) setLogLevel() {
-
 	if factory.SmfConfig.Logger == nil {
 
 		logger.InitLog.Warnln("SMF config without log level setting")
@@ -308,9 +274,7 @@ func (smf *SMF) setLogLevel() {
 	}
 
 	if factory.SmfConfig.Logger.SMF != nil {
-
 		if factory.SmfConfig.Logger.SMF.DebugLevel != "" {
-
 			if level, err := zapcore.ParseLevel(factory.SmfConfig.Logger.SMF.DebugLevel); err != nil {
 
 				logger.InitLog.Warnf("SMF Log level [%s] is invalid, set to [info] level",
@@ -326,7 +290,6 @@ func (smf *SMF) setLogLevel() {
 				logger.SetLogLevel(level)
 
 			}
-
 		} else {
 
 			logger.InitLog.Infoln("SMF Log level is default set to [info] level")
@@ -334,13 +297,10 @@ func (smf *SMF) setLogLevel() {
 			logger.SetLogLevel(zap.InfoLevel)
 
 		}
-
 	}
 
 	if factory.SmfConfig.Logger.NAS != nil {
-
 		if factory.SmfConfig.Logger.NAS.DebugLevel != "" {
-
 			if level, err := zapcore.ParseLevel(factory.SmfConfig.Logger.NAS.DebugLevel); err != nil {
 
 				nasLogger.NasLog.Warnf("NAS Log level [%s] is invalid, set to [info] level",
@@ -350,11 +310,8 @@ func (smf *SMF) setLogLevel() {
 				logger.SetLogLevel(zap.InfoLevel)
 
 			} else {
-
 				nasLogger.SetLogLevel(level)
-
 			}
-
 		} else {
 
 			nasLogger.NasLog.Warnln("NAS Log level not set. Default set to [info] level")
@@ -362,13 +319,10 @@ func (smf *SMF) setLogLevel() {
 			nasLogger.SetLogLevel(zap.InfoLevel)
 
 		}
-
 	}
 
 	if factory.SmfConfig.Logger.NGAP != nil {
-
 		if factory.SmfConfig.Logger.NGAP.DebugLevel != "" {
-
 			if level, err := zapcore.ParseLevel(factory.SmfConfig.Logger.NGAP.DebugLevel); err != nil {
 
 				ngapLogger.NgapLog.Warnf("NGAP Log level [%s] is invalid, set to [info] level",
@@ -378,11 +332,8 @@ func (smf *SMF) setLogLevel() {
 				ngapLogger.SetLogLevel(zap.InfoLevel)
 
 			} else {
-
 				ngapLogger.SetLogLevel(level)
-
 			}
-
 		} else {
 
 			ngapLogger.NgapLog.Warnln("NGAP Log level not set. Default set to [info] level")
@@ -390,13 +341,10 @@ func (smf *SMF) setLogLevel() {
 			ngapLogger.SetLogLevel(zap.InfoLevel)
 
 		}
-
 	}
 
 	if factory.SmfConfig.Logger.Aper != nil {
-
 		if factory.SmfConfig.Logger.Aper.DebugLevel != "" {
-
 			if level, err := zapcore.ParseLevel(factory.SmfConfig.Logger.Aper.DebugLevel); err != nil {
 
 				aperLogger.AperLog.Warnf("Aper Log level [%s] is invalid, set to [info] level",
@@ -406,11 +354,8 @@ func (smf *SMF) setLogLevel() {
 				aperLogger.SetLogLevel(zap.InfoLevel)
 
 			} else {
-
 				aperLogger.SetLogLevel(level)
-
 			}
-
 		} else {
 
 			aperLogger.AperLog.Warnln("Aper Log level not set. Default set to [info] level")
@@ -418,13 +363,10 @@ func (smf *SMF) setLogLevel() {
 			aperLogger.SetLogLevel(zap.InfoLevel)
 
 		}
-
 	}
 
 	if factory.SmfConfig.Logger.OpenApi != nil {
-
 		if factory.SmfConfig.Logger.OpenApi.DebugLevel != "" {
-
 			if level, err := zapcore.ParseLevel(factory.SmfConfig.Logger.OpenApi.DebugLevel); err != nil {
 
 				openapiLogger.OpenapiLog.Warnf("OpenApi Log level [%s] is invalid, set to [info] level",
@@ -434,11 +376,8 @@ func (smf *SMF) setLogLevel() {
 				openapiLogger.SetLogLevel(zap.InfoLevel)
 
 			} else {
-
 				openapiLogger.SetLogLevel(level)
-
 			}
-
 		} else {
 
 			openapiLogger.OpenapiLog.Warnln("OpenApi Log level not set. Default set to [info] level")
@@ -446,13 +385,10 @@ func (smf *SMF) setLogLevel() {
 			openapiLogger.SetLogLevel(zap.InfoLevel)
 
 		}
-
 	}
 
 	if factory.SmfConfig.Logger.Util != nil {
-
 		if factory.SmfConfig.Logger.Util.DebugLevel != "" {
-
 			if level, err := zapcore.ParseLevel(factory.SmfConfig.Logger.Util.DebugLevel); err != nil {
 
 				utilLogger.UtilLog.Warnf("Util (drsm, fsm, etc.) Log level [%s] is invalid, set to [info] level",
@@ -462,11 +398,8 @@ func (smf *SMF) setLogLevel() {
 				utilLogger.SetLogLevel(zap.InfoLevel)
 
 			} else {
-
 				utilLogger.SetLogLevel(level)
-
 			}
-
 		} else {
 
 			utilLogger.UtilLog.Warnln("Util (drsm, fsm, etc.) Log level not set. Default set to [info] level")
@@ -474,17 +407,14 @@ func (smf *SMF) setLogLevel() {
 			utilLogger.SetLogLevel(zap.InfoLevel)
 
 		}
-
 	}
 
 	// Initialise Statistics
 
 	go metrics.InitMetrics()
-
 }
 
 func (smf *SMF) FilterCli(c *cli.Command) (args []string) {
-
 	for _, flag := range smf.GetCliCmd() {
 
 		name := flag.Names()[0]
@@ -492,9 +422,7 @@ func (smf *SMF) FilterCli(c *cli.Command) (args []string) {
 		value := fmt.Sprint(c.Generic(name))
 
 		if value == "" {
-
 			continue
-
 		}
 
 		args = append(args, "--"+name, value)
@@ -502,11 +430,9 @@ func (smf *SMF) FilterCli(c *cli.Command) (args []string) {
 	}
 
 	return args
-
 }
 
 func (smf *SMF) Start() {
-
 	logger.InitLog.Infoln("SMF app initialising")
 
 	// Initialise channel to stop SMF
@@ -516,13 +442,11 @@ func (smf *SMF) Start() {
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-
 		<-signalChannel
 
 		smf.Terminate()
 
 		os.Exit(0)
-
 	}()
 
 	// Init SMF Service
@@ -560,31 +484,21 @@ func (smf *SMF) Start() {
 		// Trigger background goroutine to handle further config updates
 
 		go func() {
-
 			logger.InitLog.Infoln("dynamic config update task initialised")
 
 			for {
-
 				if <-factory.ConfigPodTrigger {
-
 					if context.ProcessConfigUpdate() {
-
 						// Let NRF registration happen in background
 
 						go smf.SendNrfRegistration()
-
 					}
-
 				}
-
 			}
-
 		}()
 
 	} else {
-
 		logger.InitLog.Infoln("configuration is managed by Helm")
-
 	}
 
 	// Send NRF Registration
@@ -606,7 +520,6 @@ func (smf *SMF) Start() {
 	callback.AddService(router)
 
 	for _, serviceName := range factory.SmfConfig.Configuration.ServiceNameList {
-
 		switch models.ServiceName(serviceName) {
 
 		case models.ServiceName_NSMF_PDUSESSION:
@@ -618,7 +531,6 @@ func (smf *SMF) Start() {
 			eventexposure.AddService(router)
 
 		}
-
 	}
 
 	if factory.SmfConfig.Configuration.EnableDbStore {
@@ -630,23 +542,17 @@ func (smf *SMF) Start() {
 		// Init DRSM for unique FSEID/FTEID/IP-Addr
 
 		if err := smfCtxt.InitDrsm(); err != nil {
-
 			logger.InitLog.Errorf("initialise drsm failed, %v ", err.Error())
-
 		}
 
 	} else {
-
 		logger.InitLog.Infoln("DB is disabled, not initialising drsm")
-
 	}
 
 	// Init Kafka stream
 
 	if err := metrics.InitialiseKafkaStream(factory.SmfConfig.Configuration); err != nil {
-
 		logger.InitLog.Errorf("initialise kafka stream failed, %v ", err.Error())
-
 	}
 
 	udp.Run(pfcp.Dispatch)
@@ -654,23 +560,16 @@ func (smf *SMF) Start() {
 	for _, upf := range context.SMF_Self().UserPlaneInformation.UPFs {
 
 		if upf.NodeID.NodeIdType == context.NodeIdTypeFqdn {
-
 			logger.AppLog.Infof("send PFCP Association Request to UPF[%s](%s)", upf.NodeID.NodeIdValue,
 
 				upf.NodeID.ResolveNodeIdToIp().String())
-
 		} else {
-
 			logger.AppLog.Infof("send PFCP Association Request to UPF[%s]", upf.NodeID.ResolveNodeIdToIp().String())
-
 		}
 
 		err := message.SendPfcpAssociationSetupRequest(upf.NodeID, upf.Port)
-
 		if err != nil {
-
 			logger.AppLog.Errorf("send PFCP Association Request failed: %v", err)
-
 		}
 
 	}
@@ -700,9 +599,7 @@ func (smf *SMF) Start() {
 	}
 
 	if err != nil {
-
 		logger.InitLog.Warnln("initialize HTTP server:", err)
-
 	}
 
 	serverScheme := factory.SmfConfig.Configuration.Sbi.Scheme
@@ -726,15 +623,11 @@ func (smf *SMF) Start() {
 	}
 
 	if err != nil {
-
 		logger.InitLog.Fatalln("HTTP server setup failed:", err)
-
 	}
-
 }
 
 func (smf *SMF) Terminate() {
-
 	logger.InitLog.Infoln("terminating SMF")
 
 	// deregister with NRF
@@ -742,29 +635,19 @@ func (smf *SMF) Terminate() {
 	problemDetails, err := consumer.SendDeregisterNFInstance()
 
 	if problemDetails != nil {
-
 		logger.InitLog.Errorf("deregister NF instance Failed Problem[%+v]", problemDetails)
-
 	} else if err != nil {
-
 		logger.InitLog.Errorf("deregister NF instance Error[%+v]", err)
-
 	} else {
-
 		logger.InitLog.Infoln("deregister from NRF successfully")
-
 	}
-
 }
 
 func (smf *SMF) Exec(c *cli.Command) error {
-
 	return nil
-
 }
 
 func StartKeepAliveTimer(nfProfile *models.NfProfile) {
-
 	KeepAliveTimerMutex.Lock()
 
 	defer KeepAliveTimerMutex.Unlock()
@@ -772,9 +655,7 @@ func StartKeepAliveTimer(nfProfile *models.NfProfile) {
 	StopKeepAliveTimer()
 
 	if nfProfile.HeartBeatTimer == 0 {
-
 		nfProfile.HeartBeatTimer = 30
-
 	}
 
 	logger.InitLog.Infof("started KeepAlive Timer: %v sec", nfProfile.HeartBeatTimer)
@@ -782,11 +663,9 @@ func StartKeepAliveTimer(nfProfile *models.NfProfile) {
 	// AfterFunc starts timer and waits for KeepAliveTimer to elapse and then calls smf.UpdateNF function
 
 	KeepAliveTimer = time.AfterFunc(time.Duration(nfProfile.HeartBeatTimer)*time.Second, UpdateNF)
-
 }
 
 func StopKeepAliveTimer() {
-
 	if KeepAliveTimer != nil {
 
 		logger.InitLog.Infoln("stopped KeepAlive Timer")
@@ -796,13 +675,11 @@ func StopKeepAliveTimer() {
 		KeepAliveTimer = nil
 
 	}
-
 }
 
 // UpdateNF is the callback function, this is called when keepalivetimer elapsed
 
 func UpdateNF() {
-
 	KeepAliveTimerMutex.Lock()
 
 	defer KeepAliveTimerMutex.Unlock()
@@ -820,7 +697,6 @@ func UpdateNF() {
 	var heartBeatTimer int32 = 30
 
 	pitem := models.PatchItem{
-
 		Op: "replace",
 
 		Path: "/nfStatus",
@@ -847,11 +723,8 @@ func UpdateNF() {
 			// register with NRF full profile
 
 			nfProfile, err = consumer.SendNFRegistration()
-
 			if err != nil {
-
 				logger.InitLog.Errorf("error [%v] when sending NF registration", err)
-
 			}
 
 		}
@@ -861,21 +734,16 @@ func UpdateNF() {
 		logger.InitLog.Errorf("SMF update to NRF Error[%s]", err.Error())
 
 		nfProfile, err = consumer.SendNFRegistration()
-
 		if err != nil {
-
 			logger.InitLog.Errorf("error [%v] when sending NF registration", err)
-
 		}
 
 	}
 
 	if nfProfile.HeartBeatTimer != 0 {
-
 		// use hearbeattimer value with received timer value from NRF
 
 		heartBeatTimer = nfProfile.HeartBeatTimer
-
 	}
 
 	logger.InitLog.Debugf("restarted KeepAlive Timer: %v sec", heartBeatTimer)
@@ -883,11 +751,9 @@ func UpdateNF() {
 	// restart timer with received HeartBeatTimer value
 
 	KeepAliveTimer = time.AfterFunc(time.Duration(heartBeatTimer)*time.Second, UpdateNF)
-
 }
 
 func (smf *SMF) SendNrfRegistration() {
-
 	// If NRF registration is ongoing then don't start another in parallel
 
 	// Just mark it so that once ongoing finishes then resend another
@@ -911,9 +777,7 @@ func (smf *SMF) SendNrfRegistration() {
 		refreshNrfRegistration = false
 
 		if prof, err := consumer.SendNFRegistration(); err != nil {
-
 			logger.InitLog.Infof("NRF Registration failure, %v", err.Error())
-
 		} else {
 
 			StartKeepAliveTimer(prof)
@@ -923,19 +787,15 @@ func (smf *SMF) SendNrfRegistration() {
 		}
 
 	}
-
 }
 
 // Run only single instance of func f at a time
 
 func (o *OneInstance) intanceRun(f func() *models.NfProfile) bool {
-
 	// Instance already running ?
 
 	if atomic.LoadUint32(&o.done) == 1 {
-
 		return true
-
 	}
 
 	// Slow-path.
@@ -957,5 +817,4 @@ func (o *OneInstance) intanceRun(f func() *models.NfProfile) bool {
 	}
 
 	return false
-
 }

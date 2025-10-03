@@ -30,7 +30,6 @@ const (
 )
 
 func InitPfcpHeartbeatRequest(userplane *context.UserPlaneInformation) {
-
 	// Iterate through all UPFs and send heartbeat to active UPFs
 
 	for {
@@ -46,13 +45,9 @@ func InitPfcpHeartbeatRequest(userplane *context.UserPlaneInformation) {
 				err := message.SendHeartbeatRequest(upf.NodeID, upf.Port) // needs lock in sync rsp(adapter mode)
 
 				if err != nil {
-
 					logger.PfcpLog.Errorf("send pfcp heartbeat request failed: %v for UPF[%v, %v]: ", err, upf.NodeID, upf.NodeID.ResolveNodeIdToIp())
-
 				} else {
-
 					upf.UPF.NHeartBeat++
-
 				}
 
 			} else if upf.UPF.NHeartBeat == maxHeartbeatRetry {
@@ -72,11 +67,9 @@ func InitPfcpHeartbeatRequest(userplane *context.UserPlaneInformation) {
 		}
 
 	}
-
 }
 
 func ProbeInactiveUpfs(upfs *context.UserPlaneInformation) {
-
 	// Iterate through all UPFs and send PFCP request to inactive UPFs
 
 	for {
@@ -90,11 +83,8 @@ func ProbeInactiveUpfs(upfs *context.UserPlaneInformation) {
 			if upf.UPF.UPFStatus == context.NotAssociated {
 
 				err := message.SendPfcpAssociationSetupRequest(upf.NodeID, upf.Port)
-
 				if err != nil {
-
 					logger.PfcpLog.Errorf("send pfcp association setup request failed: %v ", err)
-
 				}
 
 			}
@@ -104,5 +94,4 @@ func ProbeInactiveUpfs(upfs *context.UserPlaneInformation) {
 		}
 
 	}
-
 }

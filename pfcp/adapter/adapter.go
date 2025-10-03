@@ -19,9 +19,7 @@ import (
 )
 
 func init() {
-
 	PfcpTxns = make(map[uint32]*context.NodeID)
-
 }
 
 var (
@@ -31,29 +29,23 @@ var (
 )
 
 func FetchPfcpTxn(seqNo uint32) (upNodeID *context.NodeID) {
-
 	PfcpTxnLock.Lock()
 
 	defer PfcpTxnLock.Unlock()
 
 	if upNodeID = PfcpTxns[seqNo]; upNodeID != nil {
-
 		delete(PfcpTxns, seqNo)
-
 	}
 
 	return upNodeID
-
 }
 
 func InsertPfcpTxn(seqNo uint32, upNodeID *context.NodeID) {
-
 	PfcpTxnLock.Lock()
 
 	defer PfcpTxnLock.Unlock()
 
 	PfcpTxns[seqNo] = upNodeID
-
 }
 
 /*
@@ -69,7 +61,6 @@ This function is called when smf runs with upfadapter and the communication betw
 */
 
 func HandleAdapterPfcpRsp(pfcpMsg message.Message, evtData *udp.PfcpEventData) error {
-
 	switch pfcpMsg.MessageType() {
 
 	case message.MsgTypeAssociationSetupResponse:
@@ -109,47 +100,37 @@ func HandleAdapterPfcpRsp(pfcpMsg message.Message, evtData *udp.PfcpEventData) e
 	}
 
 	return nil
-
 }
 
 func FindUEIPAddress(createdPDRIEs []*ie.IE) net.IP {
-
 	for _, createdPDRIE := range createdPDRIEs {
 
 		ueIPAddress, err := createdPDRIE.UEIPAddress()
 
 		if err == nil {
-
 			return ueIPAddress.IPv4Address
-
 		}
 
 	}
 
 	return nil
-
 }
 
 func FindFTEID(createdPDRIEs []*ie.IE) (*ie.FTEIDFields, error) {
-
 	for _, createdPDRIE := range createdPDRIEs {
 
 		teid, err := createdPDRIE.FTEID()
 
 		if err == nil {
-
 			return teid, nil
-
 		}
 
 	}
 
 	return nil, fmt.Errorf("FTEID not found in CreatedPDR")
-
 }
 
 func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
-
 	rsp, ok := msg.PfcpMessage.(*message.AssociationSetupResponse)
 
 	if !ok {
@@ -171,7 +152,6 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 	}
 
 	nodeIDStr, err := nodeIDIE.NodeID()
-
 	if err != nil {
 
 		logger.PfcpLog.Errorf("pfcp association setup response NodeID error: %v", err)
@@ -191,7 +171,6 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 	}
 
 	causeValue, err := rsp.Cause.Cause()
-
 	if err != nil {
 
 		logger.PfcpLog.Errorf("pfcp association setup response cause error: %v", err)
@@ -225,7 +204,6 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 		}
 
 		recoveryTimestamp, err := rsp.RecoveryTimeStamp.RecoveryTimeStamp()
-
 		if err != nil {
 
 			logger.PfcpLog.Errorf("pfcp association setup response RecoveryTimeStamp error: %v", err)
@@ -235,18 +213,15 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 		}
 
 		upf.RecoveryTimeStamp = context.RecoveryTimeStamp{
-
 			RecoveryTimeStamp: recoveryTimestamp,
 		}
 
 		upf.NHeartBeat = 0 // reset Heartbeat attempt to 0
 
 	}
-
 }
 
 func HandlePfcpHeartbeatResponse(msg *udp.Message) {
-
 	rsp, ok := msg.PfcpMessage.(*message.HeartbeatResponse)
 
 	if !ok {
@@ -296,7 +271,6 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 	}
 
 	recoveryTimestamp, err := rsp.RecoveryTimeStamp.RecoveryTimeStamp()
-
 	if err != nil {
 
 		logger.PfcpLog.Errorf("pfcp heartbeat response RecoveryTimeStamp error: %v", err)
@@ -322,11 +296,9 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 	}
 
 	upf.NHeartBeat = 0 // reset Heartbeat attempt to 0
-
 }
 
 func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
-
 	rsp, ok := msg.PfcpMessage.(*message.SessionEstablishmentResponse)
 
 	if !ok {
@@ -342,7 +314,6 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 	SEID := rsp.SEID()
 
 	if SEID == 0 {
-
 		if eventData, ok := msg.EventData.(udp.PfcpEventData); !ok {
 
 			logger.PfcpLog.Warnln("PFCP Session Establish Response found invalid event data, response discarded")
@@ -350,11 +321,8 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 			return
 
 		} else {
-
 			SEID = eventData.LSEID
-
 		}
-
 	}
 
 	smContext := context.GetSMContextBySEID(SEID)
@@ -396,7 +364,6 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 		pfcpSessionCtx := smContext.PFCPContext[NodeIDtoIP]
 
 		rspUPFseid, err := rsp.UPFSEID.FSEID()
-
 		if err != nil {
 
 			logger.PfcpLog.Errorf("pfcp session establishment response UPFSEID error: %v", err)
@@ -436,11 +403,8 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 			// Release previous locally allocated UE IP-Addr
 
 			err := smContext.ReleaseUeIpAddr()
-
 			if err != nil {
-
 				logger.PfcpLog.Errorf("failed to release UE IP-Addr: %+v", err)
-
 			}
 
 			// Update with one received from UPF
@@ -454,7 +418,6 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 		// Store F-TEID created by UPF
 
 		fteid, err := FindFTEID(rsp.CreatedPDR)
-
 		if err != nil {
 
 			logger.PfcpLog.Errorf("failed to parse TEID IE: %+v", err)
@@ -496,7 +459,6 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 	}
 
 	rspNodeIDStr, err := rsp.NodeID.NodeID()
-
 	if err != nil {
 
 		logger.PfcpLog.Errorf("failed to parse NodeID IE: %+v", err)
@@ -526,7 +488,6 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 		}
 
 		causeValue, err := rsp.Cause.Cause()
-
 		if err != nil {
 
 			logger.PfcpLog.Errorf("pfcp session establishment response cause error: %v", err)
@@ -550,19 +511,15 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 			smContext.SubPfcpLog.Errorf("PFCP Session Establishment rejected with cause [%v]", causeValue)
 
 			if causeValue == ie.CauseNoEstablishedPFCPAssociation {
-
 				SetUpfInactive(*rspNodeID)
-
 			}
 
 		}
 
 	}
-
 }
 
 func HandlePfcpSessionModificationResponse(msg *udp.Message) {
-
 	pfcpRsp, ok := msg.PfcpMessage.(*message.SessionModificationResponse)
 
 	if !ok {
@@ -586,7 +543,6 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 	}
 
 	causeValue, err := cause.Cause()
-
 	if err != nil {
 
 		logger.PfcpLog.Errorf("PFCP Session Modification Response cause error: %v", err)
@@ -606,7 +562,6 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 	logger.PfcpLog.Infof("in HandlePfcpSessionModificationResponse smContext found by SEID %v", smContext)
 
 	if SEID == 0 {
-
 		if eventData, ok := msg.EventData.(udp.PfcpEventData); !ok {
 
 			logger.PfcpLog.Warnln("PFCP Session Modification Response found invalid event data, response discarded")
@@ -614,11 +569,8 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 			return
 
 		} else {
-
 			SEID = eventData.LSEID
-
 		}
-
 	}
 
 	if causeValue == ie.CauseRequestAccepted {
@@ -636,9 +588,7 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 			smContext.SubPduSessLog.Debugf("delete pending pfcp response: UPF IP [%s]", upfIP)
 
 			if smContext.PendingUPF.IsEmpty() {
-
 				smContext.SBIPFCPCommunicationChan <- context.SessionUpdateSuccess
-
 			}
 
 		}
@@ -650,9 +600,7 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 		smContext.SubPfcpLog.Infof("PFCP Session Modification Failed[%d]\n", SEID)
 
 		if smContext.SMContextState == context.SmStatePfcpModify {
-
 			smContext.SBIPFCPCommunicationChan <- context.SessionUpdateFailed
-
 		}
 
 	}
@@ -660,15 +608,11 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 	smContext.SubCtxLog.Debugln("PFCP Session Context")
 
 	for _, ctx := range smContext.PFCPContext {
-
 		smContext.SubCtxLog.Debugln(ctx.String())
-
 	}
-
 }
 
 func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
-
 	pfcpRsp, ok := msg.PfcpMessage.(*message.SessionDeletionResponse)
 
 	if !ok {
@@ -684,7 +628,6 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 	SEID := pfcpRsp.SEID()
 
 	if SEID == 0 {
-
 		if eventData, ok := msg.EventData.(udp.PfcpEventData); !ok {
 
 			logger.PfcpLog.Warnln("PFCP Session Deletion Response found invalid event data, response discarded")
@@ -692,11 +635,8 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			return
 
 		} else {
-
 			SEID = eventData.LSEID
-
 		}
-
 	}
 
 	smContext := context.GetSMContextBySEID(SEID)
@@ -720,7 +660,6 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 	}
 
 	causeValue, err := cause.Cause()
-
 	if err != nil {
 
 		logger.PfcpLog.Errorf("PFCP Session Deletion Response cause error: %v", err)
@@ -742,9 +681,7 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			smContext.SubPduSessLog.Debugf("delete pending pfcp response: UPF IP [%s]", upfIP)
 
 			if smContext.PendingUPF.IsEmpty() && !smContext.LocalPurged {
-
 				smContext.SBIPFCPCommunicationChan <- context.SessionReleaseSuccess
-
 			}
 
 		}
@@ -754,19 +691,15 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 	} else {
 
 		if smContext.SMContextState == context.SmStatePfcpRelease && !smContext.LocalPurged {
-
 			smContext.SBIPFCPCommunicationChan <- context.SessionReleaseSuccess
-
 		}
 
 		smContext.SubPfcpLog.Infof("PFCP Session Deletion Failed[%d]", SEID)
 
 	}
-
 }
 
 func SetUpfInactive(nodeID context.NodeID) {
-
 	upf := context.RetrieveUPFNodeByNodeID(nodeID)
 
 	if upf == nil {
@@ -786,5 +719,4 @@ func SetUpfInactive(nodeID context.NodeID) {
 	upf.UPFStatus = context.NotAssociated
 
 	upf.NHeartBeat = 0 // reset Heartbeat attempt to 0
-
 }

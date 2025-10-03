@@ -15,7 +15,6 @@ import (
 )
 
 func TestGivenRequestWhenIsRequestThenReturnTrue(t *testing.T) {
-
 	msg := message.NewAssociationReleaseRequest(
 
 		1,
@@ -24,15 +23,11 @@ func TestGivenRequestWhenIsRequestThenReturnTrue(t *testing.T) {
 	)
 
 	if !udp.IsRequest(msg) {
-
 		t.Errorf("expected true, got false")
-
 	}
-
 }
 
 func TestGivenResponseWhenIsRequestThenReturnFalse(t *testing.T) {
-
 	msg := message.NewAssociationReleaseResponse(
 
 		1,
@@ -43,15 +38,11 @@ func TestGivenResponseWhenIsRequestThenReturnFalse(t *testing.T) {
 	)
 
 	if udp.IsRequest(msg) {
-
 		t.Errorf("expected false, got true")
-
 	}
-
 }
 
 func TestGivenResponseWhenIsResponseThenReturnTrue(t *testing.T) {
-
 	msg := message.NewAssociationReleaseResponse(
 
 		1,
@@ -62,15 +53,11 @@ func TestGivenResponseWhenIsResponseThenReturnTrue(t *testing.T) {
 	)
 
 	if !udp.IsResponse(msg) {
-
 		t.Errorf("expected true, got false")
-
 	}
-
 }
 
 func TestGivenRequestWhenIsResponseThenReturnFalse(t *testing.T) {
-
 	msg := message.NewAssociationReleaseRequest(
 
 		1,
@@ -79,9 +66,6 @@ func TestGivenRequestWhenIsResponseThenReturnFalse(t *testing.T) {
 	)
 
 	if udp.IsResponse(msg) {
-
 		t.Errorf("expected false, got true")
-
 	}
-
 }

@@ -31,7 +31,5 @@ import (
 // PostPduSessions - Create
 
 func PostPduSessions(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }

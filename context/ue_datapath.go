@@ -22,11 +22,8 @@ type UEPreConfigPaths struct {
 }
 
 func NewUEDataPathNode(name string) (node *DataPathNode, err error) {
-
 	if smfContext.UserPlaneInformation == nil {
-
 		return nil, fmt.Errorf("smfContext.UserPlaneInformation is nil")
-
 	}
 
 	upNodes := smfContext.UserPlaneInformation.UPNodes
@@ -40,7 +37,6 @@ func NewUEDataPathNode(name string) (node *DataPathNode, err error) {
 	}
 
 	node = &DataPathNode{
-
 		UPF: upNodes[name].UPF,
 
 		UpLinkTunnel: &GTPTunnel{},
@@ -48,12 +44,10 @@ func NewUEDataPathNode(name string) (node *DataPathNode, err error) {
 		DownLinkTunnel: &GTPTunnel{},
 	}
 
-	return
-
+	return node, err
 }
 
 func NewUEPreConfigPaths(SUPI string, paths []factory.Path) (*UEPreConfigPaths, error) {
-
 	var uePreConfigPaths *UEPreConfigPaths
 
 	ueDataPathPool := NewDataPathPool()
@@ -69,9 +63,7 @@ func NewUEPreConfigPaths(SUPI string, paths []factory.Path) (*UEPreConfigPaths, 
 		dataPath := NewDataPath()
 
 		if idx == 0 {
-
 			dataPath.IsDefaultPath = true
-
 		}
 
 		var pathID int64
@@ -83,9 +75,7 @@ func NewUEPreConfigPaths(SUPI string, paths []factory.Path) (*UEPreConfigPaths, 
 			return nil, err
 
 		} else {
-
 			pathID = allocPathID
-
 		}
 
 		dataPath.Destination.DestinationIP = path.DestinationIP
@@ -99,17 +89,12 @@ func NewUEPreConfigPaths(SUPI string, paths []factory.Path) (*UEPreConfigPaths, 
 		for idx, nodeName := range path.UPF {
 
 			newUeNode, err := NewUEDataPathNode(nodeName)
-
 			if err != nil {
-
 				return nil, err
-
 			}
 
 			if idx == lowerBound {
-
 				dataPath.FirstDPNode = newUeNode
-
 			}
 
 			if parentNode != nil {
@@ -129,30 +114,24 @@ func NewUEPreConfigPaths(SUPI string, paths []factory.Path) (*UEPreConfigPaths, 
 	}
 
 	uePreConfigPaths = &UEPreConfigPaths{
-
 		DataPathPool: ueDataPathPool,
 
 		PathIDGenerator: pathIDGenerator,
 	}
 
 	return uePreConfigPaths, nil
-
 }
 
 func GetUEPreConfigPaths(SUPI string) *UEPreConfigPaths {
-
 	return smfContext.UEPreConfigPathPool[SUPI]
-
 }
 
 func CheckUEHasPreConfig(SUPI string) (exist bool) {
-
 	_, exist = smfContext.UEPreConfigPathPool[SUPI]
 
 	logger.CtxLog.Infoln("CheckUEHasPreConfig")
 
 	logger.CtxLog.Infoln(smfContext.UEPreConfigPathPool)
 
-	return
-
+	return exist
 }

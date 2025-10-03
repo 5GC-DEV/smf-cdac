@@ -23,21 +23,16 @@ import (
 )
 
 func (SmfTxnFsm) TxnInit(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	txn.TxnFsmLog.Debugf("handle event[%v] ", transaction.TxnEventInit.String())
 
 	return transaction.TxnEventDecode, nil
-
 }
 
 func (SmfTxnFsm) TxnDecode(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	return transaction.TxnEventLoadCtxt, nil
-
 }
 
 func (SmfTxnFsm) TxnLoadCtxt(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	switch txn.MsgType {
 
 	case svcmsgtypes.CreateSmContext:
@@ -51,13 +46,10 @@ func (SmfTxnFsm) TxnLoadCtxt(txn *transaction.Transaction) (transaction.TxnEvent
 			// Previous context exist
 
 			err := producer.HandlePduSessionContextReplacement(smCtxtRef)
-
 			if err != nil {
-
 				txn.TxnFsmLog.Errorf("handle event[%v], next-event[%v], error[%v] ",
 
 					transaction.TxnEventLoadCtxt.String(), transaction.TxnEventFailure.String(), err)
-
 			}
 
 		}
@@ -67,13 +59,10 @@ func (SmfTxnFsm) TxnLoadCtxt(txn *transaction.Transaction) (transaction.TxnEvent
 		txn.Ctxt = smf_context.NewSMContext(createData.Supi, createData.PduSessionId)
 
 		CtxtKey, err := smf_context.ResolveRef(createData.Supi, createData.PduSessionId)
-
 		if err != nil {
-
 			txn.TxnFsmLog.Errorf("handle event[%v], next-event[%v], error[%v] ",
 
 				transaction.TxnEventLoadCtxt.String(), transaction.TxnEventFailure.String(), err)
-
 		}
 
 		txn.CtxtKey = CtxtKey
@@ -127,11 +116,9 @@ func (SmfTxnFsm) TxnLoadCtxt(txn *transaction.Transaction) (transaction.TxnEvent
 	}
 
 	return transaction.TxnEventCtxtPost, nil
-
 }
 
 func (SmfTxnFsm) TxnCtxtPost(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	smContext := txn.Ctxt.(*smf_context.SMContext)
 
 	// Lock the bus before modifying
@@ -157,11 +144,9 @@ func (SmfTxnFsm) TxnCtxtPost(txn *transaction.Transaction) (transaction.TxnEvent
 	// No other Txn running, lets proceed with current Txn
 
 	return transaction.TxnEventRun, nil
-
 }
 
 func (SmfTxnFsm) TxnCtxtRun(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	smContext := txn.Ctxt.(*smf_context.SMContext)
 
 	// There shouldn't be any active Txn if current Txn has reached to Run state
@@ -173,9 +158,7 @@ func (SmfTxnFsm) TxnCtxtRun(txn *transaction.Transaction) (transaction.TxnEvent,
 	defer smContext.SMTxnBusLock.Unlock()
 
 	if smContext.ActiveTxn != nil {
-
 		logger.TxnFsmLog.Errorf("active transaction [%v] not completed", smContext.ActiveTxn)
-
 	}
 
 	// make current txn as Active now, move it to processing
@@ -183,11 +166,9 @@ func (SmfTxnFsm) TxnCtxtRun(txn *transaction.Transaction) (transaction.TxnEvent,
 	smContext.ActiveTxn = txn
 
 	return transaction.TxnEventProcess, nil
-
 }
 
 func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	smContext := txn.Ctxt.(*smf_context.SMContext)
 
 	if smContext == nil {
@@ -207,13 +188,9 @@ func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent,
 		val, ok := smContextPool.Load(smContext.Ref)
 
 		if ok {
-
 			txn.TxnFsmLog.Infoln("db - smContext in smContextPool", val)
-
 		} else {
-
 			smf_context.StoreSmContextPool(smContext)
-
 		}
 
 	}
@@ -271,13 +248,10 @@ func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent,
 	}
 
 	return transaction.TxnEventSuccess, nil
-
 }
 
 func (SmfTxnFsm) TxnSuccess(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	switch txn.MsgType {
-
 	case svcmsgtypes.PfcpSessCreate:
 
 		nextTxn := transaction.NewTransaction(nil, nil, svcmsgtypes.N1N2MessageTransfer)
@@ -293,15 +267,12 @@ func (SmfTxnFsm) TxnSuccess(txn *transaction.Transaction) (transaction.TxnEvent,
 		smContext.SMTxnBusLock.Unlock()
 
 		go func(nextTxn *transaction.Transaction) {
-
 			// Initiate N1N2 Transfer
 
 			// nextTxn.StartTxnLifeCycle(SmfTxnFsmHandle)
 
 			<-nextTxn.Status
-
 		}(nextTxn)
-
 	}
 
 	// put Success Rsp
@@ -309,11 +280,9 @@ func (SmfTxnFsm) TxnSuccess(txn *transaction.Transaction) (transaction.TxnEvent,
 	txn.Status <- true
 
 	return transaction.TxnEventSave, nil
-
 }
 
 func (SmfTxnFsm) TxnFailure(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	// Put Failure Rsp
 
 	switch txn.MsgType {
@@ -335,13 +304,11 @@ func (SmfTxnFsm) TxnFailure(txn *transaction.Transaction) (transaction.TxnEvent,
 			smContext.SMTxnBusLock.Unlock()
 
 			go func(nextTxn *transaction.Transaction) {
-
 				// Initiate N1N2 Transfer
 
 				// nextTxn.StartTxnLifeCycle(SmfTxnFsmHandle)
 
 				<-nextTxn.Status
-
 			}(nextTxn)
 
 		}
@@ -353,19 +320,15 @@ func (SmfTxnFsm) TxnFailure(txn *transaction.Transaction) (transaction.TxnEvent,
 			logger.PduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext[%s] is not found", txn.CtxtKey)
 
 			httpResponse := &httpwrapper.Response{
-
 				Header: nil,
 
 				Status: http.StatusNotFound,
 
 				Body: models.UpdateSmContextErrorResponse{
-
 					JsonData: &models.SmContextUpdateError{
-
 						UpCnxState: models.UpCnxState_DEACTIVATED,
 
 						Error: &models.ProblemDetails{
-
 							Type: "Resource Not Found",
 
 							Title: "SMContext Ref is not found",
@@ -391,13 +354,11 @@ func (SmfTxnFsm) TxnFailure(txn *transaction.Transaction) (transaction.TxnEvent,
 			// Send Not Found
 
 			httpResponse := &httpwrapper.Response{
-
 				Header: nil,
 
 				Status: http.StatusNotFound,
 
 				Body: &models.ProblemDetails{
-
 					Type: "Resource Not Found",
 
 					Title: "SMContext Ref is not found",
@@ -415,53 +376,39 @@ func (SmfTxnFsm) TxnFailure(txn *transaction.Transaction) (transaction.TxnEvent,
 	txn.Status <- false
 
 	return transaction.TxnEventEnd, nil
-
 }
 
 func (SmfTxnFsm) TxnAbort(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	return transaction.TxnEventEnd, nil
-
 }
 
 func (SmfTxnFsm) TxnSave(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	if factory.SmfConfig.Configuration.EnableDbStore {
-
 		smf_context.StoreSmContextInDB(txn.Ctxt.(*smf_context.SMContext))
 
 		// clear sm context in memory for test
 
 		// smf_context.ClearSMContextInMem(txn.Ctxt.(*smf_context.SMContext).Ref)
-
 	}
 
 	return transaction.TxnEventEnd, nil
-
 }
 
 func (SmfTxnFsm) TxnTimeout(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	return transaction.TxnEventEnd, nil
-
 }
 
 func (SmfTxnFsm) TxnCollision(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	return transaction.TxnEventEnd, nil
-
 }
 
 func (SmfTxnFsm) TxnEnd(txn *transaction.Transaction) (transaction.TxnEvent, error) {
-
 	txn.TransactionEnd()
 
 	smContext := txn.Ctxt.(*smf_context.SMContext)
 
 	if smContext == nil {
-
 		return transaction.TxnEventExit, nil
-
 	}
 
 	// Lock txnbus to access
@@ -489,11 +436,10 @@ func (SmfTxnFsm) TxnEnd(txn *transaction.Transaction) (transaction.TxnEvent, err
 	}
 
 	return transaction.TxnEventExit, nil
-
 }
 
 /// Suggestions
 
-//1. Global pipeline for txns
+// 1. Global pipeline for txns
 
-//2. Memory alloc pool for txns
+// 2. Memory alloc pool for txns

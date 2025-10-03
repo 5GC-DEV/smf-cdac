@@ -38,7 +38,6 @@ type AuthorizedQosRules struct {
 }
 
 func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error) {
-
 	m := nas.NewMessage()
 
 	m.GsmMessage = nas.NewGsmMessage()
@@ -80,11 +79,8 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 	qoSRules := qos.BuildQosRules(smContext.SmPolicyUpdates[0])
 
 	qosRulesBytes, err := qoSRules.MarshalBinary()
-
 	if err != nil {
-
 		return nil, err
-
 	}
 
 	pDUSessionEstablishmentAccept.AuthorizedQosRules.SetLen(uint16(len(qosRulesBytes)))
@@ -126,13 +122,9 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 	var sd [3]uint8
 
 	if byteArray, err := hex.DecodeString(smContext.Snssai.Sd); err != nil {
-
 		return nil, err
-
 	} else {
-
 		copy(sd[:], byteArray)
-
 	}
 
 	pDUSessionEstablishmentAccept.SNSSAI = nasType.NewSNSSAI(nasMessage.ULNASTransportSNSSAIType)
@@ -165,11 +157,8 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 		if smContext.ProtocolConfigurationOptions.DNSIPv4Request {
 
 			err := protocolConfigurationOptions.AddDNSServerIPv4Address(smContext.DNNInfo.DNS.IPv4Addr)
-
 			if err != nil {
-
 				smContext.SubGsmLog.Warnln("Error while adding DNS IPv4 Addr: ", err)
-
 			}
 
 		}
@@ -179,11 +168,8 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 		if smContext.ProtocolConfigurationOptions.DNSIPv6Request {
 
 			err := protocolConfigurationOptions.AddDNSServerIPv6Address(smContext.DNNInfo.DNS.IPv6Addr)
-
 			if err != nil {
-
 				smContext.SubGsmLog.Warnln("Error while adding DNS IPv6 Addr: ", err)
-
 			}
 
 		}
@@ -193,11 +179,8 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 		if smContext.ProtocolConfigurationOptions.IPv4LinkMTURequest {
 
 			err := protocolConfigurationOptions.AddIPv4LinkMTU(smContext.DNNInfo.MTU)
-
 			if err != nil {
-
 				smContext.SubGsmLog.Warnln("Error while adding MTU: ", err)
-
 			}
 
 		}
@@ -213,13 +196,9 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 			smContext.SubGsmLog.Infof("PCSCF Info: ", smfContext.PCSCFInfo)
 
 			if smfContext.PCSCFInfo.IPv4Addr != "" {
-
 				pcsfIpStr = smfContext.PCSCFInfo.IPv4Addr
-
 			} else {
-
 				smContext.SubGsmLog.Warn("PCSCFInfo.IPv4Addr is empty in smfContext, using config fallback")
-
 			}
 
 			smContext.SubGsmLog.Infof("PCSCF Ip: ", pcsfIpStr)
@@ -227,17 +206,12 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 			pcscfIP := net.ParseIP(pcsfIpStr)
 
 			if pcscfIP == nil {
-
 				smContext.SubGsmLog.Warnln("Invalid P-CSCF IP address")
-
 			} else {
 
 				err := protocolConfigurationOptions.AddPCSCFIPv4Address(pcscfIP)
-
 				if err != nil {
-
 					smContext.SubGsmLog.Warnln("Error while adding P-CSCF IPv4 Addr: ", err)
-
 				}
 
 			}
@@ -257,11 +231,9 @@ func BuildGSMPDUSessionEstablishmentAccept(smContext *SMContext) ([]byte, error)
 	}
 
 	return m.PlainNasEncode()
-
 }
 
 func BuildGSMPDUSessionEstablishmentReject(smContext *SMContext, cause uint8) ([]byte, error) {
-
 	m := nas.NewMessage()
 
 	m.GsmMessage = nas.NewGsmMessage()
@@ -285,7 +257,6 @@ func BuildGSMPDUSessionEstablishmentReject(smContext *SMContext, cause uint8) ([
 	pDUSessionEstablishmentReject.SetPTI(smContext.Pti)
 
 	return m.PlainNasEncode()
-
 }
 
 /*func BuildGSMPDUSessionModificationReject(smContext *SMContext, cause uint8) ([]byte, error) {
@@ -319,7 +290,6 @@ func BuildGSMPDUSessionEstablishmentReject(smContext *SMContext, cause uint8) ([
 }*/
 
 func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
-
 	m := nas.NewMessage()
 
 	m.GsmMessage = nas.NewGsmMessage()
@@ -347,13 +317,11 @@ func BuildGSMPDUSessionReleaseCommand(smContext *SMContext) ([]byte, error) {
 	// End of Modification
 
 	return m.PlainNasEncode()
-
 }
 
 // 3GPP Reference: TS 24.501, Section 8.3.4 – "PDU Session Modification Command"
 
 func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error) {
-
 	// Initialize NAS message
 
 	m := nas.NewMessage()
@@ -415,11 +383,9 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	authQfd := qos.BuildAuthorizedQosFlowDescriptions(smContext.SmPolicyUpdates[0])
 
 	if pDUSessionModificationCommand.AuthorizedQosFlowDescriptions == nil {
-
 		pDUSessionModificationCommand.AuthorizedQosFlowDescriptions = nasType.NewAuthorizedQosFlowDescriptions(
 
 			nasMessage.PDUSessionModificationCommandAuthorizedQosFlowDescriptionsType)
-
 	}
 
 	pDUSessionModificationCommand.AuthorizedQosFlowDescriptions.SetLen(authQfd.IeLen)
@@ -443,11 +409,9 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 				r.Identifier, r.QFI, len(r.PacketFilterList))
 
 			for _, pf := range r.PacketFilterList {
-
 				smContext.SubGsmLog.Debugf("PF ID: %d, Dir: %d, Content: %s",
 
 					pf.Identifier, pf.Direction, pf.Content)
-
 			}
 
 		}
@@ -455,7 +419,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 		// Marshal QoS rules to binary
 
 		qosRulesBytes, err := qoSRules.MarshalBinary()
-
 		if err != nil {
 
 			smContext.SubGsmLog.Errorf("Failed to marshal QoS rules: %v", err)
@@ -495,7 +458,6 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	// Encode NAS message to bytes
 
 	encoded, err := m.PlainNasEncode()
-
 	if err != nil {
 
 		smContext.SubGsmLog.Errorf("Encoding failed: %v", err)
@@ -507,11 +469,9 @@ func BuildGSMPDUSessionModificationCommand(smContext *SMContext) ([]byte, error)
 	smContext.SubGsmLog.Infof("Successfully encoded message, length: %d, hex: %x", len(encoded), encoded)
 
 	return encoded, nil
-
 }
 
 func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
-
 	m := nas.NewMessage()
 
 	m.GsmMessage = nas.NewGsmMessage()
@@ -537,11 +497,9 @@ func BuildGSMPDUSessionReleaseReject(smContext *SMContext) ([]byte, error) {
 	pDUSessionReleaseReject.SetCauseValue(nasMessage.Cause5GSMRequestRejectedUnspecified)
 
 	return m.PlainNasEncode()
-
 }
 
 func BuildGSMPDUSessionReleaseRejectWithCause(smContext *SMContext, pduSessionID int32, cause string) ([]byte, error) {
-
 	m := nas.NewMessage()
 
 	m.GsmMessage = nas.NewGsmMessage()
@@ -567,13 +525,10 @@ func BuildGSMPDUSessionReleaseRejectWithCause(smContext *SMContext, pduSessionID
 	pDUSessionReleaseRejectWithCause.SetCauseValue(uint8Cause)
 
 	return m.PlainNasEncode()
-
 }
 
 func (a *AuthorizedQosRules) SetQosRule(qosRule []uint8) {
-
 	a.Buffer = make([]byte, len(qosRule)) // fresh buffer
 
 	copy(a.Buffer, qosRule)
-
 }

@@ -15,7 +15,6 @@ import (
 )
 
 func TestBuildAuthorizedQosFlowDescriptions(t *testing.T) {
-
 	// make SM Policy Decision
 
 	smPolicyDecision := &models.SmPolicyDecision{}
@@ -35,7 +34,6 @@ func TestBuildAuthorizedQosFlowDescriptions(t *testing.T) {
 	t.Logf("authorized QosFlow: %v", authorizedQosFlow.Content)
 
 	expectedBytes := []byte{
-
 		0x5, 0x20, 0x45, 0x1, 0x1, 0x5, 0x4, 0x3, 0x6, 0x0,
 
 		0x65, 0x5, 0x3, 0x6, 0x0, 0xc9, 0x2, 0x3, 0x6, 0x0, 0xb, 0x3, 0x3, 0x6,
@@ -44,5 +42,4 @@ func TestBuildAuthorizedQosFlowDescriptions(t *testing.T) {
 	}
 
 	require.Equal(t, expectedBytes, authorizedQosFlow.Content)
-
 }

@@ -48,7 +48,6 @@ var (
 // HTTPReleaseSmContext - Release SM Context
 
 func HTTPReleaseSmContext(c *gin.Context) {
-
 	var err error
 
 	logger.PduSessLog.Infoln("receive Release SM Context Request")
@@ -56,7 +55,6 @@ func HTTPReleaseSmContext(c *gin.Context) {
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.ReleaseSmContext), "In", "", "")
 
 	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_release_req)
-
 	if err != nil {
 
 		logger.PduSessLog.Errorf("error: %v", err)
@@ -90,7 +88,6 @@ func HTTPReleaseSmContext(c *gin.Context) {
 		problemDetail := "[Request Body] " + err.Error()
 
 		rsp := models.ProblemDetails{
-
 			Title: "Malformed request syntax",
 
 			Status: http.StatusBadRequest,
@@ -129,21 +126,17 @@ func HTTPReleaseSmContext(c *gin.Context) {
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.ReleaseSmContext), "Out", http.StatusText(http.StatusNoContent), "")
 
 	c.Status(http.StatusNoContent)
-
 }
 
 // RetrieveSmContext - Retrieve SM Context
 
 func RetrieveSmContext(c *gin.Context) {
-
 	c.JSON(http.StatusOK, gin.H{})
-
 }
 
 // HTTPUpdateSmContext - Update SM Context
 
 func HTTPUpdateSmContext(c *gin.Context) {
-
 	var err error
 
 	logger.PduSessLog.Infoln("receive Update SM Context Request")
@@ -151,7 +144,6 @@ func HTTPUpdateSmContext(c *gin.Context) {
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "In", "", "")
 
 	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_req)
-
 	if err != nil {
 
 		logger.PduSessLog.Errorf("error: %v", err)
@@ -183,7 +175,6 @@ func HTTPUpdateSmContext(c *gin.Context) {
 		problemDetail := "[Request Body] " + err.Error()
 
 		rsp := models.ProblemDetails{
-
 			Title: "Malformed request syntax",
 
 			Status: http.StatusBadRequest,
@@ -226,13 +217,8 @@ func HTTPUpdateSmContext(c *gin.Context) {
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "Out", http.StatusText(HTTPResponse.Status), "")
 
 	if HTTPResponse.Status < 300 {
-
 		c.Render(HTTPResponse.Status, openapi.MultipartRelatedRender{Data: HTTPResponse.Body})
-
 	} else {
-
 		c.JSON(HTTPResponse.Status, HTTPResponse.Body)
-
 	}
-
 }

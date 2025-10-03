@@ -35,7 +35,6 @@ type UPTunnelInDB struct {
 }
 
 type DataPathInDB struct {
-
 	// Data Path Double Link List
 
 	FirstDPNode *DataPathNodeInDB
@@ -52,7 +51,6 @@ type DataPathInDB struct {
 }
 
 type DataPathNodeInDB struct {
-
 	// UPF *UPF
 
 	ULTunnelInfo *TunnelInfo
@@ -76,7 +74,6 @@ type NodeIDInDB struct {
 	NodeIdValue []byte
 
 	NodeIdType uint8 // 0x00001111
-
 }
 
 type PFCPSessionContextInDB struct {
@@ -92,51 +89,35 @@ type PFCPSessionContextInDB struct {
 type PFCPContextInDB map[string]PFCPSessionContextInDB
 
 func GetNodeIDInDB(nodeID NodeID) NodeIDInDB {
-
 	return NodeIDInDB(nodeID)
-
 }
 
 func GetNodeID(nodeIDInDB NodeIDInDB) NodeID {
-
 	return NodeID(nodeIDInDB)
-
 }
 
 func testEq(a, b []byte) bool {
-
 	if len(a) != len(b) {
-
 		return false
-
 	}
 
 	if (len(a) == len(b)) && (len(a) == 0) {
-
 		return true
-
 	}
 
 	for i := range a {
-
 		if a[i] != b[i] {
-
 			return false
-
 		}
-
 	}
 
 	return true
-
 }
 
 func RecoverTunnel(tunnelInfo *TunnelInfo) (tunnel *GTPTunnel) {
-
 	if tunnelInfo != nil {
 
 		tunnel = &GTPTunnel{
-
 			TEID: tunnelInfo.TEID,
 
 			PDR: tunnelInfo.PDR,
@@ -165,17 +146,14 @@ func RecoverTunnel(tunnelInfo *TunnelInfo) (tunnel *GTPTunnel) {
 	// TBA: recover dst endPoint
 
 	return tunnel
-
 }
 
 func RecoverFirstDPNode(nodeIDInDB NodeIDInDB) (dataPathNode *DataPathNode) {
-
 	logger.CtxLog.Infoln("in RecoverFirstDPNode")
 
 	nodeInDB := GetNodeInDBFromDB(nodeIDInDB)
 
 	dataPathNode = &DataPathNode{
-
 		IsBranchingPoint: nodeInDB.IsBranchingPoint,
 
 		UPF: RetrieveUPFNodeByNodeID(GetNodeID(nodeInDB.DataPathNodeUPFNodeID)),
@@ -187,15 +165,11 @@ func RecoverFirstDPNode(nodeIDInDB NodeIDInDB) (dataPathNode *DataPathNode) {
 	var nilVal *TunnelInfo = nil
 
 	if nodeInDB.ULTunnelInfo != nilVal {
-
 		dataPathNode.UpLinkTunnel = RecoverTunnel(nodeInDB.ULTunnelInfo)
-
 	}
 
 	if nodeInDB.DLTunnelInfo != nilVal {
-
 		dataPathNode.DownLinkTunnel = RecoverTunnel(nodeInDB.DLTunnelInfo)
-
 	}
 
 	logger.CtxLog.Infoln("RecoverFirstDPNode - dataPathNode", dataPathNode)
@@ -217,37 +191,27 @@ func RecoverFirstDPNode(nodeIDInDB NodeIDInDB) (dataPathNode *DataPathNode) {
 	}
 
 	return dataPathNode
-
 }
 
 func ToBsonMNodeInDB(data *DataPathNodeInDB) (ret bson.M) {
-
 	// Marshal data into json format
 
 	tmp, err := json.Marshal(data)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("ToBsonMNodeInDB marshall error: %v", err)
-
 	}
 
 	// unmarshal data into bson format
 
 	err = json.Unmarshal(tmp, &ret)
-
 	if err != nil {
-
 		logger.DataRepoLog.Errorf("ToBsonMNodeInDB unmarshall error: %v", err)
-
 	}
 
-	return
-
+	return ret
 }
 
 func StoreNodeInDB(nodeInDB *DataPathNodeInDB) {
-
 	itemBsonA := ToBsonMNodeInDB(nodeInDB)
 
 	filter := bson.M{"nodeIDInDB": nodeInDB.DataPathNodeUPFNodeID}
@@ -257,15 +221,11 @@ func StoreNodeInDB(nodeInDB *DataPathNodeInDB) {
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(NodeInDBCol, filter, itemBsonA)
 
 	if postErr != nil {
-
 		logger.DataRepoLog.Warnln(postErr)
-
 	}
-
 }
 
 func GetNodeInDBFromDB(nodeIDInDB NodeIDInDB) (dataPathNodeInDB *DataPathNodeInDB) {
-
 	filter := bson.M{}
 
 	filter["nodeIDInDB"] = nodeIDInDB
@@ -273,9 +233,7 @@ func GetNodeInDBFromDB(nodeIDInDB NodeIDInDB) (dataPathNodeInDB *DataPathNodeInD
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(NodeInDBCol, filter)
 
 	if getOneErr != nil {
-
 		logger.DataRepoLog.Warnln(getOneErr)
-
 	}
 
 	dataPathNodeInDB = new(DataPathNodeInDB)
@@ -285,7 +243,6 @@ func GetNodeInDBFromDB(nodeIDInDB NodeIDInDB) (dataPathNodeInDB *DataPathNodeInD
 	logger.CtxLog.Infoln("GetNodeInDBFromDB, smf dataPathNodeInDB:", dataPathNodeInDB)
 
 	err := json.Unmarshal(mapToByte(result), dataPathNodeInDB)
-
 	if err != nil {
 
 		logger.DataRepoLog.Errorf("GetNodeInDBFromDB unmarshall error: %v", err)
@@ -295,11 +252,9 @@ func GetNodeInDBFromDB(nodeIDInDB NodeIDInDB) (dataPathNodeInDB *DataPathNodeInD
 	}
 
 	return dataPathNodeInDB
-
 }
 
 func RecoverDataPathNode(dataPathNodeInDB *DataPathNodeInDB) (dataPathNode *DataPathNode) {
-
 	var nilValDpn *DataPathNodeInDB = nil
 
 	var nilVarTunnelInfo *TunnelInfo = nil
@@ -307,7 +262,6 @@ func RecoverDataPathNode(dataPathNodeInDB *DataPathNodeInDB) (dataPathNode *Data
 	if dataPathNodeInDB != nilValDpn {
 
 		dataPathNode := &DataPathNode{
-
 			UPF: RetrieveUPFNodeByNodeID(GetNodeID(dataPathNodeInDB.DataPathNodeUPFNodeID)),
 
 			IsBranchingPoint: dataPathNodeInDB.IsBranchingPoint,
@@ -350,11 +304,9 @@ func RecoverDataPathNode(dataPathNodeInDB *DataPathNodeInDB) (dataPathNode *Data
 	}
 
 	return nil
-
 }
 
 func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNodeInDB) {
-
 	var nilValDpn *DataPathNode = nil
 
 	var nilValTunnel *GTPTunnel = nil
@@ -362,7 +314,6 @@ func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNo
 	if dataPathNode != nilValDpn {
 
 		dataPathNodeInDB := &DataPathNodeInDB{
-
 			DataPathNodeUPFNodeID: GetNodeIDInDB(dataPathNode.UPF.NodeID),
 
 			IsBranchingPoint: dataPathNode.IsBranchingPoint,
@@ -389,9 +340,7 @@ func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNo
 			upLinkTunnelSEP := upLinkTunnel.SrcEndPoint
 
 			if upLinkTunnelSEP != nilValDpn {
-
 				uLTunnelInfo.DataPathNodeUPFNodeID = GetNodeIDInDB(upLinkTunnelSEP.UPF.NodeID)
-
 			}
 
 			dataPathNodeInDB.ULTunnelInfo = uLTunnelInfo
@@ -407,9 +356,7 @@ func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNo
 			dlLinkTunnelSEP := downLinkTunnel.SrcEndPoint
 
 			if dlLinkTunnelSEP != nilValDpn {
-
 				dLTunnelInfo.DataPathNodeUPFNodeID = GetNodeIDInDB(dlLinkTunnelSEP.UPF.NodeID)
-
 			}
 
 			dataPathNodeInDB.DLTunnelInfo = dLTunnelInfo
@@ -423,5 +370,4 @@ func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNo
 	}
 
 	return nil
-
 }

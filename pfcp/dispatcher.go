@@ -18,7 +18,6 @@ import (
 )
 
 func Dispatch(msg *udp.Message) {
-
 	// TODO: Add return status to all handlers
 
 	msgType := msg.PfcpMessage.MessageType()
@@ -116,5 +115,4 @@ func Dispatch(msg *udp.Message) {
 	// stats
 
 	metrics.IncrementN4MsgStats(context.SMF_Self().NfInstanceID, msg.PfcpMessage.MessageTypeName(), "In", "", "")
-
 }

@@ -21,33 +21,24 @@ const (
 )
 
 func TestUpdateSliceInfo(t *testing.T) {
-
 	cfg1 := Configuration{}
 
 	cfg2 := Configuration{}
 
 	err := cfg1.parseRocConfig(makeDummyConfig("1", "010203"))
-
 	if err != nil {
-
 		t.Errorf("error parsing config: %v", err)
-
 	}
 
 	err = cfg2.parseRocConfig(makeDummyConfig("2", "010203"))
-
 	if err != nil {
-
 		t.Errorf("error parsing config: %v", err)
-
 	}
 
 	compareAndProcessConfigs(&cfg1, &cfg2)
-
 }
 
 func makeDummyConfig(sst, sd string) *protos.NetworkSliceResponse {
-
 	var rsp protos.NetworkSliceResponse
 
 	rsp.NetworkSlice = make([]*protos.NetworkSlice, 0)
@@ -79,11 +70,9 @@ func makeDummyConfig(sst, sd string) *protos.NetworkSliceResponse {
 	rsp.NetworkSlice = append(rsp.NetworkSlice, &ns)
 
 	return &rsp
-
 }
 
 func TestCompareSliceConfigIdentical(t *testing.T) {
-
 	sNssai1 := models.Snssai{Sst: 1, Sd: "010203"}
 
 	sNssai2 := models.Snssai{Sst: 1, Sd: "010203"}
@@ -111,33 +100,23 @@ func TestCompareSliceConfigIdentical(t *testing.T) {
 	match, add, mod, del := compareNetworkSlices(slice1, slice2)
 
 	if !match {
-
 		t.Errorf("Expected NetworkSlice configurations to be different, but they were identical")
-
 	}
 
 	if len(add) != 0 {
-
 		t.Errorf("Expected 0 NetworkSlices to be added, but got %d", len(add))
-
 	}
 
 	if len(mod) != 0 {
-
 		t.Errorf("Expected 0 NetworkSlices to be modified, but got %d", len(mod))
-
 	}
 
 	if len(del) != 0 {
-
 		t.Errorf("Expected 0 NetworkSlices to be deleted, but got %d", len(del))
-
 	}
-
 }
 
 func TestCompareSliceConfigDifferent(t *testing.T) {
-
 	sNssai1 := models.Snssai{Sst: 1, Sd: "010203"}
 
 	sNssai2 := models.Snssai{Sst: 1, Sd: "010204"}
@@ -165,33 +144,23 @@ func TestCompareSliceConfigDifferent(t *testing.T) {
 	match, add, mod, del := compareNetworkSlices(slice1, slice2)
 
 	if match {
-
 		t.Errorf("Expected NetworkSlice configurations to be different, but they were identical")
-
 	}
 
 	if len(add) != 1 {
-
 		t.Errorf("Expected 1 NetworkSlice to be added, but got %d", len(add))
-
 	}
 
 	if len(mod) != 0 {
-
 		t.Errorf("Expected 1 NetworkSlice to be modified, but got %d", len(mod))
-
 	}
 
 	if len(del) != 1 {
-
 		t.Errorf("Expected 1 NetworkSlice to be deleted, but got %d", len(del))
-
 	}
-
 }
 
 func TestCompareSliceConfigModified(t *testing.T) {
-
 	sNssai1 := models.Snssai{Sst: 1, Sd: "010203"}
 
 	sNssai2 := models.Snssai{Sst: 1, Sd: "010203"}
@@ -211,35 +180,24 @@ func TestCompareSliceConfigModified(t *testing.T) {
 	match, add, mod, del := compareNetworkSlices(slice1, slice2)
 
 	if match {
-
 		t.Errorf("Expected NetworkSlice configurations to be different, but they were identical")
-
 	}
 
 	if len(add) != 0 {
-
 		t.Errorf("Expected 0 NetworkSlices to be added, but got %d", len(add))
-
 	}
 
 	if len(mod) != 1 {
-
 		t.Errorf("Expected 1 NetworkSlice to be modified, but got %d", len(mod))
-
 	}
 
 	if len(del) != 0 {
-
 		t.Errorf("Expected 0 NetworkSlices to be deleted, but got %d", len(del))
-
 	}
-
 }
 
 func TestCompareUPNodesConfigs(t *testing.T) {
-
 	u1 := UPNode{
-
 		Type: "UPF",
 
 		NodeID: "u1.abc.def.com",
@@ -273,7 +231,6 @@ func TestCompareUPNodesConfigs(t *testing.T) {
 	u1.SNssaiInfos = []models.SnssaiUpfInfoItem{sn1, sn2}
 
 	u2 := UPNode{
-
 		Type: "UPF",
 
 		NodeID: "u2.abc.def.com",
@@ -315,35 +272,24 @@ func TestCompareUPNodesConfigs(t *testing.T) {
 	match, add, mod, del := compareUPNodesConfigs(up1, up2)
 
 	if match {
-
 		t.Errorf("Expected UPNode configurations to be different, but they were identical")
-
 	}
 
 	if len(add) != 1 {
-
 		t.Errorf("Expected 1 UPNode to be added, but got %d", len(add))
-
 	}
 
 	if len(mod) != 0 {
-
 		t.Errorf("Expected 0 UPNodes to be modified, but got %d", len(mod))
-
 	}
 
 	if len(del) != 1 {
-
 		t.Errorf("Expected 1 UPNode to be deleted, but got %d", len(del))
-
 	}
-
 }
 
 func TestCompareUPNodesConfigsIdentical(t *testing.T) {
-
 	u1 := UPNode{
-
 		Type: "UPF",
 
 		NodeID: "u1.abc.def.com",
@@ -354,7 +300,6 @@ func TestCompareUPNodesConfigsIdentical(t *testing.T) {
 	}
 
 	u2 := UPNode{
-
 		Type: "UPF",
 
 		NodeID: "u1.abc.def.com",
@@ -389,35 +334,24 @@ func TestCompareUPNodesConfigsIdentical(t *testing.T) {
 	match, add, mod, del := compareUPNodesConfigs(up1, up2)
 
 	if !match {
-
 		t.Errorf("Expected UPNode configurations to be identical, but they were not")
-
 	}
 
 	if len(add) != 0 {
-
 		t.Errorf("Expected 0 UPNodes to be added, but got %d", len(add))
-
 	}
 
 	if len(mod) != 0 {
-
 		t.Errorf("Expected 0 UPNodes to be modified, but got %d", len(mod))
-
 	}
 
 	if len(del) != 0 {
-
 		t.Errorf("Expected 0 UPNodes to be deleted, but got %d", len(del))
-
 	}
-
 }
 
 func TestCompareUPNodesConfigsDifferentDNN(t *testing.T) {
-
 	u1 := UPNode{
-
 		Type: "UPF",
 
 		NodeID: "u1.abc.def.com",
@@ -428,7 +362,6 @@ func TestCompareUPNodesConfigsDifferentDNN(t *testing.T) {
 	}
 
 	u2 := UPNode{
-
 		Type: "UPF",
 
 		NodeID: "u1.abc.def.com",
@@ -463,33 +396,23 @@ func TestCompareUPNodesConfigsDifferentDNN(t *testing.T) {
 	match, add, mod, del := compareUPNodesConfigs(up1, up2)
 
 	if match {
-
 		t.Errorf("Expected UPNode configurations to be different, but they were identical")
-
 	}
 
 	if len(add) != 0 {
-
 		t.Errorf("Expected 0 UPNodes to be added, but got %d", len(add))
-
 	}
 
 	if len(mod) != 1 {
-
 		t.Errorf("Expected 1 UPNode to be modified, but got %d", len(mod))
-
 	}
 
 	if len(del) != 0 {
-
 		t.Errorf("Expected 0 UPNodes to be deleted, but got %d", len(del))
-
 	}
-
 }
 
 func TestCompareGenericSlicesDifferent1(t *testing.T) {
-
 	l1 := UPLink{A: "gnb", B: "upf1"}
 
 	l2 := UPLink{A: "gnb", B: "upf2"}
@@ -501,115 +424,81 @@ func TestCompareGenericSlicesDifferent1(t *testing.T) {
 	match, addLinksInterface, delLinksInterface := compareGenericSlices([]UPLink{l1, l2}, []UPLink{l3, l4}, compareUPLinks)
 
 	if match {
-
 		t.Errorf("Expected GenericSlice configurations to be different, but they were identical")
-
 	}
 
 	addLinks, ok := addLinksInterface.([]UPLink)
 
 	if !ok {
-
 		t.Fatalf("Expected addLinks to be of type []UPLink, but it was not")
-
 	}
 
 	if len(addLinks) != 2 {
-
 		t.Errorf("Expected 2 GenericSlices to be added, but got %d", len(addLinks))
-
 	}
 
 	if addLinks[0].A != GNB || addLinks[0].B != "upf3" {
-
 		t.Errorf("Expected GenericSlice to be added, but got %v", addLinks[0])
-
 	}
 
 	if addLinks[1].A != GNB || addLinks[1].B != "upf4" {
-
 		t.Errorf("Expected GenericSlice to be added, but got %v", addLinks[1])
-
 	}
 
 	delLinks, ok := delLinksInterface.([]UPLink)
 
 	if !ok {
-
 		t.Fatalf("Expected delLinks to be of type []UPLink, but it was not")
-
 	}
 
 	if len(delLinks) != 2 {
-
 		t.Errorf("Expected 2 GenericSlices to be deleted, but got %d", len(delLinks))
-
 	}
 
 	if delLinks[0].A != GNB || delLinks[0].B != "upf1" {
-
 		t.Errorf("Expected GenericSlice to be deleted, but got %v", delLinks[0])
-
 	}
 
 	if delLinks[1].A != GNB || delLinks[1].B != "upf2" {
-
 		t.Errorf("Expected GenericSlice to be deleted, but got %v", delLinks[1])
-
 	}
-
 }
 
 func TestCompareGenericSlicesDifferent2(t *testing.T) {
-
 	l1 := UPLink{A: "gnb", B: "upf1"}
 
 	match, addLinksInterface, delLinksInterface := compareGenericSlices([]UPLink{}, []UPLink{l1}, compareUPLinks)
 
 	if match {
-
 		t.Errorf("Expected GenericSlice configurations to be different, but they were identical")
-
 	}
 
 	addLinks, ok := addLinksInterface.([]UPLink)
 
 	if !ok {
-
 		t.Fatalf("Expected addLinks to be of type []UPLink, but it was not")
-
 	}
 
 	if len(addLinks) != 1 {
-
 		t.Errorf("Expected 2 GenericSlices to be added, but got %d", len(addLinks))
-
 	}
 
 	if addLinks[0].A != GNB || addLinks[0].B != "upf1" {
-
 		t.Errorf("Expected GenericSlice to be added, but got %v", addLinks[0])
-
 	}
 
 	delLinks, ok := delLinksInterface.([]UPLink)
 
 	if !ok {
-
 		t.Fatalf("Expected delLinks to be of type []UPLink, but it was not")
-
 	}
 
 	if len(delLinks) != 0 {
-
 		t.Errorf("Expected 0 GenericSlices to be deleted, but got %d", len(delLinks))
-
 	}
-
 }
 
 func TestCompareGenericSlicesIdentical(t *testing.T) {
-
 	l1 := UPLink{A: "gnb", B: "upf1"}
 
 	l2 := UPLink{A: "gnb", B: "upf2"}
@@ -621,67 +510,46 @@ func TestCompareGenericSlicesIdentical(t *testing.T) {
 	match, addLinksInterface, delLinksInterface := compareGenericSlices([]UPLink{l1, l2}, []UPLink{l3, l4}, compareUPLinks)
 
 	if !match {
-
 		t.Errorf("Expected GenericSlice configurations to be identical, but they were not")
-
 	}
 
 	addLinks, ok := addLinksInterface.([]UPLink)
 
 	if !ok {
-
 		t.Fatalf("Expected addLinks to be of type []UPLink, but it was not")
-
 	}
 
 	if len(addLinks) != 0 {
-
 		t.Errorf("Expected 0 GenericSlices to be added, but got %d", len(addLinks))
-
 	}
 
 	delLinks, ok := delLinksInterface.([]UPLink)
 
 	if !ok {
-
 		t.Fatalf("Expected delLinks to be of type []UPLink, but it was not")
-
 	}
 
 	if len(delLinks) != 0 {
-
 		t.Errorf("Expected 0 GenericSlices to be deleted, but got %d", len(delLinks))
-
 	}
-
 }
 
 func TestKafkaEnabledByDefault(t *testing.T) {
-
 	err := InitConfigFactory("../config/smfcfg.yaml")
-
 	if err != nil {
-
 		t.Errorf("Could not load default configuration file: %v", err)
-
 	}
 
 	if !*SmfConfig.Configuration.KafkaInfo.EnableKafka {
-
 		t.Errorf("Expected Kafka to be enabled by default, was disabled")
-
 	}
-
 }
 
 // Webui URL is not set then default Webui URL value is returned
 
 func TestGetDefaultWebuiUrl(t *testing.T) {
-
 	if err := InitConfigFactory("../config/smfcfg.yaml"); err != nil {
-
 		t.Logf("error in InitConfigFactory: %v", err)
-
 	}
 
 	got := SmfConfig.Configuration.WebuiUri
@@ -689,17 +557,13 @@ func TestGetDefaultWebuiUrl(t *testing.T) {
 	want := "webui:9876"
 
 	assert.Equal(t, got, want, "The webui URL is not correct.")
-
 }
 
 // Webui URL is set to a custom value then custom Webui URL is returned
 
 func TestGetCustomWebuiUrl(t *testing.T) {
-
 	if err := InitConfigFactory("../config/smfcfg_with_custom_webui_url.yaml"); err != nil {
-
 		t.Logf("error in InitConfigFactory: %v", err)
-
 	}
 
 	got := SmfConfig.Configuration.WebuiUri
@@ -707,5 +571,4 @@ func TestGetCustomWebuiUrl(t *testing.T) {
 	want := "myspecialwebui:9872"
 
 	assert.Equal(t, got, want, "The webui URL is not correct.")
-
 }

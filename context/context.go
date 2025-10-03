@@ -30,11 +30,9 @@ import (
 )
 
 func init() {
-
 	smfContext.NfInstanceID = uuid.New().String()
 
 	metrics.SetNfInstanceId(smfContext.NfInstanceID)
-
 }
 
 const (
@@ -124,33 +122,23 @@ type SMFContext struct {
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
 
 func RetrieveDnnInformation(Snssai models.Snssai, dnn string) *SnssaiSmfDnnInfo {
-
 	for _, snssaiInfo := range SMF_Self().SnssaiInfos {
-
 		if snssaiInfo.Snssai.Sst == Snssai.Sst && snssaiInfo.Snssai.Sd == Snssai.Sd {
-
 			return snssaiInfo.DnnInfos[dnn]
-
 		}
-
 	}
 
 	return nil
-
 }
 
 func AllocateLocalSEID() (uint64, error) {
-
 	if factory.SmfConfig.Configuration.EnableDbStore {
 
 		if smfContext.DrsmCtxts.SeidPool == nil {
-
 			return 0, fmt.Errorf("SEID pool is not initialized")
-
 		}
 
 		seid32, err := smfContext.DrsmCtxts.SeidPool.AllocateInt32ID()
-
 		if err != nil {
 
 			logger.CtxLog.Errorf("allocate SEID error: %+v", err)
@@ -168,17 +156,14 @@ func AllocateLocalSEID() (uint64, error) {
 		return smfContext.LocalSEIDCount, nil
 
 	}
-
 }
 
 func ReleaseLocalSEID(seid uint64) error {
-
 	if factory.SmfConfig.Configuration.EnableDbStore {
 
 		seid32 := (int32)(seid)
 
 		err := smfContext.DrsmCtxts.SeidPool.ReleaseInt32ID(seid32)
-
 		if err != nil {
 
 			logger.CtxLog.Errorf("allocate SEID error: %+v", err)
@@ -190,11 +175,9 @@ func ReleaseLocalSEID(seid uint64) error {
 	}
 
 	return nil
-
 }
 
 func InitSmfContext(config *factory.Config) *SMFContext {
-
 	if config == nil {
 
 		logger.CtxLog.Error("Config is nil")
@@ -216,9 +199,7 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	configuration := config.Configuration
 
 	if configuration.SmfName != "" {
-
 		smfContext.Name = configuration.SmfName
-
 	}
 
 	// copy static UE IP Addr config
@@ -260,23 +241,17 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 		}
 
 		if sbi.Port != 0 {
-
 			smfContext.SBIPort = sbi.Port
-
 		}
 
 		if tls := sbi.TLS; tls != nil {
 
 			if tls.Key != "" {
-
 				smfContext.Key = tls.Key
-
 			}
 
 			if tls.PEM != "" {
-
 				smfContext.PEM = tls.PEM
-
 			}
 
 		}
@@ -284,9 +259,7 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 		smfContext.BindingIPv4 = os.Getenv(sbi.BindingIPv4)
 
 		if smfContext.BindingIPv4 != "" {
-
 			logger.CtxLog.Info("Parsing ServerIPv4 address from ENV Variable.")
-
 		} else {
 
 			smfContext.BindingIPv4 = sbi.BindingIPv4
@@ -304,9 +277,7 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	}
 
 	if configuration.NrfUri != "" {
-
 		smfContext.NrfUri = configuration.NrfUri
-
 	} else {
 
 		logger.CtxLog.Warn("NRF Uri is empty! Using localhost as NRF IPv4 address.")
@@ -318,9 +289,7 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	if pfcp := configuration.PFCP; pfcp != nil {
 
 		if pfcp.Port == 0 {
-
 			pfcp.Port = factory.DEFAULT_PFCP_PORT
-
 		}
 
 		pfcpAddrEnv := os.Getenv(pfcp.Addr)
@@ -342,11 +311,8 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 		}
 
 		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", pfcp.Addr, pfcp.Port))
-
 		if err != nil {
-
 			logger.CtxLog.Warnf("PFCP Parse Addr Fail: %v", err)
-
 		}
 
 		smfContext.PFCPPort = int(pfcp.Port)
@@ -362,11 +328,8 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	for _, snssaiInfoConfig := range configuration.SNssaiInfo {
 
 		err := smfContext.insertSmfNssaiInfo(&snssaiInfoConfig)
-
 		if err != nil {
-
 			logger.CtxLog.Warnln(err)
-
 		}
 
 	}
@@ -394,17 +357,11 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	smfContext.EnableNrfCaching = configuration.EnableNrfCaching
 
 	if configuration.EnableNrfCaching {
-
 		if configuration.NrfCacheEvictionInterval == 0 {
-
 			smfContext.NrfCacheEvictionInterval = time.Duration(900) // 15 mins
-
 		} else {
-
 			smfContext.NrfCacheEvictionInterval = time.Duration(configuration.NrfCacheEvictionInterval)
-
 		}
-
 	}
 
 	smfContext.PCSCFInfo = PCSCFInfo(configuration.PCSCFInfo)
@@ -418,15 +375,11 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	SetupNFProfile(config)
 
 	return &smfContext
-
 }
 
 func InitSMFUERouting(routingConfig *factory.RoutingConfig) {
-
 	if !smfContext.ULCLSupport {
-
 		return
-
 	}
 
 	if routingConfig == nil {
@@ -450,7 +403,6 @@ func InitSMFUERouting(routingConfig *factory.RoutingConfig) {
 		supi := routingInfo.SUPI
 
 		uePreConfigPaths, err := NewUEPreConfigPaths(supi, routingInfo.PathList)
-
 		if err != nil {
 
 			logger.CtxLog.Warnln(err)
@@ -462,23 +414,17 @@ func InitSMFUERouting(routingConfig *factory.RoutingConfig) {
 		smfContext.UEPreConfigPathPool[supi] = uePreConfigPaths
 
 	}
-
 }
 
 func SMF_Self() *SMFContext {
-
 	return &smfContext
-
 }
 
 func GetUserPlaneInformation() *UserPlaneInformation {
-
 	return smfContext.UserPlaneInformation
-
 }
 
 func ProcessConfigUpdate() bool {
-
 	logger.CtxLog.Infof("Dynamic config update received [%+v]", factory.UpdatedSmfConfig)
 
 	sendNrfRegistration := false
@@ -494,11 +440,8 @@ func ProcessConfigUpdate() bool {
 		for _, slice := range *updatedCfg.DelSNssaiInfo {
 
 			err := SMF_Self().deleteSmfNssaiInfo(&slice)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("delete network slice [%v] failed: %v", slice, err)
-
 			}
 
 		}
@@ -514,11 +457,8 @@ func ProcessConfigUpdate() bool {
 		for _, slice := range *updatedCfg.AddSNssaiInfo {
 
 			err := SMF_Self().insertSmfNssaiInfo(&slice)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("insert network slice [%v] failed: %v", slice, err)
-
 			}
 
 		}
@@ -534,11 +474,8 @@ func ProcessConfigUpdate() bool {
 		for _, slice := range *updatedCfg.ModSNssaiInfo {
 
 			err := SMF_Self().updateSmfNssaiInfo(&slice)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("update network slice [%v] failed: %v", slice, err)
-
 			}
 
 		}
@@ -556,11 +493,8 @@ func ProcessConfigUpdate() bool {
 		for _, link := range *updatedCfg.DelLinks {
 
 			err := GetUserPlaneInformation().DeleteUPNodeLinks(&link)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("delete UP Node Links failed: %v", err)
-
 			}
 
 		}
@@ -576,11 +510,8 @@ func ProcessConfigUpdate() bool {
 		for name, upf := range *updatedCfg.DelUPNodes {
 
 			err := GetUserPlaneInformation().DeleteSmfUserPlaneNode(name, &upf)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("delete UP Node [%s] failed: %v", name, err)
-
 			}
 
 		}
@@ -594,11 +525,8 @@ func ProcessConfigUpdate() bool {
 		for name, upf := range *updatedCfg.AddUPNodes {
 
 			err := GetUserPlaneInformation().InsertSmfUserPlaneNode(name, &upf)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("insert UP Node [%s] failed: %v", name, err)
-
 			}
 
 		}
@@ -616,11 +544,8 @@ func ProcessConfigUpdate() bool {
 		for name, upf := range *updatedCfg.ModUPNodes {
 
 			err := GetUserPlaneInformation().UpdateSmfUserPlaneNode(name, &upf)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("update UP Node [%s] failed: %v", name, err)
-
 			}
 
 		}
@@ -638,11 +563,8 @@ func ProcessConfigUpdate() bool {
 		for _, link := range *updatedCfg.AddLinks {
 
 			err := GetUserPlaneInformation().InsertUPNodeLinks(&link)
-
 			if err != nil {
-
 				logger.CtxLog.Errorf("insert UP Node Links failed: %v", err)
-
 			}
 
 		}
@@ -664,17 +586,13 @@ func ProcessConfigUpdate() bool {
 	// Send NRF Re-register if Slice info got updated
 
 	if sendNrfRegistration {
-
 		SetupNFProfile(&factory.SmfConfig)
-
 	}
 
 	return sendNrfRegistration
-
 }
 
 func (smfCtxt *SMFContext) InitDrsm() error {
-
 	podname := os.Getenv("HOSTNAME")
 
 	podip := os.Getenv("POD_IP")
@@ -686,15 +604,11 @@ func (smfCtxt *SMFContext) InitDrsm() error {
 	dbUrl := "mongodb://mongodb-arbiter-headless"
 
 	if factory.SmfConfig.Configuration.Mongodb.Url != "" {
-
 		dbUrl = factory.SmfConfig.Configuration.Mongodb.Url
-
 	}
 
 	if factory.SmfConfig.Configuration.SmfDbName != "" {
-
 		dbName = factory.SmfConfig.Configuration.SmfDbName
-
 	}
 
 	logger.CfgLog.Infof("initialising drsm name [%v]", dbName)
@@ -706,13 +620,9 @@ func (smfCtxt *SMFContext) InitDrsm() error {
 	// for local FSEID
 
 	if drsmCtxt, err := drsm.InitDRSM("fseid", podId, db, opt); err == nil {
-
 		smfCtxt.DrsmCtxts.SeidPool = drsmCtxt
-
 	} else {
-
 		return err
-
 	}
 
 	// for IP-Addr
@@ -720,13 +630,10 @@ func (smfCtxt *SMFContext) InitDrsm() error {
 	// TODO, use UPF based allocation for now
 
 	return nil
-
 }
 
 func (smfCtxt *SMFContext) GetDnnStaticIpInfo(dnn string) *factory.StaticIpInfo {
-
 	for _, info := range *smfCtxt.StaticIpInfo {
-
 		if info.Dnn == dnn {
 
 			logger.CfgLog.Debugf("get static ip info for dnn [%s] found [%v]", dnn, info)
@@ -734,9 +641,7 @@ func (smfCtxt *SMFContext) GetDnnStaticIpInfo(dnn string) *factory.StaticIpInfo 
 			return &info
 
 		}
-
 	}
 
 	return nil
-
 }

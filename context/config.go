@@ -17,19 +17,14 @@ import (
 )
 
 func SetupSMFContext(config *factory.Config) error {
-
 	return nil
-
 }
 
 func (c *SMFContext) insertSmfNssaiInfo(snssaiInfoConfig *factory.SnssaiInfoItem) error {
-
 	logger.InitLog.Infof("Network Slices to be inserted [%v] ", factory.PrettyPrintNetworkSlices([]factory.SnssaiInfoItem{*snssaiInfoConfig}))
 
 	if smfContext.SnssaiInfos == nil {
-
 		c.SnssaiInfos = make([]SnssaiSmfInfo, 0)
-
 	}
 
 	// Check if prev slice with same sst+sd exist
@@ -39,11 +34,8 @@ func (c *SMFContext) insertSmfNssaiInfo(snssaiInfoConfig *factory.SnssaiInfoItem
 		logger.InitLog.Errorf("network slice [%v] already exist, deleting", factory.PrettyPrintNetworkSlices([]factory.SnssaiInfoItem{*snssaiInfoConfig}))
 
 		err := c.deleteSmfNssaiInfo(snssaiInfoConfig)
-
 		if err != nil {
-
 			return fmt.Errorf("network slice delete error %v", err)
-
 		}
 
 	}
@@ -51,7 +43,6 @@ func (c *SMFContext) insertSmfNssaiInfo(snssaiInfoConfig *factory.SnssaiInfoItem
 	snssaiInfo := SnssaiSmfInfo{}
 
 	snssaiInfo.Snssai = SNssai{
-
 		Sst: snssaiInfoConfig.SNssai.Sst,
 
 		Sd: snssaiInfoConfig.SNssai.Sd,
@@ -80,21 +71,15 @@ func (c *SMFContext) insertSmfNssaiInfo(snssaiInfoConfig *factory.SnssaiInfoItem
 			continue
 
 		} else {
-
 			dnnInfo.UeIPAllocator = allocator
-
 		}
 
 		if dnnInfoConfig.MTU != 0 {
-
 			dnnInfo.MTU = dnnInfoConfig.MTU
-
 		} else {
-
 			// Adding default MTU value, if nothing is set in config file.
 
 			dnnInfo.MTU = 1400
-
 		}
 
 		// block static IPs for this DNN if any
@@ -114,37 +99,28 @@ func (c *SMFContext) insertSmfNssaiInfo(snssaiInfoConfig *factory.SnssaiInfoItem
 	c.SnssaiInfos = append(c.SnssaiInfos, snssaiInfo)
 
 	return nil
-
 }
 
 func (c *SMFContext) updateSmfNssaiInfo(modSliceInfo *factory.SnssaiInfoItem) error {
-
 	// identify slices to be updated
 
 	logger.InitLog.Infof("Network Slices to be modified [%v] ", factory.PrettyPrintNetworkSlices([]factory.SnssaiInfoItem{*modSliceInfo}))
 
 	if err := c.deleteSmfNssaiInfo(modSliceInfo); err != nil {
-
 		return fmt.Errorf("network slice delete error %v", err)
-
 	}
 
 	if err := c.insertSmfNssaiInfo(modSliceInfo); err != nil {
-
 		return fmt.Errorf("network slice insert error %v", err)
-
 	}
 
 	return nil
-
 }
 
 func (c *SMFContext) deleteSmfNssaiInfo(delSliceInfo *factory.SnssaiInfoItem) error {
-
 	logger.InitLog.Infof("Network Slices to be deleted [%v] ", factory.PrettyPrintNetworkSlices([]factory.SnssaiInfoItem{*delSliceInfo}))
 
 	for index, slice := range c.SnssaiInfos {
-
 		if slice.Snssai.Sd == delSliceInfo.SNssai.Sd && slice.Snssai.Sst == delSliceInfo.SNssai.Sst {
 
 			// Remove the desired slice
@@ -156,7 +132,6 @@ func (c *SMFContext) deleteSmfNssaiInfo(delSliceInfo *factory.SnssaiInfoItem) er
 			return nil
 
 		}
-
 	}
 
 	err := fmt.Errorf("network slice [%v] to be deleted not found", factory.PrettyPrintNetworkSlices([]factory.SnssaiInfoItem{*delSliceInfo}))
@@ -164,21 +139,14 @@ func (c *SMFContext) deleteSmfNssaiInfo(delSliceInfo *factory.SnssaiInfoItem) er
 	logger.InitLog.Errorf("%v", err.Error())
 
 	return err
-
 }
 
 func (c *SMFContext) getSmfNssaiInfo(sst int32, sd string) *SnssaiSmfInfo {
-
 	for _, slice := range c.SnssaiInfos {
-
 		if slice.Snssai.Sd == sd && slice.Snssai.Sst == sst {
-
 			return &slice
-
 		}
-
 	}
 
 	return nil
-
 }

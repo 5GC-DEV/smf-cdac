@@ -13,7 +13,6 @@ import (
 )
 
 func HTTPGetUEPDUSessionInfo(c *gin.Context) {
-
 	req := httpwrapper.NewRequest(c.Request, nil)
 
 	req.Params["smContextRef"] = c.Params.ByName("smContextRef")
@@ -23,5 +22,4 @@ func HTTPGetUEPDUSessionInfo(c *gin.Context) {
 	HTTPResponse := producer.HandleOAMGetUEPDUSessionInfo(smContextRef)
 
 	c.JSON(HTTPResponse.Status, HTTPResponse.Body)
-
 }

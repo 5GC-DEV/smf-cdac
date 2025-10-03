@@ -91,31 +91,24 @@ const (
 )
 
 func init() {
-
 }
 
 func incSMContextActive() uint64 {
-
 	atomic.AddUint64(&smContextActive, 1)
 
 	return smContextActive
-
 }
 
 func decSMContextActive() uint64 {
-
 	atomic.AddUint64(&smContextActive, ^uint64(0))
 
 	return smContextActive
-
 }
 
 func GetSMContextCount() uint64 {
-
 	atomic.AddUint64(&smContextCount, 1)
 
 	return smContextCount
-
 }
 
 type UeIpAddr struct {
@@ -267,13 +260,10 @@ type SMContext struct {
 }
 
 func canonicalName(identifier string, pduSessID int32) (canonical string) {
-
 	return fmt.Sprintf("%s-%d", identifier, pduSessID)
-
 }
 
 func ResolveRef(identifier string, pduSessID int32) (ref string, err error) {
-
 	if value, ok := canonicalRef.Load(canonicalName(identifier, pduSessID)); ok {
 
 		ref = value.(string)
@@ -290,12 +280,10 @@ func ResolveRef(identifier string, pduSessID int32) (ref string, err error) {
 
 	}
 
-	return
-
+	return ref, err
 }
 
 func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
-
 	smContext = new(SMContext)
 
 	// Create Ref and identifier
@@ -323,7 +311,6 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	smContext.SmPolicyData.Initialize()
 
 	smContext.ProtocolConfigurationOptions = &ProtocolConfigurationOptions{
-
 		DNSIPv4Request: false,
 
 		DNSIPv6Request: false,
@@ -340,11 +327,9 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	smContext.initLogTags()
 
 	return smContext
-
 }
 
 func (smContext *SMContext) initLogTags() {
-
 	smContext.SubPfcpLog = logger.PfcpLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
 
 	smContext.SubCtxLog = logger.CtxLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
@@ -358,11 +343,9 @@ func (smContext *SMContext) initLogTags() {
 	smContext.SubFsmLog = logger.FsmLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
 
 	smContext.SubQosLog = logger.QosLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
-
 }
 
 func (smContext *SMContext) ChangeState(nextState SMContextState) {
-
 	// Update Subscriber profile Metrics
 
 	if nextState == SmStateActive || smContext.SMContextState == SmStateActive {
@@ -370,7 +353,6 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 		var upf string
 
 		if smContext.Tunnel != nil {
-
 			// Set UPF FQDN name if provided else IP-address
 
 			if smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdType == NodeIdTypeFqdn {
@@ -388,11 +370,8 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 				smContext.SubCtxLog.Infof("Resolved UPF Node IP: %s", upf)
 
 			}
-
 		} else {
-
 			smContext.SubCtxLog.Warn("No UPF tunnel available while changing state")
-
 		}
 
 		// enterprise name
@@ -416,15 +395,11 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 				smContext.SubCtxLog.Infof("Mapped enterprise for key [%s]: %s", entKey, ent)
 
 			} else {
-
 				smContext.SubCtxLog.Warnf("No enterprise mapping found for key [%s], defaulting to 'na'", entKey)
-
 			}
 
 		} else {
-
 			smContext.SubCtxLog.Debug("Enterprise info not available")
-
 		}
 
 		// metrics update
@@ -462,47 +437,35 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 		smContext.SMContextState.String(), nextState.String())
 
 	smContext.SMContextState = nextState
-
 }
 
 // *** add unit test ***//
 
 func GetSMContext(ref string) (smContext *SMContext) {
-
 	if value, ok := smContextPool.Load(ref); ok {
-
 		smContext = value.(*SMContext)
-
 	} else {
-
 		if factory.SmfConfig.Configuration.EnableDbStore {
 
 			smContext := GetSMContextByRefInDB(ref)
 
 			if smContext != nil {
-
 				smContextPool.Store(ref, smContext)
-
 			}
 
 		}
-
 	}
 
-	return
-
+	return smContext
 }
 
 // *** add unit test ***//
 
 func RemoveSMContext(ref string) {
-
 	var smContext *SMContext
 
 	if value, ok := smContextPool.Load(ref); ok {
-
 		smContext = value.(*SMContext)
-
 	}
 
 	smContext.SubCtxLog.Infof("RemoveSMContext, SM context released ")
@@ -514,9 +477,7 @@ func RemoveSMContext(ref string) {
 		seidSMContextMap.Delete(pfcpSessionContext.LocalSEID)
 
 		if factory.SmfConfig.Configuration.EnableDbStore {
-
 			DeleteSmContextInDBBySEID(pfcpSessionContext.LocalSEID)
-
 		}
 
 	}
@@ -524,11 +485,8 @@ func RemoveSMContext(ref string) {
 	// Release UE IP-Address
 
 	err := smContext.ReleaseUeIpAddr()
-
 	if err != nil {
-
 		smContext.SubCtxLog.Errorf("release UE IP-Address failed, %v", err)
-
 	}
 
 	smContextPool.Delete(ref)
@@ -542,37 +500,25 @@ func RemoveSMContext(ref string) {
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 
 	if factory.SmfConfig.Configuration.EnableDbStore {
-
 		DeleteSmContextInDBByRef(smContext.Ref)
-
 	}
-
 }
 
 // *** add unit test ***//
 
 func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
-
 	if value, ok := seidSMContextMap.Load(SEID); ok {
-
 		smContext = value.(*SMContext)
-
 	} else {
-
 		if factory.SmfConfig.Configuration.EnableDbStore {
-
 			smContext = GetSMContextBySEIDInDB(SEID)
-
 		}
-
 	}
 
-	return
-
+	return smContext
 }
 
 func (smContext *SMContext) ReleaseUeIpAddr() error {
-
 	if ip := smContext.PDUAddress.Ip; ip != nil && !smContext.PDUAddress.UpfProvided {
 
 		smContext.SubPduSessLog.Infof("Release IP[%s]", smContext.PDUAddress.Ip.String())
@@ -584,13 +530,11 @@ func (smContext *SMContext) ReleaseUeIpAddr() error {
 	}
 
 	return nil
-
 }
 
 // *** add unit test ***//
 
 func (smContext *SMContext) SetCreateData(createData *models.SmContextCreateData) {
-
 	smContext.Gpsi = createData.Gpsi
 
 	smContext.Supi = createData.Supi
@@ -618,21 +562,17 @@ func (smContext *SMContext) SetCreateData(createData *models.SmContextCreateData
 	smContext.OldPduSessionId = createData.OldPduSessionId
 
 	smContext.ServingNfId = createData.ServingNfId
-
 }
 
 func (smContext *SMContext) BuildCreatedData() (createdData *models.SmContextCreatedData) {
-
 	createdData = new(models.SmContextCreatedData)
 
 	createdData.SNssai = smContext.Snssai
 
-	return
-
+	return createdData
 }
 
 func (smContext *SMContext) PDUAddressToNAS() (addr [12]byte, addrLen uint8) {
-
 	copy(addr[:], smContext.PDUAddress.Ip)
 
 	switch smContext.SelectedPDUSessionType {
@@ -649,14 +589,12 @@ func (smContext *SMContext) PDUAddressToNAS() (addr [12]byte, addrLen uint8) {
 
 	}
 
-	return
-
+	return addr, addrLen
 }
 
 // PCFSelection will select PCF for this SM Context
 
 func (smContext *SMContext) PCFSelection() error {
-
 	// Send NFDiscovery for find PCF
 
 	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
@@ -670,11 +608,8 @@ func (smContext *SMContext) PCFSelection() error {
 	if SMF_Self().EnableNrfCaching {
 
 		rep, err = nrfCache.SearchNFInstances(SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
-
 		if err != nil {
-
 			return err
-
 		}
 
 	} else {
@@ -683,7 +618,6 @@ func (smContext *SMContext) PCFSelection() error {
 			NFDiscoveryClient.
 			NFInstancesStoreApi.
 			SearchNFInstances(context.TODO(), models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
-
 		if err != nil {
 
 			metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", "Failure", err.Error())
@@ -693,17 +627,12 @@ func (smContext *SMContext) PCFSelection() error {
 		}
 
 		defer func() {
-
 			if rspCloseErr := res.Body.Close(); rspCloseErr != nil {
-
 				logger.PduSessLog.Errorf("SmfEventExposureNotification response body cannot close: %+v", rspCloseErr)
-
 			}
-
 		}()
 
 		if res != nil {
-
 			if status := res.StatusCode; status != http.StatusOK {
 
 				metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", "Failure", "")
@@ -711,7 +640,6 @@ func (smContext *SMContext) PCFSelection() error {
 				logger.CtxLog.Warnf("NFDiscovery PCF return status: %d", status)
 
 			}
-
 		}
 
 		// Select PCF from available PCF
@@ -725,7 +653,6 @@ func (smContext *SMContext) PCFSelection() error {
 	// Create SMPolicyControl Client for this SM Context
 
 	for _, service := range *smContext.SelectedPCFProfile.NfServices {
-
 		if service.ServiceName == models.ServiceName_NPCF_SMPOLICYCONTROL {
 
 			SmPolicyControlConf := Npcf_SMPolicyControl.NewConfiguration()
@@ -735,31 +662,22 @@ func (smContext *SMContext) PCFSelection() error {
 			smContext.SMPolicyClient = Npcf_SMPolicyControl.NewAPIClient(SmPolicyControlConf)
 
 		}
-
 	}
 
 	return nil
-
 }
 
 func (smContext *SMContext) GetNodeIDByLocalSEID(seid uint64) (nodeID NodeID) {
-
 	for _, pfcpCtx := range smContext.PFCPContext {
-
 		if pfcpCtx.LocalSEID == seid {
-
 			nodeID = pfcpCtx.NodeID
-
 		}
-
 	}
 
-	return
-
+	return nodeID
 }
 
 func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
-
 	logger.PduSessLog.Debugln("in AllocateLocalSEIDForDataPath")
 
 	for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
@@ -771,15 +689,11 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 		if _, exist := smContext.PFCPContext[NodeIDtoIP]; !exist {
 
 			allocatedSEID, err := AllocateLocalSEID()
-
 			if err != nil {
-
 				logger.PduSessLog.Errorf("allocateLocalSEID failed, %v", err)
-
 			}
 
 			smContext.PFCPContext[NodeIDtoIP] = &PFCPSessionContext{
-
 				PDRs: make(map[uint16]*PDR),
 
 				NodeID: curDataPathNode.UPF.NodeID,
@@ -800,51 +714,37 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 		}
 
 	}
-
 }
 
 func (smContext *SMContext) PutPDRtoPFCPSession(nodeID NodeID, pdrList map[string]*PDR) error {
-
 	// TODO: Iterate over PDRS
 
 	NodeIDtoIP := nodeID.ResolveNodeIdToIp().String()
 
 	if pfcpSessCtx, exist := smContext.PFCPContext[NodeIDtoIP]; exist {
-
 		for name, pdr := range pdrList {
-
 			pfcpSessCtx.PDRs[pdrList[name].PDRID] = pdr
-
 		}
-
 	} else {
-
 		return fmt.Errorf("error, can't find PFCPContext[%s] to put PDR(%v)", NodeIDtoIP, pdrList)
-
 	}
 
 	return nil
-
 }
 
 func (smContext *SMContext) RemovePDRfromPFCPSession(nodeID NodeID, pdr *PDR) {
-
 	NodeIDtoIP := nodeID.ResolveNodeIdToIp().String()
 
 	pfcpSessCtx := smContext.PFCPContext[NodeIDtoIP]
 
 	delete(pfcpSessCtx.PDRs, pdr.PDRID)
-
 }
 
 func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint8) error {
-
 	dnnPDUSessionType := smContext.DnnConfiguration.PduSessionTypes
 
 	if dnnPDUSessionType == nil {
-
 		return fmt.Errorf("this SMContext[%s] has no subscription pdu session type info", smContext.Ref)
-
 	}
 
 	allowIPv4 := false
@@ -854,7 +754,6 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 	allowEthernet := false
 
 	for _, allowedPDUSessionType := range smContext.DnnConfiguration.PduSessionTypes.AllowedSessionTypes {
-
 		switch allowedPDUSessionType {
 
 		case models.PduSessionType_IPV4:
@@ -876,7 +775,6 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 			allowEthernet = true
 
 		}
-
 	}
 
 	supportedPDUSessionType := SMF_Self().SupportedPDUSessionType
@@ -886,33 +784,25 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 	case "IPv4":
 
 		if !allowIPv4 {
-
 			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
-
 		}
 
 	case "IPv6":
 
 		if !allowIPv6 {
-
 			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
-
 		}
 
 	case "IPv4v6":
 
 		if !allowIPv4 && !allowIPv6 {
-
 			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
-
 		}
 
 	case "Ethernet":
 
 		if !allowEthernet {
-
 			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
-
 		}
 
 	}
@@ -924,33 +814,23 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 	case models.PduSessionType_IPV4:
 
 		if allowIPv4 {
-
 			smContext.SelectedPDUSessionType = nasConvert.ModelsToPDUSessionType(models.PduSessionType_IPV4)
-
 		} else {
-
 			return fmt.Errorf("PduSessionType_IPV4 is not allowed in DNN[%s] configuration", smContext.Dnn)
-
 		}
 
 	case models.PduSessionType_IPV6:
 
 		if allowIPv6 {
-
 			smContext.SelectedPDUSessionType = nasConvert.ModelsToPDUSessionType(models.PduSessionType_IPV6)
-
 		} else {
-
 			return fmt.Errorf("PduSessionType_IPV6 is not allowed in DNN[%s] configuration", smContext.Dnn)
-
 		}
 
 	case models.PduSessionType_IPV4_V6:
 
 		if allowIPv4 && allowIPv6 {
-
 			smContext.SelectedPDUSessionType = nasConvert.ModelsToPDUSessionType(models.PduSessionType_IPV4_V6)
-
 		} else if allowIPv4 {
 
 			smContext.SelectedPDUSessionType = nasConvert.ModelsToPDUSessionType(models.PduSessionType_IPV4)
@@ -964,21 +844,15 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 			smContext.EstAcceptCause5gSMValue = nasMessage.Cause5GSMPDUSessionTypeIPv6OnlyAllowed
 
 		} else {
-
 			return fmt.Errorf("PduSessionType_IPV4_V6 is not allowed in DNN[%s] configuration", smContext.Dnn)
-
 		}
 
 	case models.PduSessionType_ETHERNET:
 
 		if allowEthernet {
-
 			smContext.SelectedPDUSessionType = nasConvert.ModelsToPDUSessionType(models.PduSessionType_ETHERNET)
-
 		} else {
-
 			return fmt.Errorf("PduSessionType_ETHERNET is not allowed in DNN[%s] configuration", smContext.Dnn)
-
 		}
 
 	// Modified to fix the Unstructured Session type
@@ -998,7 +872,6 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 	}
 
 	return nil
-
 }
 
 // SM Policy related operation
@@ -1006,7 +879,6 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 // SelectedSessionRule - return the SMF selected session rule for this SM Context
 
 func (smContext *SMContext) SelectedSessionRule() *models.SessionRule {
-
 	logger.CtxLog.Infof("SelectedSessionRule len(smContext.SmPolicyUpdates): %v", len(smContext.SmPolicyUpdates))
 
 	if len(smContext.SmPolicyUpdates) > 0 {
@@ -1042,11 +914,9 @@ func (smContext *SMContext) SelectedSessionRule() *models.SessionRule {
 	logger.CtxLog.Infof("SelectedSessionRule smContext.SmPolicyData.SmCtxtSessionRules.ActiveRule: %v", smContext.SmPolicyData.SmCtxtSessionRules.ActiveRule)
 
 	return smContext.SmPolicyData.SmCtxtSessionRules.ActiveRule
-
 }
 
 func (smContextState SMContextState) String() string {
-
 	switch smContextState {
 
 	case SmStateInit:
@@ -1090,11 +960,9 @@ func (smContextState SMContextState) String() string {
 		return "Unknown State"
 
 	}
-
 }
 
 func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) *httpwrapper.Response {
-
 	var httpResponse *httpwrapper.Response
 
 	if buf, err := BuildGSMPDUSessionEstablishmentReject(
@@ -1102,36 +970,27 @@ func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) 
 		smContext,
 
 		errors.ErrorCause[cause]); err != nil {
-
 		httpResponse = &httpwrapper.Response{
-
 			Header: nil,
 
 			Status: int(errors.ErrorType[cause].Status),
 
 			Body: models.PostSmContextsErrorResponse{
-
 				JsonData: &models.SmContextCreateError{
-
 					Error: errors.ErrorType[cause],
 
 					N1SmMsg: &models.RefToBinaryData{ContentId: "n1SmMsg"},
 				},
 			},
 		}
-
 	} else {
-
 		httpResponse = &httpwrapper.Response{
-
 			Header: nil,
 
 			Status: int(errors.ErrorType[cause].Status),
 
 			Body: models.PostSmContextsErrorResponse{
-
 				JsonData: &models.SmContextCreateError{
-
 					Error: errors.ErrorType[cause],
 
 					N1SmMsg: &models.RefToBinaryData{ContentId: "n1SmMsg"},
@@ -1140,15 +999,12 @@ func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) 
 				BinaryDataN1SmMessage: buf,
 			},
 		}
-
 	}
 
 	return httpResponse
-
 }
 
 func (smContext *SMContext) CommitSmPolicyDecision(status bool) error {
-
 	// Lock SM context
 
 	smContext.SMLock.Lock()
@@ -1158,11 +1014,8 @@ func (smContext *SMContext) CommitSmPolicyDecision(status bool) error {
 	if status {
 
 		err := qos.CommitSmPolicyDecision(&smContext.SmPolicyData, smContext.SmPolicyUpdates[0])
-
 		if err != nil {
-
 			logger.CtxLog.Errorf("failed to commit SM Policy Decision, %v", err)
-
 		}
 
 	}
@@ -1170,9 +1023,7 @@ func (smContext *SMContext) CommitSmPolicyDecision(status bool) error {
 	// Release 0th index update
 
 	if len(smContext.SmPolicyUpdates) >= 1 {
-
 		smContext.SmPolicyUpdates = smContext.SmPolicyUpdates[1:]
-
 	}
 
 	// Notify PCF of failure ?
@@ -1180,17 +1031,13 @@ func (smContext *SMContext) CommitSmPolicyDecision(status bool) error {
 	// TODO
 
 	return nil
-
 }
 
 func (smContext *SMContext) getSmCtxtUpf() (name, ip string) {
-
 	var upfName, upfIP string
 
 	if smContext.SMContextState == SmStateActive {
-
 		if smContext.Tunnel != nil {
-
 			// Set UPF FQDN name if provided else IP-address
 
 			if smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.NodeID.NodeIdType == NodeIdTypeFqdn {
@@ -1208,23 +1055,17 @@ func (smContext *SMContext) getSmCtxtUpf() (name, ip string) {
 				upfIP = smContext.Tunnel.DataPathPool[1].FirstDPNode.UPF.GetUPFIP()
 
 			}
-
 		}
-
 	}
 
 	return upfName, upfIP
-
 }
 
 // Collect Ctxt info and publish on Kafka stream
 
 func (smContext *SMContext) PublishSmCtxtInfo() {
-
 	if !*factory.SmfConfig.Configuration.KafkaInfo.EnableKafka {
-
 		return
-
 	}
 
 	var op mi.SubscriberOp
@@ -1236,9 +1077,7 @@ func (smContext *SMContext) PublishSmCtxtInfo() {
 	kafkaSmCtxt.Imsi = smContext.Supi
 
 	if smContext.PDUAddress != nil && smContext.PDUAddress.Ip != nil {
-
 		kafkaSmCtxt.IPAddress = smContext.PDUAddress.Ip.String()
-
 	}
 
 	kafkaSmCtxt.SmfSubState, op = mapPduSessStateToMetricStateAndOp(smContext.SMContextState)
@@ -1256,17 +1095,12 @@ func (smContext *SMContext) PublishSmCtxtInfo() {
 	// Send to stream
 
 	err := metrics.GetWriter().PublishPduSessEvent(kafkaSmCtxt, op)
-
 	if err != nil {
-
 		smContext.SubCtxLog.Errorf("failed to publish sm ctxt info on kafka stream: %v", err)
-
 	}
-
 }
 
 func mapPduSessStateToMetricStateAndOp(state SMContextState) (string, mi.SubscriberOp) {
-
 	switch state {
 
 	case SmStateInit:
@@ -1314,5 +1148,4 @@ func mapPduSessStateToMetricStateAndOp(state SMContextState) (string, mi.Subscri
 		return "unknown", mi.SubsOpDel
 
 	}
-
 }

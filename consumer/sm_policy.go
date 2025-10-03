@@ -25,13 +25,10 @@ import (
 // SendSMPolicyAssociationCreate create the session management association to the PCF
 
 func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.SmPolicyDecision, int, error) {
-
 	httpRspStatusCode := http.StatusInternalServerError
 
 	if smContext.SMPolicyClient == nil {
-
 		return nil, httpRspStatusCode, errors.Errorf("smContext not selected PCF")
-
 	}
 
 	smPolicyData := models.SmPolicyContextData{}
@@ -68,7 +65,6 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 	smPolicyData.SliceInfo = smContext.Snssai
 
 	smPolicyData.ServingNetwork = &models.NetworkId{
-
 		Mcc: smContext.ServingNetwork.Mcc,
 
 		Mnc: smContext.ServingNetwork.Mnc,
@@ -82,9 +78,7 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 		DefaultApi.SmPoliciesPost(context.Background(), smPolicyData); err != nil {
 
 		if httpRsp != nil {
-
 			httpRspStatusCode = httpRsp.StatusCode
-
 		}
 
 		return nil, httpRspStatusCode, fmt.Errorf("setup sm policy association failed: %s", err.Error())
@@ -98,23 +92,17 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 	}
 
 	if err := validateSmPolicyDecision(smPolicyDecision); err != nil {
-
 		return nil, httpRspStatusCode, fmt.Errorf("setup sm policy association failed: %s", err.Error())
-
 	}
 
 	return smPolicyDecision, httpRspStatusCode, nil
-
 }
 
 func SendSMPolicyAssociationModify(smContext *smf_context.SMContext) {
-
 	// TODO
-
 }
 
 func SendSMPolicyAssociationDelete(smContext *smf_context.SMContext, smDelReq *models.ReleaseSmContextRequest) (int, error) {
-
 	smPolicyDelData := models.SmPolicyDeleteData{}
 
 	// Populate Policy delete data
@@ -122,7 +110,6 @@ func SendSMPolicyAssociationDelete(smContext *smf_context.SMContext, smDelReq *m
 	// Network Id
 
 	smPolicyDelData.ServingNetwork = &models.NetworkId{
-
 		Mcc: smContext.ServingNetwork.Mcc,
 
 		Mnc: smContext.ServingNetwork.Mnc,
@@ -131,21 +118,15 @@ func SendSMPolicyAssociationDelete(smContext *smf_context.SMContext, smDelReq *m
 	// User location info
 
 	if smDelReq.JsonData.UeLocation != nil {
-
 		smPolicyDelData.UserLocationInfo = smDelReq.JsonData.UeLocation
-
 	} else if smDelReq.JsonData.AddUeLocation != nil {
-
 		smPolicyDelData.UserLocationInfo = smDelReq.JsonData.AddUeLocation
-
 	}
 
 	// UE Time Zone
 
 	if smDelReq.JsonData.UeTimeZone != "" {
-
 		smPolicyDelData.UeTimeZone = smDelReq.JsonData.UeTimeZone
-
 	}
 
 	// RAN/NAS Release Cause
@@ -153,9 +134,7 @@ func SendSMPolicyAssociationDelete(smContext *smf_context.SMContext, smDelReq *m
 	ranNasRelCause := models.RanNasRelCause{}
 
 	if smDelReq.JsonData.NgApCause != nil {
-
 		ranNasRelCause.NgApCause = smDelReq.JsonData.NgApCause
-
 	}
 
 	// MM cause
@@ -182,15 +161,11 @@ func SendSMPolicyAssociationDelete(smContext *smf_context.SMContext, smDelReq *m
 		return 0, err
 
 	} else {
-
 		return httpRsp.StatusCode, nil
-
 	}
-
 }
 
 func validateSmPolicyDecision(smPolicy *models.SmPolicyDecision) error {
-
 	// Validate just presence of important IEs as of now
 
 	// Sess Rules
@@ -216,5 +191,4 @@ func validateSmPolicyDecision(smPolicy *models.SmPolicyDecision) error {
 	}
 
 	return nil
-
 }

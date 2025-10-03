@@ -19,50 +19,39 @@ import (
 )
 
 var configuration = &factory.UserPlaneInformation{
-
 	UPNodes: map[string]factory.UPNode{
-
 		"GNodeB": {
-
 			Type: "AN",
 
 			NodeID: "192.168.179.100",
 		},
 
 		"UPF1": {
-
 			Type: "UPF",
 
 			NodeID: "192.168.179.1",
 
 			SNssaiInfos: []models.SnssaiUpfInfoItem{
-
 				{
-
 					SNssai: &models.Snssai{
-
 						Sst: 1,
 
 						Sd: "112232",
 					},
 
 					DnnUpfInfoList: []models.DnnUpfInfoItem{
-
 						{Dnn: "internet"},
 					},
 				},
 
 				{
-
 					SNssai: &models.Snssai{
-
 						Sst: 1,
 
 						Sd: "112235",
 					},
 
 					DnnUpfInfoList: []models.DnnUpfInfoItem{
-
 						{Dnn: "internet"},
 					},
 				},
@@ -70,24 +59,19 @@ var configuration = &factory.UserPlaneInformation{
 		},
 
 		"UPF2": {
-
 			Type: "UPF",
 
 			NodeID: "192.168.179.2",
 
 			SNssaiInfos: []models.SnssaiUpfInfoItem{
-
 				{
-
 					SNssai: &models.Snssai{
-
 						Sst: 2,
 
 						Sd: "112233",
 					},
 
 					DnnUpfInfoList: []models.DnnUpfInfoItem{
-
 						{Dnn: "internet"},
 					},
 				},
@@ -95,24 +79,19 @@ var configuration = &factory.UserPlaneInformation{
 		},
 
 		"UPF3": {
-
 			Type: "UPF",
 
 			NodeID: "192.168.179.3",
 
 			SNssaiInfos: []models.SnssaiUpfInfoItem{
-
 				{
-
 					SNssai: &models.Snssai{
-
 						Sst: 3,
 
 						Sd: "112234",
 					},
 
 					DnnUpfInfoList: []models.DnnUpfInfoItem{
-
 						{Dnn: "internet"},
 					},
 				},
@@ -120,24 +99,19 @@ var configuration = &factory.UserPlaneInformation{
 		},
 
 		"UPF4": {
-
 			Type: "UPF",
 
 			NodeID: "192.168.179.4",
 
 			SNssaiInfos: []models.SnssaiUpfInfoItem{
-
 				{
-
 					SNssai: &models.Snssai{
-
 						Sst: 1,
 
 						Sd: "112235",
 					},
 
 					DnnUpfInfoList: []models.DnnUpfInfoItem{
-
 						{Dnn: "internet"},
 					},
 				},
@@ -146,30 +120,25 @@ var configuration = &factory.UserPlaneInformation{
 	},
 
 	Links: []factory.UPLink{
-
 		{
-
 			A: "GNodeB",
 
 			B: "UPF1",
 		},
 
 		{
-
 			A: "UPF1",
 
 			B: "UPF2",
 		},
 
 		{
-
 			A: "UPF2",
 
 			B: "UPF3",
 		},
 
 		{
-
 			A: "UPF3",
 
 			B: "UPF4",
@@ -178,7 +147,6 @@ var configuration = &factory.UserPlaneInformation{
 }
 
 func TestNewUserPlaneInformation(t *testing.T) {
-
 	userplaneInformation := context.NewUserPlaneInformation(configuration)
 
 	require.NotNil(t, userplaneInformation.AccessNetwork["GNodeB"])
@@ -200,36 +168,29 @@ func TestNewUserPlaneInformation(t *testing.T) {
 	require.Contains(t, userplaneInformation.UPFs["UPF2"].Links, userplaneInformation.UPFs["UPF3"])
 
 	require.Contains(t, userplaneInformation.UPFs["UPF3"].Links, userplaneInformation.UPFs["UPF4"])
-
 }
 
 func TestGenerateDefaultPath(t *testing.T) {
-
 	configuration.Links = []factory.UPLink{
-
 		{
-
 			A: "GNodeB",
 
 			B: "UPF1",
 		},
 
 		{
-
 			A: "GNodeB",
 
 			B: "UPF2",
 		},
 
 		{
-
 			A: "GNodeB",
 
 			B: "UPF3",
 		},
 
 		{
-
 			A: "UPF1",
 
 			B: "UPF4",
@@ -243,15 +204,11 @@ func TestGenerateDefaultPath(t *testing.T) {
 
 		expected bool
 	}{
-
 		{
-
 			name: "S-NSSAI 01112232 and DNN internet ok",
 
 			param: &context.UPFSelectionParams{
-
 				SNssai: &context.SNssai{
-
 					Sst: 1,
 
 					Sd: "112232",
@@ -265,13 +222,10 @@ func TestGenerateDefaultPath(t *testing.T) {
 		},
 
 		{
-
 			name: "S-NSSAI 02112233 and DNN internet ok",
 
 			param: &context.UPFSelectionParams{
-
 				SNssai: &context.SNssai{
-
 					Sst: 2,
 
 					Sd: "112233",
@@ -285,13 +239,10 @@ func TestGenerateDefaultPath(t *testing.T) {
 		},
 
 		{
-
 			name: "S-NSSAI 03112234 and DNN internet ok",
 
 			param: &context.UPFSelectionParams{
-
 				SNssai: &context.SNssai{
-
 					Sst: 3,
 
 					Sd: "112234",
@@ -305,13 +256,10 @@ func TestGenerateDefaultPath(t *testing.T) {
 		},
 
 		{
-
 			name: "S-NSSAI 01112235 and DNN internet ok",
 
 			param: &context.UPFSelectionParams{
-
 				SNssai: &context.SNssai{
-
 					Sst: 1,
 
 					Sd: "112235",
@@ -325,13 +273,10 @@ func TestGenerateDefaultPath(t *testing.T) {
 		},
 
 		{
-
 			name: "S-NSSAI 01010203 and DNN internet fail",
 
 			param: &context.UPFSelectionParams{
-
 				SNssai: &context.SNssai{
-
 					Sst: 1,
 
 					Sd: "010203",
@@ -348,23 +293,16 @@ func TestGenerateDefaultPath(t *testing.T) {
 	userplaneInformation := context.NewUserPlaneInformation(configuration)
 
 	for _, tc := range testCases {
-
 		t.Run(tc.name, func(t *testing.T) {
-
 			pathExist := userplaneInformation.GenerateDefaultPath(tc.param)
 
 			require.Equal(t, tc.expected, pathExist)
-
 		})
-
 	}
-
 }
 
 func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
-
 	upi := &context.UserPlaneInformation{
-
 		UPNodes: make(map[string]*context.UPNode),
 
 		UPFs: make(map[string]*context.UPNode),
@@ -381,7 +319,6 @@ func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
 	}
 
 	nodeID := context.NodeID{
-
 		NodeIdType: context.NodeIdTypeIpv4Address,
 
 		NodeIdValue: []byte(net.ParseIP("1.2.3.4").To4()),
@@ -392,7 +329,6 @@ func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
 	originalUPF := context.NewUPF(&nodeID, nil)
 
 	existingNode := &context.UPNode{
-
 		Type: "UPF",
 
 		NodeID: nodeID,
@@ -402,13 +338,10 @@ func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
 		UPF: originalUPF,
 
 		Links: []*context.UPNode{
-
 			{
-
 				Type: context.UPNODE_AN,
 
 				NodeID: context.NodeID{
-
 					NodeIdType: context.NodeIdTypeIpv4Address,
 
 					NodeIdValue: []byte(net.ParseIP("5.6.7.8").To4()),
@@ -424,7 +357,6 @@ func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
 	// Create a new UPNode with the same NodeID
 
 	newNode := &factory.UPNode{
-
 		Type: "UPF",
 
 		NodeID: "1.2.3.4",
@@ -432,18 +364,14 @@ func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
 		Port: 4321,
 
 		SNssaiInfos: []models.SnssaiUpfInfoItem{
-
 			{
-
 				SNssai: &models.Snssai{
-
 					Sst: 1,
 
 					Sd: "112235",
 				},
 
 				DnnUpfInfoList: []models.DnnUpfInfoItem{
-
 					{Dnn: "internet2"},
 				},
 			},
@@ -451,19 +379,14 @@ func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
 	}
 
 	err := upi.UpdateSmfUserPlaneNode("testNode", newNode)
-
 	if err != nil {
-
 		t.Fatalf("Update failed: %v", err)
-
 	}
 
 	updatedUPF := upi.UPNodes["testNode"].UPF
 
 	if updatedUPF != originalUPF {
-
 		t.Errorf("Expected UPF instance to remain unchanged, but it was recreated")
-
 	}
 
 	_, upfExists := upi.UPFs["testNode"]
@@ -471,35 +394,24 @@ func TestUpdateSmfUserPlaneNode_NodeIDChange(t *testing.T) {
 	require.True(t, upfExists)
 
 	if upi.UPFs["testNode"].UPF.SNssaiInfos[0].DnnList[0].Dnn != "internet2" {
-
 		t.Errorf("Expected UPF DNN to be updated")
-
 	}
 
 	updatedUPNode, exists := upi.UPNodes["testNode"]
 
 	if !exists {
-
 		t.Errorf("Expected UPNode to exist")
-
 	}
 
 	if updatedUPNode.Port != 4321 {
-
 		t.Errorf("Expected UPNode port to be updated")
-
 	}
 
 	if updatedUPNode.NodeID.ResolveNodeIdToIp().String() != "1.2.3.4" {
-
 		t.Errorf("Expected UPNode NodeID to be updated")
-
 	}
 
 	if updatedUPNode.Links[0].NodeID.ResolveNodeIdToIp().String() != "5.6.7.8" {
-
 		t.Errorf("Expected UPNode NodeID to be updated")
-
 	}
-
 }

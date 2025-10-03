@@ -18,7 +18,6 @@ import (
 )
 
 func UnmarshallUserPlaneFunctionFeatures(data []byte) (*context.UPFunctionFeatures, error) {
-
 	length := uint16(len(data))
 
 	u := &context.UPFunctionFeatures{}
@@ -28,17 +27,13 @@ func UnmarshallUserPlaneFunctionFeatures(data []byte) (*context.UPFunctionFeatur
 	// Octet 5 to 6
 
 	if length < idx+2 {
-
 		return nil, fmt.Errorf("inadequate TLV length: %d", length)
-
 	}
 
 	// Additional Supported-Features
 
 	if length >= 2 {
-
 		u.SupportedFeatures = binary.LittleEndian.Uint16(data[idx : idx+2])
-
 	}
 
 	if length >= 4 {
@@ -62,5 +57,4 @@ func UnmarshallUserPlaneFunctionFeatures(data []byte) (*context.UPFunctionFeatur
 	}
 
 	return u, nil
-
 }

@@ -17,7 +17,6 @@ import (
 )
 
 func DummyServer() {
-
 	router := utilLogger.NewGinWithZap(logger.GinLog)
 
 	AddService(router)
@@ -33,17 +32,11 @@ func DummyServer() {
 	var server *http.Server
 
 	if srv, err := http2_util.NewServer(":29502", smfKeyLogPath, router); err != nil {
-
 	} else {
-
 		server = srv
-
 	}
 
 	if err := server.ListenAndServeTLS(smfPemPath, smfkeyPath); err != nil {
-
 		logger.PduSessLog.Fatalln(err)
-
 	}
-
 }
