@@ -15,13 +15,11 @@ import (
 
 func (obj *IPFilterRule) String() string {
 	return fmt.Sprintf("IPFilter content: ProtocolId:[%v], Source:[Ip:[%v], Mask:[%v], Port:[%v] Port-range [%v-%v]],Destination [Ip [%v], Mask [%v], Port [%v], Port-range [%v-%v]]",
-
 		obj.protoId, obj.sAddrv4.addr, obj.sAddrv4.mask, obj.sPort, obj.sPortRange.lowLimit, obj.sPortRange.highLimit, obj.dAddrv4.addr, obj.sAddrv4.mask, obj.dPort, obj.dPortRange.lowLimit, obj.dPortRange.highLimit)
 }
 
 func (obj QosRule) String() string {
 	return fmt.Sprintf("QosRule:[Id:[%v], Precedence:[%v], OpCode:[%v]], DQR:[%v], QFI:[%v], PacketFilters:[%v]",
-
 		obj.Identifier, obj.Precedence, RuleOperation(obj.OperationCode), obj.DQR, obj.QFI, obj.PacketFilterList)
 }
 
@@ -31,23 +29,14 @@ func (obj PacketFilter) String() string {
 
 func (obj PacketFilterComponent) String() string {
 	switch obj.ComponentType {
-
 	case PFComponentTypeSingleLocalPort:
-
 		fallthrough
-
 	case PFComponentTypeSingleRemotePort:
-
 		return fmt.Sprintf("PFComponent content: type:[%v] value:[%v]\n",
-
 			PfcString(obj.ComponentType), binary.BigEndian.Uint16(obj.ComponentValue))
-
 	case PFComponentTypeLocalPortRange:
-
 		fallthrough
-
 	case PFComponentTypeRemotePortRange:
-
 		return fmt.Sprintf("PFComponent content: type:[%v] value:[%v-%v]\n",
 
 			PfcString(obj.ComponentType), binary.BigEndian.Uint16(obj.ComponentValue[:2]), binary.BigEndian.Uint16(obj.ComponentValue[2:]))
@@ -55,13 +44,11 @@ func (obj PacketFilterComponent) String() string {
 	default:
 
 		return fmt.Sprintf("PFComponent content: type:[%v] value:[%v]\n", PfcString(obj.ComponentType), obj.ComponentValue)
-
 	}
 }
 
 func RuleOperation(op uint8) string {
 	switch op {
-
 	case OperationCodeCreateNewQoSRule:
 
 		return "CreateNewQoSRule"
@@ -87,15 +74,12 @@ func RuleOperation(op uint8) string {
 		return "ModifyExistingQoSRuleWithoutModifyingPacketFilters"
 
 	default:
-
 		return "invalid"
-
 	}
 }
 
 func PfDirectionString(dir uint8) string {
 	switch dir {
-
 	case PacketFilterDirectionDownlink:
 
 		return "Downlink"
@@ -111,13 +95,11 @@ func PfDirectionString(dir uint8) string {
 	default:
 
 		return "Unspecified"
-
 	}
 }
 
 func PfcString(pfcType uint8) string {
 	switch pfcType {
-
 	case PFComponentTypeMatchAll:
 
 		return "MatchAll"
@@ -201,29 +183,21 @@ func PfcString(pfcType uint8) string {
 	default:
 
 		return "invalid"
-
 	}
 }
 
 func SmPolicyDecisionString(smPolicy *models.SmPolicyDecision) string {
 	// PCC Rules
-
 	str := "\nPCC Rules: "
-
 	for name, rule := range smPolicy.PccRules {
 		str = str + fmt.Sprintf("\n[name:[%v], %v]", name, PccRuleString(rule))
 	}
-
 	// Session Rules
-
 	str = str + "\nSession Rules: "
-
 	for name, rule := range smPolicy.SessRules {
 		str = str + fmt.Sprintf("\n[name:[%v], %v]", name, SessRuleString(rule))
 	}
-
 	// Qos Data
-
 	str = str + "\nQosData: "
 
 	for name, qosData := range smPolicy.QosDecs {
@@ -237,7 +211,6 @@ func SmPolicyDecisionString(smPolicy *models.SmPolicyDecision) string {
 	for name, tcData := range smPolicy.TraffContDecs {
 		str = str + fmt.Sprintf("\n[name:[%v], %v]", name, TCDataString(tcData))
 	}
-
 	return str
 }
 
@@ -279,15 +252,12 @@ func PccFlowInfosString(flows []models.FlowInformation) []string {
 	var flowStrs []string
 
 	for _, flow := range flows {
-
 		str := fmt.Sprintf("\nFlowInfo:[flowDesc:[%v], PFId:[%v], direction:[%v]]",
 
 			flow.FlowDescription, flow.PackFiltId, flow.FlowDirection)
 
 		flowStrs = append(flowStrs, str)
-
 	}
-
 	return flowStrs
 }
 
@@ -315,7 +285,6 @@ func (obj PccRulesUpdate) String() string {
 	for name, rule := range obj.add {
 		strAdd += fmt.Sprintf("\n[name:[%v], %v", name, PccRuleString(rule))
 	}
-
 	str += fmt.Sprintf("\n[to add:[%v]]", strAdd)
 
 	// To be modified
@@ -337,7 +306,6 @@ func (obj PccRulesUpdate) String() string {
 	}
 
 	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
-
 	return str
 }
 
@@ -373,13 +341,11 @@ func (obj SessRulesUpdate) String() string {
 	}
 
 	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
-
 	return str
 }
 
 func (obj QosFlowsUpdate) String() string {
 	str := "\nQos Data Changes:"
-
 	// To be added
 
 	strAdd := ""
@@ -409,7 +375,6 @@ func (obj QosFlowsUpdate) String() string {
 	}
 
 	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
-
 	return str
 }
 
@@ -429,7 +394,6 @@ func (obj TrafficControlUpdate) String() string {
 	// To be modified
 
 	strMod := ""
-
 	for name, val := range obj.mod {
 		strMod += fmt.Sprintf("\n[name:[%v], %v", name, TCDataString(val))
 	}
@@ -445,7 +409,6 @@ func (obj TrafficControlUpdate) String() string {
 	}
 
 	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
-
 	return str
 }
 
@@ -461,7 +424,6 @@ func TestMakeSamplePolicyDecision() *models.SmPolicyDecision {
 
 		TraffContDecs: TestMakeTrafficControlData(),
 	}
-
 	return smPolDec
 }
 
@@ -660,10 +622,8 @@ func TestMakeSessionRule() map[string]*models.SessionRule {
 
 	sessRule2 := models.SessionRule{
 		SessRuleId: "RuleId-2",
-
 		AuthSessAmbr: &models.Ambr{
-			Uplink: "55 Mbps",
-
+			Uplink:   "55 Mbps",
 			Downlink: "33 Mbps",
 		},
 
@@ -681,10 +641,8 @@ func TestMakeSessionRule() map[string]*models.SessionRule {
 			PriorityLevel: 7,
 		},
 	}
-
 	return map[string]*models.SessionRule{
 		"SessRule1": &sessRule1,
-
 		"SessRule2": &sessRule2,
 	}
 }
@@ -693,16 +651,13 @@ func TestMakeSessionRule() map[string]*models.SessionRule {
 
 func TestMakeTrafficControlData() map[string]*models.TrafficControlData {
 	tc1 := models.TrafficControlData{
-		TcId: "TC1",
-
+		TcId:       "TC1",
 		FlowStatus: models.FlowStatus_ENABLED,
 	}
 
 	tc2 := models.TrafficControlData{
-		TcId: "TC2",
-
+		TcId:       "TC2",
 		FlowStatus: models.FlowStatus_ENABLED,
 	}
-
 	return map[string]*models.TrafficControlData{"TC1": &tc1, "TC2": &tc2}
 }

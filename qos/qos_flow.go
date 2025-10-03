@@ -392,7 +392,6 @@ func GetBitRate(sBitRate string) (val uint16, unit uint8) {
 	default:
 
 		unit = QFBitRate1Mbps
-
 	}
 	return val, unit
 }
@@ -650,7 +649,6 @@ func GetDefaultQoSDataFromPolicyDecision(smPolicyDecision *models.SmPolicyDecisi
 		if qosData.DefQosFlowIndication {
 			return qosData
 		}
-
 	}
 	logger.QosLog.Fatalln("default Qos Data not received from PCF")
 	return nil
