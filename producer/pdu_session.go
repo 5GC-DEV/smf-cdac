@@ -18,6 +18,7 @@ import (
 	"github.com/5GC-DEV/openapi-cdac/Nsmf_PDUSession"
 	"github.com/5GC-DEV/openapi-cdac/Nudm_SubscriberDataManagement"
 	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/antihax/optional"
 	"github.com/omec-project/smf/consumer"
 	smf_context "github.com/omec-project/smf/context"
@@ -27,7 +28,6 @@ import (
 	pfcp_message "github.com/omec-project/smf/pfcp/message"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
 )
 
 func formContextCreateErrRsp(httpStatus int, problemBody *models.ProblemDetails, n1SmMsg *models.RefToBinaryData) *httpwrapper.Response {

@@ -11,11 +11,11 @@ import (
 
 	"github.com/5GC-DEV/openapi-cdac"
 	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/gin-gonic/gin"
 	"github.com/omec-project/smf/consumer"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/producer"
-	"github.com/omec-project/util/httpwrapper"
 )
 
 func HTTPNfSubscriptionStatusNotify(c *gin.Context) {

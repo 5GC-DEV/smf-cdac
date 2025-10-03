@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/5GC-DEV/util-cdac/util_3gpp"
 	"github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/pfcp/message"
-	"github.com/omec-project/util/util_3gpp"
 	"github.com/wmnsk/go-pfcp/ie"
 	pfcp_message "github.com/wmnsk/go-pfcp/message"
 )

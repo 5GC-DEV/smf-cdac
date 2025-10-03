@@ -7,11 +7,11 @@ package pdusession
 import (
 	"net/http"
 
+	"github.com/5GC-DEV/util-cdac/http2_util"
+	utilLogger "github.com/5GC-DEV/util-cdac/logger"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/pfcp"
 	"github.com/omec-project/smf/pfcp/udp"
-	"github.com/omec-project/util/http2_util"
-	utilLogger "github.com/omec-project/util/logger"
 )
 
 func DummyServer() {

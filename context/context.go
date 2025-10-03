@@ -18,11 +18,11 @@ import (
 	"github.com/5GC-DEV/openapi-cdac/Nnrf_NFManagement"
 	"github.com/5GC-DEV/openapi-cdac/Nudm_SubscriberDataManagement"
 	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/5GC-DEV/util-cdac/drsm"
 	"github.com/google/uuid"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/metrics"
-	"github.com/omec-project/util/drsm"
 )
 
 func init() {

@@ -19,6 +19,7 @@ import (
 
 	"github.com/5GC-DEV/openapi-cdac"
 	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/gin-gonic/gin"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/fsm"
@@ -26,7 +27,6 @@ import (
 	stats "github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/transaction"
-	"github.com/omec-project/util/httpwrapper"
 )
 
 // SubscriptionsPost -
