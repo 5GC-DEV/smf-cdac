@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/omec-project/smf/context"
-	"github.com/omec-project/util/httpwrapper"
 )
 
 type PDUSessionInfo struct {

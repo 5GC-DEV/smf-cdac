@@ -5,9 +5,9 @@
 package oam
 
 import (
+	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/gin-gonic/gin"
 	"github.com/omec-project/smf/producer"
-	"github.com/omec-project/util/httpwrapper"
 )
 
 func HTTPGetUEPDUSessionInfo(c *gin.Context) {
