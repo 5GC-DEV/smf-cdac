@@ -8,10 +8,13 @@ package context
 import (
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/5GC-DEV/util-cdac/util_3gpp"
 )
+
+var pdrLocks sync.Map
 
 const (
 	RULE_INITIAL RuleState = 0
