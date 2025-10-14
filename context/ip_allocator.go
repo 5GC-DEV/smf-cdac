@@ -49,6 +49,7 @@ func maskBits(mask net.IPMask) int {
 func IPAddrWithOffset(ip net.IP, offset int) net.IP {
 	retIP := make(net.IP, len(ip))
 	copy(retIP, ip)
+	logger.CtxLog.Infof("IPAddrWithOffset: Base IP: %s, Offset: %d", ip.String(), offset)
 
 	var carry int
 	for i := len(retIP) - 1; i >= 0; i-- {
@@ -59,10 +60,11 @@ func IPAddrWithOffset(ip net.IP, offset int) net.IP {
 		val := int(retIP[i]) + carry + offset%256
 		retIP[i] = byte(val % 256)
 		carry = val / 256
+		logger.CtxLog.Infof("IPAddrWithOffset: byte[%d] updated to %d, carry: %d, remaining offset: %d", i, retIP[i], carry, offset/256)
 
 		offset /= 256
 	}
-
+	logger.CtxLog.Infof("IPAddrWithOffset: Resulting IP: %s", retIP.String())
 	return retIP
 }
 
@@ -83,11 +85,13 @@ func (a *IPAllocator) Allocate(imsi string) (net.IP, error) {
 	if a.g.staticIps != nil {
 		staticIps := *a.g.staticIps
 		if ipStr := staticIps[imsi]; ipStr != "" {
+			logger.CtxLog.Infof("IPAllocator: Static IP already reserved for IMSI %s: %s", imsi, net.ParseIP(ipStr).To4().String())
 			return net.ParseIP(ipStr).To4(), nil
 		}
 	}
 
 	if offset, err := a.g.allocate(); err != nil {
+		logger.CtxLog.Errorf("IPAllocator: Failed to allocate IP for IMSI %s: %v", imsi, err)
 		return nil, errors.New("ip allocation failed" + err.Error())
 	} else {
 		smfCountStr := os.Getenv("SMF_COUNT")
@@ -99,9 +103,15 @@ func (a *IPAllocator) Allocate(imsi string) (net.IP, error) {
 			logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
 		}
 		ip := IPAddrWithOffset(a.ipNetwork.IP, int(offset)+(smfCount-1)*5000)
+		logger.CtxLog.Infof("IPAllocator: Dynamic IP allocation successful for IMSI %s", imsi)
+		logger.CtxLog.Infof("  Allocated IP: %s", ip.String())
 		logger.CtxLog.Infof("unique id - ip %v", ip)
 		logger.CtxLog.Infof("unique id - offset %v", offset)
 		logger.CtxLog.Infof("unique id - smfCount %v", smfCount)
+		if a.ipNetwork != nil {
+			logger.CtxLog.Infof("  Base network IP: %s", a.ipNetwork.IP.String())
+			logger.CtxLog.Infof("  IP Network Mask: %s", a.ipNetwork.Mask.String())
+		}
 		return ip, nil
 	}
 }
@@ -122,16 +132,23 @@ func (a *IPAllocator) BlockIp(ip net.IP) {
 }
 
 func (a *IPAllocator) Release(imsi string, ip net.IP) {
+	if a == nil || a.g == nil || a.ipNetwork == nil {
+		logger.CtxLog.Errorf("IPAllocator not initialized properly, cannot release IP %s for IMSI %s", ip.String(), imsi)
+	}
+	logger.CtxLog.Infof("Releasing IP %s for IMSI %s", ip.String(), imsi)
 	// Don't release static IPs
 	if a.g.staticIps != nil {
 		staticIps := *a.g.staticIps
 		if ipStr := staticIps[imsi]; ipStr != "" {
+			logger.CtxLog.Infof("IPAllocator: Not releasing static IP %s for IMSI %s", ipStr, imsi)
 			return
 		}
 	}
 
 	offset := IPAddrOffset(ip, a.ipNetwork.IP)
+	logger.CtxLog.Infof("IPAllocator: Calculated offset %d for IP %s", offset, ip.String())
 	a.g.release(int64(offset))
+	logger.CtxLog.Infof("IPAllocator: Released IP %s (offset %d) for IMSI %s", ip.String(), offset, imsi)
 }
 
 type _IDPool struct {
@@ -155,23 +172,31 @@ func newIDPool(minValue int64, maxValue int64) (idPool *_IDPool) {
 func (i *_IDPool) allocate() (id int64, err error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
+	logger.CtxLog.Infof("IDPool: Starting ID allocation from index %d to maxValue %d", i.index, i.maxValue)
 
 	for id = i.index; id <= i.maxValue; id++ {
 		if _, exist := i.isUsed[id]; !exist {
 			i.isUsed[id] = true
 			i.index = (id % i.maxValue) + 1
+			logger.CtxLog.Infof("IDPool: Allocated ID %d (first loop), next index set to %d", id, i.index)
 			return id, nil
+		} else {
+			logger.CtxLog.Infof("IDPool: ID %d already in use", id)
 		}
 	}
 
+	logger.CtxLog.Infof("IDPool: Wrapping around, checking IDs from 1 to %d", i.index-1)
 	for id = 1; id < i.index; id++ {
 		if _, exist := i.isUsed[id]; !exist {
 			i.isUsed[id] = true
 			i.index = id + 1
+			logger.CtxLog.Infof("IDPool: Allocated ID %d (wrap-around), next index set to %d", id, i.index)
 			return id, nil
+		} else {
+			logger.CtxLog.Infof("IDPool: ID %d already in use (wrap-around)", id)
 		}
 	}
-
+	logger.CtxLog.Infof("IDPool: No available value range to allocate ID")
 	return 0, errors.New("no available value range to allocate id")
 }
 

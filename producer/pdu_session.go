@@ -135,9 +135,13 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
 		return fmt.Errorf("IpAllocError")
 	} else {
+		logger.CtxLog.Infof("PDUSessionSMContextCreate: Allocated IP for SUPI %s: %s (before assigning to PDUAddress)", smContext.Supi, ip.String())
 		smContext.PDUAddress = &smf_context.UeIpAddr{Ip: ip, UpfProvided: false}
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, IP alloc success IP[%s]",
-			smContext.PDUAddress.Ip.String())
+		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate: IP allocation successful")
+		smContext.SubPduSessLog.Infof("  SUPI: %s", smContext.Supi)
+		smContext.SubPduSessLog.Infof("  Allocated IP: %s", smContext.PDUAddress.Ip.String())
+		smContext.SubPduSessLog.Infof("  UPF Provided: %v", smContext.PDUAddress.UpfProvided)
+		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, IP alloc success IP[%s]", smContext.PDUAddress.Ip.String())
 	}
 
 	// UDM-Fetch Subscription Data based on servingnetwork.plmn and dnn, snssai
