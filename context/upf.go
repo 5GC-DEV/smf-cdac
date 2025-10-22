@@ -141,25 +141,30 @@ func (i *UPFInterfaceInfo) IP(pduSessType uint8) (net.IP, error) {
 	}
 
 	if i.EndpointFQDN != "" {
-		if resolvedAddr, err := net.ResolveIPAddr("ip", i.EndpointFQDN); err != nil {
-			logger.CtxLog.Errorf("resolve addr [%s] failed", i.EndpointFQDN)
-		} else {
-			switch pduSessType {
-			case nasMessage.PDUSessionTypeIPv4:
-				return resolvedAddr.IP.To4(), nil
-			case nasMessage.PDUSessionTypeIPv6:
-				return resolvedAddr.IP.To16(), nil
-			default:
-				v4addr := resolvedAddr.IP.To4()
-				if v4addr != nil {
-					return v4addr, nil
-				} else {
+		// sanity check: valid string length
+		if len(i.EndpointFQDN) > 0 && len(i.EndpointFQDN) < 256 {
+			resolvedAddr, err := net.ResolveIPAddr("ip", i.EndpointFQDN)
+			if err != nil {
+				logger.CtxLog.Errorf("resolve addr [%s] failed: %v", i.EndpointFQDN, err)
+			} else if resolvedAddr != nil && resolvedAddr.IP != nil {
+				switch pduSessType {
+				case nasMessage.PDUSessionTypeIPv4:
+					if ip := resolvedAddr.IP.To4(); ip != nil {
+						return ip, nil
+					}
+				case nasMessage.PDUSessionTypeIPv6:
+					return resolvedAddr.IP.To16(), nil
+				default:
+					if ip := resolvedAddr.IP.To4(); ip != nil {
+						return ip, nil
+					}
 					return resolvedAddr.IP.To16(), nil
 				}
 			}
+		} else {
+			logger.CtxLog.Errorf("Invalid EndpointFQDN value: %v", i.EndpointFQDN)
 		}
 	}
-
 	return nil, errors.New("not matched ip address")
 }
 

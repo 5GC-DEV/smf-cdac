@@ -357,12 +357,44 @@ func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
 	return
 }
 
-func (smContext *SMContext) ReleaseUeIpAddr() error {
+/*func (smContext *SMContext) ReleaseUeIpAddr() error {
 	if ip := smContext.PDUAddress.Ip; ip != nil && !smContext.PDUAddress.UpfProvided {
 		smContext.SubPduSessLog.Infof("Release IP[%s]", smContext.PDUAddress.Ip.String())
 		smContext.DNNInfo.UeIPAllocator.Release(smContext.Supi, ip)
 		smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
 	}
+	return nil
+} */
+
+func (smContext *SMContext) ReleaseUeIpAddr() error {
+	ip := smContext.PDUAddress.Ip
+
+	if ip == nil || smContext.PDUAddress.UpfProvided {
+		smContext.SubPduSessLog.Error("ReleaseUeIpAddr: No IP to release or IP provided by UPF")
+		return nil
+	}
+
+	smContext.SubPduSessLog.Infof("Releasing IP [%s] for SUPI [%s]", ip.String(), smContext.Supi)
+
+	if smContext.DNNInfo == nil {
+		err := fmt.Errorf("DNNInfo is nil for SUPI [%s]", smContext.Supi)
+		smContext.SubPduSessLog.Error(err)
+		smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
+		return err
+	}
+
+	if smContext.DNNInfo.UeIPAllocator == nil {
+		err := fmt.Errorf("UeIPAllocator is nil for SUPI [%s]", smContext.Supi)
+		smContext.SubPduSessLog.Error(err)
+		smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
+		return err
+	}
+
+	// Call Release (no return value)
+	smContext.DNNInfo.UeIPAllocator.Release(smContext.Supi, ip)
+	smContext.SubPduSessLog.Infof("Successfully released IP [%s] for SUPI [%s]", ip.String(), smContext.Supi)
+
+	smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
 	return nil
 }
 

@@ -136,7 +136,20 @@ func HTTPUpdateSmContext(c *gin.Context) {
 	txn.CtxtKey = smContextRef
 	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
 	<-txn.Status
-	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
+	// HTTPResponse := txn.Rsp.(*httpwrapper.Response)
+	rsp, ok := txn.Rsp.(*httpwrapper.Response)
+	if !ok || rsp == nil {
+		logger.PduSessLog.Errorln("UpdateSmContext: transaction response is nil or invalid")
+		c.JSON(http.StatusInternalServerError, models.ProblemDetails{
+			Title:  "Internal Server Error",
+			Status: http.StatusInternalServerError,
+			Detail: "Failed to process SM Context update",
+		})
+		return
+	}
+
+	HTTPResponse := rsp
+
 	// HTTPResponse := producer.HandlePDUSessionSMContextUpdate(
 	//	smContextRef, req.Body.(models.UpdateSmContextRequest))
 
