@@ -311,9 +311,10 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	// ----------------------------------------------------
 	// Step 4: Check QoS Policy Decision overrides
 	// ----------------------------------------------------
-	policyDecision := ctx.SmPolicyData.SmCtxtQosData.QosData
+	// policyDecision := ctx.SmPolicyData.SmCtxtQosData.QosData
+	policyDecision := ctx.SmPolicyUpdates[0].SmPolicyDecision
 	if policyDecision != nil {
-		for _, qos := range policyDecision {
+		for _, qos := range policyDecision.QosDecs {
 			ctx.SubPduSessLog.Infof(
 				"QoSId=%s, Var5QI=%d, GBR: UL=%s, DL=%s, MBR: UL=%s, DL=%s",
 				qos.QosId, qos.Var5qi, qos.GbrUl, qos.GbrDl, qos.MaxbrUl, qos.MaxbrDl,
