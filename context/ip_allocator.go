@@ -102,7 +102,7 @@ func (a *IPAllocator) Allocate(imsi string) (net.IP, error) {
 		if err != nil {
 			logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
 		}
-		ip := IPAddrWithOffset(a.ipNetwork.IP, int(offset)) //int64((smfCount-1)*5000 + 1)
+		ip := IPAddrWithOffset(a.ipNetwork.IP, int(offset)) // int64((smfCount-1)*5000 + 1)
 		logger.CtxLog.Infof("IPAllocator: Dynamic IP allocation successful for IMSI %s", imsi)
 		logger.CtxLog.Infof("  Allocated IP: %s", ip.String())
 		logger.CtxLog.Infof("unique id - ip %v", ip)
