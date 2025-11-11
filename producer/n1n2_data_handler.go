@@ -55,6 +55,8 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			}
 			return err
 		}
+		msgTypeN := m.GsmHeader.GetMessageType()
+		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, Received N1 NAS message type: %d (0x%X)", msgTypeN, msgTypeN)
 		switch m.GsmHeader.GetMessageType() {
 		case nas.MsgTypePDUSessionReleaseRequest:
 			smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N1 Msg PDU Session Release Request received")
