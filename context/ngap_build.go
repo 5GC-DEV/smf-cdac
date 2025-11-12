@@ -66,6 +66,14 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	// Possible cause: Physical interface connecting to UPF may be down
 	logger.CtxLog.Infof("SUPI[%s], PDUSessionID[%d]: N3Interfaces count: %d",
 		ctx.Supi, ctx.PDUSessionID, len(UpNode.N3Interfaces))
+	logger.PduSessLog.Infof("Checking N3Interfaces for UPF node %s, initial count: %d for UE[%s]", UpNode.NodeID, len(UpNode.N3Interfaces), ctx.Supi)
+	for i := 0; i < 10; i++ {
+		if len(UpNode.N3Interfaces) > 0 {
+			logger.PduSessLog.Infof("UPF node %s N3Interfaces became available after %d retries", UpNode.NodeID, i)
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	if len(UpNode.N3Interfaces) == 0 {
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF", ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
