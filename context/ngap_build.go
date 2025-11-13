@@ -77,17 +77,21 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	}*/
 	for i := 0; i < 10; i++ { // wait up to 500ms
 		UpNode.UpfLock.RLock()
-		if len(UpNode.N3Interfaces) > 0 {
+		n3Count := len(UpNode.N3Interfaces)
+		if n3Count > 0 {
+			logger.PduSessLog.Infof("Attempt %d: Found %d N3 interface(s) in UPF", i+1, n3Count)
 			UpNode.UpfLock.RUnlock()
 			break
 		}
+		logger.PduSessLog.Warnf("Attempt %d: No N3 interface available in UPF, retrying...", i+1)
 		UpNode.UpfLock.RUnlock()
 		time.Sleep(50 * time.Millisecond)
 	}
 	if len(UpNode.N3Interfaces) == 0 {
-		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF", ctx.Supi, ctx.PDUSessionID)
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF after all retries", ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}
+
 	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
 			ctx.Supi, ctx.PDUSessionID, err)
