@@ -84,7 +84,7 @@ type UPF struct {
 	uuid              uuid.UUID
 	Port              uint16
 	NHeartBeat        uint8
-
+	Writing           int32 // atomic flag
 	// lock
 	UpfLock sync.RWMutex
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	// "time"
 
@@ -92,8 +93,13 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF after all retries", ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}*/
-	UpNode.UpfLock.RLock()
-	defer UpNode.UpfLock.RUnlock()
+	// UpNode.UpfLock.RLock()
+	// defer UpNode.UpfLock.RUnlock()
+	if atomic.LoadInt32(&UpNode.Writing) == 1 {
+		logger.PduSessLog.Warn("Reading N3 while writer is active")
+	} else {
+		logger.PduSessLog.Warn("Reading N3 while writer is not active")
+	}
 	if len(UpNode.N3Interfaces) == 0 {
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF after all retries",
 			ctx.Supi, ctx.PDUSessionID)

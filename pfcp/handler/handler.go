@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync/atomic"
 
 	"github.com/5GC-DEV/openapi-cdac/models"
 	mi "github.com/5GC-DEV/util-cdac/metricinfo"
@@ -84,8 +85,19 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "unknown_upf")
 		return
 	}
+	/*upf.UpfLock.Lock()
+	defer upf.UpfLock.Unlock()*/
+
+	// writer entering
+	atomic.StoreInt32(&upf.Writing, 1)
+	logger.PfcpLog.Warn("UPF N3Interfaces update started HandlePfcpHeartbeatResponse")
 	upf.UpfLock.Lock()
-	defer upf.UpfLock.Unlock()
+	defer func() {
+		upf.UpfLock.Unlock()
+		// writer leaving
+		atomic.StoreInt32(&upf.Writing, 0)
+		logger.PfcpLog.Warn("UPF N3Interfaces update finished HandlePfcpHeartbeatResponse")
+	}()
 
 	rspRecoveryTimeStamp, err := rsp.RecoveryTimeStamp.RecoveryTimeStamp()
 	if err != nil {
@@ -129,8 +141,17 @@ func SetUpfInactive(nodeID smf_context.NodeID, msgTypeName string) {
 		return
 	}
 
+	// writer entering
+	atomic.StoreInt32(&upf.Writing, 1)
+
 	upf.UpfLock.Lock()
-	defer upf.UpfLock.Unlock()
+	logger.PfcpLog.Warn("UPF N3Interfaces update started SetUpfInactive")
+	defer func() {
+		upf.UpfLock.Unlock()
+		// writer leaving
+		atomic.StoreInt32(&upf.Writing, 0)
+		logger.PfcpLog.Warn("UPF N3Interfaces update finished SetUpfInactive")
+	}()
 	upf.UPFStatus = smf_context.NotAssociated
 	upf.NHeartBeat = 0 // reset Heartbeat attempt to 0
 }
@@ -179,8 +200,16 @@ func HandlePfcpAssociationSetupRequest(msg *udp.Message) {
 		return
 	}
 
+	// writer entering
+	atomic.StoreInt32(&upf.Writing, 1)
+	logger.PfcpLog.Warn("UPF N3Interfaces update started HandlePfcpAssociationSetupRequest")
 	upf.UpfLock.Lock()
-	defer upf.UpfLock.Unlock()
+	defer func() {
+		upf.UpfLock.Unlock()
+		logger.PfcpLog.Warn("UPF N3Interfaces update finished HandlePfcpAssociationSetupRequest")
+		// writer leaving
+		atomic.StoreInt32(&upf.Writing, 0)
+	}()
 
 	upf.RecoveryTimeStamp = smf_context.RecoveryTimeStamp{
 		RecoveryTimeStamp: recoveryTimestamp,
@@ -239,8 +268,16 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 			return
 		}
 
+		// writer entering
+		atomic.StoreInt32(&upf.Writing, 1)
+		logger.PfcpLog.Warn("UPF N3Interfaces update started HandlePfcpAssociationSetupResponse")
 		upf.UpfLock.Lock()
-		defer upf.UpfLock.Unlock()
+		defer func() {
+			upf.UpfLock.Unlock()
+			// writer leaving
+			atomic.StoreInt32(&upf.Writing, 0)
+			logger.PfcpLog.Warn("UPF N3Interfaces update finished HandlePfcpAssociationSetupResponse")
+		}()
 		upf.UPFStatus = smf_context.AssociatedSetUpSuccess
 		recoveryTimestamp, err := rsp.RecoveryTimeStamp.RecoveryTimeStamp()
 		if err != nil {

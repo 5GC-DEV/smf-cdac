@@ -7,6 +7,7 @@
 package upf
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/omec-project/smf/context"
@@ -27,6 +28,8 @@ func InitPfcpHeartbeatRequest(userplane *context.UserPlaneInformation) {
 	for {
 		time.Sleep(maxHeartbeatInterval * time.Second)
 		for _, upf := range userplane.UPFs {
+			atomic.StoreInt32(&upf.UPF.Writing, 1)
+			logger.PfcpLog.Warn("UPF N3Interfaces update started InitPfcpHeartbeatRequest")
 			upf.UPF.UpfLock.Lock()
 			if (upf.UPF.UPFStatus == context.AssociatedSetUpSuccess) && upf.UPF.NHeartBeat < maxHeartbeatRetry {
 				err := message.SendHeartbeatRequest(upf.NodeID, upf.Port) // needs lock in sync rsp(adapter mode)
@@ -43,6 +46,8 @@ func InitPfcpHeartbeatRequest(userplane *context.UserPlaneInformation) {
 			}
 
 			upf.UPF.UpfLock.Unlock()
+			logger.PfcpLog.Warn("UPF N3Interfaces update finished InitPfcpHeartbeatRequest")
+			atomic.StoreInt32(&upf.UPF.Writing, 0)
 		}
 	}
 }
@@ -52,6 +57,8 @@ func ProbeInactiveUpfs(upfs *context.UserPlaneInformation) {
 	for {
 		time.Sleep(maxUpfProbeRetryInterval * time.Second)
 		for _, upf := range upfs.UPFs {
+			atomic.StoreInt32(&upf.UPF.Writing, 1)
+			logger.PfcpLog.Warn("UPF N3Interfaces update started ProbeInactiveUpfs")
 			upf.UPF.UpfLock.Lock()
 			if upf.UPF.UPFStatus == context.NotAssociated {
 				err := message.SendPfcpAssociationSetupRequest(upf.NodeID, upf.Port)
@@ -60,6 +67,8 @@ func ProbeInactiveUpfs(upfs *context.UserPlaneInformation) {
 				}
 			}
 			upf.UPF.UpfLock.Unlock()
+			logger.PfcpLog.Warn("UPF N3Interfaces update finished ProbeInactiveUpfs")
+			atomic.StoreInt32(&upf.UPF.Writing, 0)
 		}
 	}
 }
