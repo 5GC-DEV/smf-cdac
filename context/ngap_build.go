@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
+
+	// "time"
 
 	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/omec-project/aper"
@@ -75,7 +76,7 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}*/
-	for i := 0; i < 10; i++ { // wait up to 500ms
+	/*for i := 0; i < 10; i++ { // wait up to 500ms
 		UpNode.UpfLock.RLock()
 		n3Count := len(UpNode.N3Interfaces)
 		if n3Count > 0 {
@@ -90,8 +91,14 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	if len(UpNode.N3Interfaces) == 0 {
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF after all retries", ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
+	}*/
+	UpNode.UpfLock.RLock()
+	defer UpNode.UpfLock.RUnlock()
+	if len(UpNode.N3Interfaces) == 0 {
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF after all retries",
+			ctx.Supi, ctx.PDUSessionID)
+		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}
-
 	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
 			ctx.Supi, ctx.PDUSessionID, err)
