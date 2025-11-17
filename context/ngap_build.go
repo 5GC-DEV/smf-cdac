@@ -99,8 +99,6 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 			ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}*/
-	// Check if N3Interfaces is empty
-	// Step 1: Wait if writer is active
 	UpNode.UpfLock.RLock()
 
 	n := len(UpNode.N3Interfaces)
@@ -113,7 +111,10 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF")
 	}
-	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
+	n3Iface := UpNode.N3Interfaces[0]
+	UpNode.UpfLock.RUnlock()
+	n3IP, err := n3Iface.IP(ctx.SelectedPDUSessionType)
+	if err != nil {
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
 			ctx.Supi, ctx.PDUSessionID, err)
 		return nil, err
