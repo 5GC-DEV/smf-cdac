@@ -7,6 +7,7 @@ package context
 import (
 	"encoding/binary"
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -101,30 +102,58 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}*/
 	// Check if N3Interfaces is empty
-	if len(UpNode.N3Interfaces) == 0 {
+	// Step 1: Wait if writer is active
+	if atomic.LoadInt32(&UpNode.Writing) == 1 {
+		logger.PduSessLog.Warnf(
+			"UE[%s] waiting: writer is ACTIVE while trying to read N3Interfaces",
+			ctx.Supi,
+		)
+	}
+
+	for atomic.LoadInt32(&UpNode.Writing) == 1 {
+		runtime.Gosched()
+	}
+
+	// Writer finished
+	logger.PduSessLog.Infof(
+		"UE[%s] proceeding: writer is NOT active now, checking N3Interfaces",
+		ctx.Supi,
+	)
+
+	// Step 2: Read N3 interfaces with RLock
+	UpNode.UpfLock.RLock()
+	n3Count := len(UpNode.N3Interfaces)
+	logger.PduSessLog.Infof(
+		"UE[%s] first check: N3Interfaces count = %d",
+		ctx.Supi, n3Count,
+	)
+	UpNode.UpfLock.RUnlock()
+
+	// Step 3: If empty, yield & check again
+	if n3Count == 0 {
+		logger.PduSessLog.Warnf(
+			"UE[%s] N3Interfaces empty on first check — waiting briefly and rechecking",
+			ctx.Supi,
+		)
+
+		runtime.Gosched()
+
+		UpNode.UpfLock.RLock()
+		n3Count = len(UpNode.N3Interfaces)
+		logger.PduSessLog.Infof(
+			"UE[%s] second check: N3Interfaces count = %d",
+			ctx.Supi, n3Count,
+		)
+		UpNode.UpfLock.RUnlock()
+	}
+
+	// Step 4: Final check
+	if n3Count == 0 {
 		logger.PduSessLog.Errorf(
-			"SUPI[%s], PDUSessionID[%d]: N3Interfaces empty — checking again with lock",
+			"SUPI[%s], PDUSessionID[%d]: N3Interfaces STILL empty after checks",
 			ctx.Supi, ctx.PDUSessionID,
 		)
-		// Check writer status
-		if atomic.LoadInt32(&UpNode.Writing) == 1 {
-			logger.PduSessLog.Warnf(
-				"Writer is ACTIVE while UE[%s] is reading N3Interfaces", ctx.Supi,
-			)
-		} else {
-			logger.PduSessLog.Warnf(
-				"Writer NOT active while UE[%s] is reading N3Interfaces", ctx.Supi,
-			)
-		}
-		// Acquire RLock and re-check N3Interfaces
-		UpNode.UpfLock.RLock()
-		if len(UpNode.N3Interfaces) == 0 {
-			logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF after all retries",
-				ctx.Supi, ctx.PDUSessionID)
-			return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
-		}
-		UpNode.UpfLock.RUnlock()
-		// You can retry here or return error
+		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}
 	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
 		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
