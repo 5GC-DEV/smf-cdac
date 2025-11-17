@@ -442,7 +442,15 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 					Status: http.StatusOK,
 					Body:   response,
 				}
-
+				smContext.SubCtxLog.Info("---httpResponse.Status: with imsi: ", httpResponse.Status, smContext.Supi)
+				smContext.SubCtxLog.Info("---httpResponse.Body: ", httpResponse.Body)
+				resp, ok := httpResponse.Body.(*models.UpdateSmContextResponse)
+				if !ok {
+					fmt.Println("---Body is not UpdateSmContextResponse")
+				}
+				smContext.SubCtxLog.Info("---JsonData: %+v\n with imsi: ", resp.JsonData, smContext.Supi)
+				smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfoType: %v, with imsi: ", resp.JsonData.N2SmInfoType, smContext.Supi)
+				smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfo: %v, with imsi: ", resp.JsonData.N2SmInfo, smContext.Supi)
 				smContext.ChangeState(smf_context.SmStateActive)
 				smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
 			}
@@ -469,7 +477,8 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 			Body:   response,
 		}
 	}
-
+	smContext.SubCtxLog.Debugln("---body", httpResponse.Body)
+	smContext.SubCtxLog.Debugln("---status", httpResponse.Status)
 	txn.Rsp = httpResponse
 	return nil
 }
