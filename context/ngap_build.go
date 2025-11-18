@@ -99,24 +99,37 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 			ctx.Supi, ctx.PDUSessionID)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}*/
+	//UpNode.UpfLock.RLock()
+
+	// Take read lock
 	UpNode.UpfLock.RLock()
 
-	n := len(UpNode.N3Interfaces)
-	if n == 0 {
-		UpNode.UpfLock.RUnlock()
+	// Copy the slice pointer (snapshot)
+	n3Ifaces := UpNode.N3Interfaces
 
+	// Check empty
+	if len(n3Ifaces) == 0 {
+		UpNode.UpfLock.RUnlock()
 		logger.PduSessLog.Errorf(
 			"SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF",
 			ctx.Supi, ctx.PDUSessionID,
 		)
 		return nil, fmt.Errorf("N3Interfaces is empty for UPF")
 	}
-	n3Iface := UpNode.N3Interfaces[0]
+
+	// Copy interface reference while locked
+	n3Iface := n3Ifaces[0]
+
+	// Unlock NOW (because we have a safe snapshot)
 	UpNode.UpfLock.RUnlock()
+
+	// Safe: call methods on n3Iface outside lock
 	n3IP, err := n3Iface.IP(ctx.SelectedPDUSessionType)
 	if err != nil {
-		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
-			ctx.Supi, ctx.PDUSessionID, err)
+		logger.PduSessLog.Errorf(
+			"SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
+			ctx.Supi, ctx.PDUSessionID, err,
+		)
 		return nil, err
 	} else {
 		logger.PduSessLog.Infof("SUPI[%s], PDUSessionID[%d]: Using N3 IP[%v] for UPF[%s]",
