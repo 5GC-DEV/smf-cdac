@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	// "time"
-
 	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/omec-project/aper"
 	"github.com/omec-project/ngap/ngapConvert"
@@ -101,30 +99,22 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	}*/
 	//UpNode.UpfLock.RLock()
 
-	// Take read lock
 	UpNode.UpfLock.RLock()
-
-	// Copy the slice pointer (snapshot)
 	n3Ifaces := UpNode.N3Interfaces
-
-	// Check empty
-	if len(n3Ifaces) == 0 {
-		UpNode.UpfLock.RUnlock()
-		logger.PduSessLog.Errorf(
-			"SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF",
-			ctx.Supi, ctx.PDUSessionID,
-		)
-		return nil, fmt.Errorf("N3Interfaces is empty for UPF")
-	}
-
-	// Copy interface reference while locked
-	n3Iface := n3Ifaces[0]
-
-	// Unlock NOW (because we have a safe snapshot)
 	UpNode.UpfLock.RUnlock()
 
-	// Safe: call methods on n3Iface outside lock
-	n3IP, err := n3Iface.IP(ctx.SelectedPDUSessionType)
+	if len(n3Ifaces) == 0 {
+		// time.Sleep(5 * time.Millisecond)
+
+		UpNode.UpfLock.RLock()
+		n3Ifaces = UpNode.N3Interfaces
+		UpNode.UpfLock.RUnlock()
+
+		if len(n3Ifaces) == 0 {
+			return nil, fmt.Errorf("N3Interfaces still empty after retry")
+		}
+	}
+	n3IP, err := n3Ifaces[0].IP(ctx.SelectedPDUSessionType)
 	if err != nil {
 		logger.PduSessLog.Errorf(
 			"SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
