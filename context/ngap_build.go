@@ -99,7 +99,7 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 	}*/
 	//UpNode.UpfLock.RLock()
 
-	UpNode.UpfLock.RLock()
+	/*UpNode.UpfLock.RLock()
 	n3Ifaces := UpNode.N3Interfaces
 	UpNode.UpfLock.RUnlock()
 
@@ -139,8 +139,34 @@ func BuildPDUSessionResourceSetupRequestTransfer(ctx *SMContext) ([]byte, error)
 				},
 			},
 		}
+	} */
+	if len(UpNode.N3Interfaces) == 0 {
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: No N3 interface available in UPF", ctx.Supi, ctx.PDUSessionID)
+		return nil, fmt.Errorf("N3Interfaces is empty for UPF: %v", UpNode.N3Interfaces)
 	}
-
+	if n3IP, err := UpNode.N3Interfaces[0].IP(ctx.SelectedPDUSessionType); err != nil {
+		logger.PduSessLog.Errorf("SUPI[%s], PDUSessionID[%d]: Failed to get N3 IP for UPF, err: %v",
+			ctx.Supi, ctx.PDUSessionID, err)
+		return nil, err
+	} else {
+		logger.PduSessLog.Infof("SUPI[%s], PDUSessionID[%d]: Using N3 IP[%v] for UPF[%s]",
+			ctx.Supi, ctx.PDUSessionID, n3IP, UpNode.NodeID)
+		ie.Value = ngapType.PDUSessionResourceSetupRequestTransferIEsValue{
+			Present: ngapType.PDUSessionResourceSetupRequestTransferIEsPresentULNGUUPTNLInformation,
+			ULNGUUPTNLInformation: &ngapType.UPTransportLayerInformation{
+				Present: ngapType.UPTransportLayerInformationPresentGTPTunnel,
+				GTPTunnel: &ngapType.GTPTunnel{
+					TransportLayerAddress: ngapType.TransportLayerAddress{
+						Value: aper.BitString{
+							Bytes:     n3IP,
+							BitLength: uint64(len(n3IP) * 8),
+						},
+					},
+					GTPTEID: ngapType.GTPTEID{Value: teidOct},
+				},
+			},
+		}
+	}
 	resourceSetupRequestTransfer.ProtocolIEs.List = append(resourceSetupRequestTransfer.ProtocolIEs.List, ie)
 	logger.PduSessLog.Debugf("SUPI[%s], PDUSessionID[%d]: PDU Session Type set to IPv4",
 		ctx.Supi, ctx.PDUSessionID)
