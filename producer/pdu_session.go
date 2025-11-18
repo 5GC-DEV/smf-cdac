@@ -8,7 +8,7 @@ package producer
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -445,17 +445,16 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 				}
 				smContext.SubCtxLog.Info("---httpResponse.Status: with imsi: ", httpResponse.Status, smContext.Supi)
 				smContext.SubCtxLog.Info("---httpResponse.Body: ", httpResponse.Body)
-				smContext.SubCtxLog.Info("---actual type of body: %T", httpResponse.Body)
-				data, ok := httpResponse.Body.([]byte)
+				fmt.Printf("---Actual type: %T\n", httpResponse.Body)
+				fmt.Printf("---Actual value: %#v\n", httpResponse.Body)
+				resp, ok := httpResponse.Body.(models.UpdateSmContextResponse)
 				if !ok {
-					fmt.Println("---Body is not []byte")
+					fmt.Printf("---Body type is: %T\n", httpResponse.Body)
+					return errors.New("body type err")
 				}
-				var resp models.UpdateSmContextResponse
-				err := json.Unmarshal(data, &resp)
-				if err != nil {
-					fmt.Println("---JSON unmarshal error:", err)
+				if resp.JsonData != nil {
+					smContext.SubCtxLog.Infof("N2SmInfoType: %v for imsi: %s", resp.JsonData.N2SmInfoType, smContext.Supi)
 				}
-				smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfoType: ", resp.JsonData.N2SmInfoType)
 				// resp, ok := httpResponse.Body.(*models.UpdateSmContextResponse)
 				// if !ok {
 				// 	fmt.Println("---Body is not UpdateSmContextResponse")
