@@ -8,6 +8,7 @@ package producer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -444,13 +445,24 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 				}
 				smContext.SubCtxLog.Info("---httpResponse.Status: with imsi: ", httpResponse.Status, smContext.Supi)
 				smContext.SubCtxLog.Info("---httpResponse.Body: ", httpResponse.Body)
-				resp, ok := httpResponse.Body.(*models.UpdateSmContextResponse)
+				smContext.SubCtxLog.Info("---actual type of body: %T", httpResponse.Body)
+				data, ok := httpResponse.Body.([]byte)
 				if !ok {
-					fmt.Println("---Body is not UpdateSmContextResponse")
+					fmt.Println("---Body is not []byte")
 				}
-				smContext.SubCtxLog.Info("---JsonData: %+v\n with imsi: ", resp.JsonData, smContext.Supi)
-				smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfoType: %v, with imsi: ", resp.JsonData.N2SmInfoType, smContext.Supi)
-				smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfo: %v, with imsi: ", resp.JsonData.N2SmInfo, smContext.Supi)
+				var resp models.UpdateSmContextResponse
+				err := json.Unmarshal(data, &resp)
+				if err != nil {
+					fmt.Println("---JSON unmarshal error:", err)
+				}
+				smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfoType: ", resp.JsonData.N2SmInfoType)
+				// resp, ok := httpResponse.Body.(*models.UpdateSmContextResponse)
+				// if !ok {
+				// 	fmt.Println("---Body is not UpdateSmContextResponse")
+				// }
+				// smContext.SubCtxLog.Info("---JsonData: %+v\n with imsi: ", resp.JsonData, smContext.Supi)
+				// smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfoType: %v, with imsi: ", resp.JsonData.N2SmInfoType, smContext.Supi)
+				// smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfo: %v, with imsi: ", resp.JsonData.N2SmInfo, smContext.Supi)
 				smContext.ChangeState(smf_context.SmStateActive)
 				smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
 			}
