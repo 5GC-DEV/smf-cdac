@@ -461,7 +461,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 			},
 		}
 		upf.UpfLock.Lock()
-		logger.PfcpLog.Infof("Locked UPF N3 for supi %s", smContext.Supi)
+		logger.PfcpLog.Debugf("Locked UPF N3 for supi %s", smContext.Supi)
 		upf.N3Interfaces = newN3
 		upf.UpfLock.Unlock()
 	}
