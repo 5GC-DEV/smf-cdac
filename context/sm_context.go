@@ -358,10 +358,16 @@ func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
 }
 
 func (smContext *SMContext) ReleaseUeIpAddr() error {
-	if ip := smContext.PDUAddress.Ip; ip != nil && !smContext.PDUAddress.UpfProvided {
-		smContext.SubPduSessLog.Infof("Release IP[%s]", smContext.PDUAddress.Ip.String())
-		smContext.DNNInfo.UeIPAllocator.Release(smContext.Supi, ip)
-		smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
+	if smContext.PDUAddress != nil {
+		smContext.SubPduSessLog.Infof("[ReleaseUeIpAddr]  PDUAddress present: IP[%v], UpfProvided[%v], SUPI[%v]", smContext.PDUAddress.Ip, smContext.PDUAddress.UpfProvided, smContext.Supi)
+		smContext.SubPduSessLog.Infof("[ReleaseUeIpAddr]  Releasing UE IP[%s]", smContext.PDUAddress.Ip.String())
+		if ip := smContext.PDUAddress.Ip; ip != nil && !smContext.PDUAddress.UpfProvided {
+			smContext.SubPduSessLog.Infof("[ReleaseUeIpAddr]  Release IP[%s]", smContext.PDUAddress.Ip.String())
+			smContext.DNNInfo.UeIPAllocator.Release(smContext.Supi, ip)
+			smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
+		}
+	} else {
+		smContext.SubPduSessLog.Infof("[ReleaseUeIpAddr]  PDUAddress is nil, nothing to release")
 	}
 	return nil
 }
