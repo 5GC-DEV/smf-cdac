@@ -6,6 +6,7 @@ require (
 	github.com/5GC-DEV/config5g-cdac v0.2.1
 	github.com/5GC-DEV/nas-cdac v0.0.0-20251003065343-87d9d21b06f6
 	github.com/5GC-DEV/openapi-cdac v1.0.1-0.20250930103916-588dd800f7e9
+	github.com/5GC-DEV/util-cdac v0.0.0-20251121092437-4f36f7ad1952
 	github.com/antihax/optional v1.0.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
@@ -22,10 +23,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require (
-	github.com/5GC-DEV/util-cdac v0.0.0-20250930103432-58951725c085 // indirect
-	github.com/omec-project/openapi v1.4.1 // indirect
-)
+require github.com/omec-project/openapi v1.4.1 // indirect
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
