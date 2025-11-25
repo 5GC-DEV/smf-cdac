@@ -424,43 +424,38 @@ func (smf *SMF) Start() {
 
 	HTTPAddr := fmt.Sprintf("%s:%d", context.SMF_Self().BindingIPv4, context.SMF_Self().SBIPort)
 	sslLog := filepath.Dir(factory.SmfConfig.CfgLocation) + "/sslkey.log"
-	server, err := http2_util.NewServer(HTTPAddr, sslLog, router)
 
-	if server == nil {
-		logger.InitLog.Errorln("initialize HTTP server failed:", err)
-		return
-	}
+	server, err := http2_util.NewServer(
+		HTTPAddr,
+		sslLog,
+		context.SMF_Self().PEM,
+		context.SMF_Self().Key,
+		router,
+	)
 
 	if err != nil {
-		logger.InitLog.Warnln("initialize HTTP server:", err)
+		logger.InitLog.Fatalf("Server init failed: %v", err)
 	}
 
 	serverScheme := factory.SmfConfig.Configuration.Sbi.Scheme
+
 	switch serverScheme {
 	case "http":
 		err = server.ListenAndServe()
+
 	case "https":
-		// err = server.ListenAndServeTLS(context.SMF_Self().PEM, context.SMF_Self().Key)
-		cert, _ := tls.LoadX509KeyPair(context.SMF_Self().PEM, context.SMF_Self().Key)
-		server.TLSConfig.Certificates = []tls.Certificate{cert}
-		server.TLSConfig.NextProtos = []string{"h2"} // REQUIRED for HTTP/2
 		ln, err := tls.Listen("tcp", HTTPAddr, server.TLSConfig)
 		if err != nil {
 			logger.InitLog.Fatalf("TLS listen failed: %v", err)
 		}
-
-		serveErr := server.Serve(ln)
-		if serveErr != nil {
-			logger.InitLog.Fatalf("HTTP/2 TLS server failed: %v", serveErr)
-		}
-	default:
-		logger.InitLog.Fatalf("HTTP server setup failed: invalid server scheme %+v", serverScheme)
-		return
+		logger.InitLog.Infof("SMF HTTPS running at %s", HTTPAddr)
+		err = server.Serve(ln)
 	}
 
 	if err != nil {
-		logger.InitLog.Fatalln("HTTP server setup failed:", err)
+		logger.InitLog.Fatalf("HTTP server failed: %v", err)
 	}
+
 }
 
 func (smf *SMF) Terminate() {
