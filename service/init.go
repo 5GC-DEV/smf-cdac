@@ -7,6 +7,7 @@
 package service
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof" // Using package only for invoking initialization.
@@ -439,7 +440,16 @@ func (smf *SMF) Start() {
 	case "http":
 		err = server.ListenAndServe()
 	case "https":
-		err = server.ListenAndServeTLS(context.SMF_Self().PEM, context.SMF_Self().Key)
+		// err = server.ListenAndServeTLS(context.SMF_Self().PEM, context.SMF_Self().Key)
+		cert, _ := tls.LoadX509KeyPair(context.SMF_Self().PEM, context.SMF_Self().Key)
+		server.TLSConfig.Certificates = []tls.Certificate{cert}
+
+		ln, err := tls.Listen("tcp", HTTPAddr, server.TLSConfig)
+		if err != nil {
+			panic(err)
+		}
+
+		err = server.Serve(ln)
 	default:
 		logger.InitLog.Fatalf("HTTP server setup failed: invalid server scheme %+v", serverScheme)
 		return
