@@ -428,8 +428,6 @@ func (smf *SMF) Start() {
 	server, err := http2_util.NewServer(
 		HTTPAddr,
 		sslLog,
-		context.SMF_Self().PEM,
-		context.SMF_Self().Key,
 		router,
 	)
 
@@ -444,11 +442,23 @@ func (smf *SMF) Start() {
 		err = server.ListenAndServe()
 
 	case "https":
+		// 1. Load certificate
+		cert, err := tls.LoadX509KeyPair(context.SMF_Self().PEM, context.SMF_Self().Key)
+		if err != nil {
+			logger.InitLog.Fatalf("LoadX509KeyPair failed: %v", err)
+		}
+
+		// 2. Attach cert + enable HTTP/2
+		server.TLSConfig.Certificates = []tls.Certificate{cert}
+		server.TLSConfig.NextProtos = []string{"h2", "http/1.1"}
+
+		// 3. Create manual TLS listener
 		ln, err := tls.Listen("tcp", HTTPAddr, server.TLSConfig)
 		if err != nil {
 			logger.InitLog.Fatalf("TLS listen failed: %v", err)
 		}
-		logger.InitLog.Infof("SMF HTTPS running at %s", HTTPAddr)
+
+		// 4. Run using Serve() so KeyLogWriter is used
 		err = server.Serve(ln)
 	}
 
