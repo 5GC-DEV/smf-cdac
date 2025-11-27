@@ -92,11 +92,48 @@ type SMFContext struct {
 
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
 func RetrieveDnnInformation(Snssai models.Snssai, dnn string) *SnssaiSmfDnnInfo {
+
+	logger.CtxLog.Infof(
+		"[RetrieveDnnInformation] Input S-NSSAI[sst:%d sd:%s], DNN[%s]",
+		Snssai.Sst, Snssai.Sd, dnn,
+	)
+
 	for _, snssaiInfo := range SMF_Self().SnssaiInfos {
+
+		logger.CtxLog.Infof(
+			"[RetrieveDnnInformation] Checking SMF Snssai Config: sst:%d sd:%s",
+			snssaiInfo.Snssai.Sst, snssaiInfo.Snssai.Sd,
+		)
+
 		if snssaiInfo.Snssai.Sst == Snssai.Sst && snssaiInfo.Snssai.Sd == Snssai.Sd {
-			return snssaiInfo.DnnInfos[dnn]
+
+			logger.CtxLog.Infof(
+				"[RetrieveDnnInformation] Matched S-NSSAI. Looking for DNN: %s",
+				dnn,
+			)
+
+			dnnInfo, ok := snssaiInfo.DnnInfos[dnn]
+			if !ok {
+				logger.CtxLog.Errorf(
+					"[RetrieveDnnInformation] DNN[%s] not found under matched S-NSSAI",
+					dnn,
+				)
+				return nil
+			}
+
+			logger.CtxLog.Infof(
+				"[RetrieveDnnInformation] Found DNN[%s] → returning DNN Info",
+				dnn,
+			)
+			return dnnInfo
 		}
 	}
+
+	logger.CtxLog.Errorf(
+		"[RetrieveDnnInformation] No matching S-NSSAI found for sst:%d sd:%s",
+		Snssai.Sst, Snssai.Sd,
+	)
+
 	return nil
 }
 
