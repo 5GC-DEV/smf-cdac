@@ -162,6 +162,14 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		SessionManagementSubscriptionDataRetrievalApi.
 		GetSmData(context.Background(), smContext.Supi, smDataParams); err != nil {
 		metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), err.Error())
+		if smContext == nil {
+			logger.PduSessLog.Errorln("PDUSessionSMContextCreate: smContext is NIL")
+			return fmt.Errorf("smContext nil")
+		}
+		if rsp == nil {
+			logger.PduSessLog.Errorln("PDUSessionSMContextCreate: response is NIL")
+			return fmt.Errorf("response nil")
+		}
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, get SessionManagementSubscriptionData error: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("SubscriptionDataFetchError")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
