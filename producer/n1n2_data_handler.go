@@ -24,6 +24,10 @@ type pfcpAction struct {
 	sendPfcpModify, sendPfcpDelete bool
 }
 
+type SmEventData struct {
+	Txn interface{}
+}
+
 type pfcpParam struct {
 	pdrList   []*context.PDR
 	farList   []*context.FAR
@@ -139,6 +143,34 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
 		case nas.MsgTypePDUSessionEstablishmentRequest:
 			smContext.SubPduSessLog.Infoln("PDUSessionSMContextUpdate, N1 Msg PDU Session Establishment Request received")
+			if smContext.SMContextState != context.SmStateInActivePending {
+				// Wait till the state becomes SmStateActive again
+				// TODO: implement sleep wait in concurrent architecture
+				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
+			}
+			pduSessIDRelReq := int32(m.PDUSessionReleaseRequest.GetPDUSessionID())
+			smContext.SubPduSessLog.Debug("PDU Session ID in Rel Req: ", pduSessIDRelReq)
+			pduSessIDSmCxt := smContext.PDUSessionID
+			smContext.SubPduSessLog.Debug("PDU Session ID in SM Context: ", pduSessIDSmCxt)
+			eventData := &SmEventData{Txn: txn}
+			smContext.SubPduSessLog.Infof("EventData created: Txn=%+v", eventData.Txn)
+			smContext.SubPduSessLog.Infof("EventData Details: %+v", eventData)
+			if pduSessIDRelReq == pduSessIDSmCxt {
+				// Call the existing creation handler
+				err := HandlePDUSessionSMContextUpdate(eventData.Txn)
+				if err != nil {
+					smContext.SubPduSessLog.Infof("Re-establishment via UpdateSMContext failed: %+v", err)
+					return err
+				}
+				// SmStateActive
+				//smContext.ChangeState(context.SmStateActive)
+				// return smf_context.SmStateActive, err
+				return nil
+			} else {
+				smContext.SubPduSessLog.Infof("Invalid PDU Session ID")
+				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionDoesNotExist")
+				// rejection
+			}
 		}
 	} else {
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, Binary Data N1 SmMessage is nil")
@@ -211,7 +243,6 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 			}
 
 			pfcpParam.farList = append(pfcpParam.farList, farList...)
-
 			pfcpAction.sendPfcpModify = true
 			smContext.ChangeState(context.SmStatePfcpModify)
 			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())

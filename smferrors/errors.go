@@ -109,6 +109,13 @@ var (
 		Cause:         "REQUEST_REJECTED",
 		InvalidParams: nil,
 	}
+	PDUSessionDoesNotExist = models.ProblemDetails{
+		Title:         "PduSession Does Not Exist",
+		Status:        http.StatusNotFound,
+		Detail:        "PDU Session Establishment Request Rejected as PDU Session Does Not Exist.",
+		Cause:         "REQUEST_REJECTED",
+		InvalidParams: nil,
+	}
 )
 
 var ErrorType = map[string]*models.ProblemDetails{
@@ -125,6 +132,7 @@ var ErrorType = map[string]*models.ProblemDetails{
 	"ApplySMPolicyFailure":          &ApplySMPolicyFailure,
 	"AMFDiscoveryFailure":           &AMFDiscoveryFailure,
 	"PDUSessionTypeIPv4OnlyAllowed": &PduSessionTypeNotSupported,
+	"PDUSessionDoesNotExist":        &PDUSessionDoesNotExist,
 }
 
 var ErrorCause = map[string]uint8{
@@ -142,4 +150,5 @@ var ErrorCause = map[string]uint8{
 	"AMFDiscoveryFailure":           nasMessage.Cause5GSMRequestRejectedUnspecified,
 	"PDUSessionTypeIPv4OnlyAllowed": nasMessage.Cause5GSMPDUSessionTypeIPv4OnlyAllowed,
 	"InvalidPDUSessionIdentity":     nasMessage.Cause5GSMInvalidPDUSessionIdentity,
+	"PDUSessionDoesNotExist":        nasMessage.Cause5GSMPDUSessionDoesNotExist,
 }
