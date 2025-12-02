@@ -154,6 +154,12 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		PlmnId:      optional.NewInterface(smPlmnID.Mcc + smPlmnID.Mnc),
 		SingleNssai: optional.NewInterface(openapi.MarshToJsonString(smContext.Snssai)),
 	}
+	smContext.SubPduSessLog.Infof("Selected PLMN: %s%s, DNN: %s",
+		smPlmnID.Mcc, smPlmnID.Mnc, createData.Dnn)
+
+	// Print S-NSSAI (slice)
+	sliceJson := openapi.MarshToJsonString(smContext.Snssai)
+	smContext.SubPduSessLog.Infof("Selected S-NSSAI: %s", sliceJson)
 
 	SubscriberDataManagementClient := smf_context.SMF_Self().SubscriberDataManagementClient
 	metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "Out", "", "")
