@@ -423,36 +423,60 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 			}
 		} else if pfcpAction.sendPfcpModify {
 			smContext.ChangeState(smf_context.SmStatePfcpModify)
-			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-			smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send PFCP Modification")
+			smContext.SubCtxLog.Debugf(
+				"PDUSessionSMContextUpdate SUPI[%s], State changed to: %s",
+				smContext.Supi, smContext.SMContextState.String(),
+			)
+
+			smContext.SubPduSessLog.Infof(
+				"PDUSessionSMContextUpdate SUPI[%s], sending PFCP Session Modification",
+				smContext.Supi,
+			)
 
 			// Initiate PFCP Modify
 			if err = SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
-				// Modify failure
-				smContext.SubCtxLog.Errorf("pfcp session modify error: %v ", err.Error())
 
-				// Form Modify err rsp
+				// Modify failure logs
+				smContext.SubCtxLog.Errorf(
+					"SUPI[%s] PFCP Session Modify error: %v",
+					smContext.Supi, err.Error(),
+				)
+
+				// Form Modify error response
 				httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
 
 				/*
-					// TODO: Add Ctxt cleanup if PFCP response is context not found,
+					// TODO: Add context cleanup if PFCP response is context not found,
 					// just initiating PFCP session release will not help
-						//PFCP Modify Err, initiate release
+
+						// PFCP Modify Err, initiate release
 						SendPfcpSessionReleaseReq(smContext)
 
-						//Change state to InactivePending
+						// Change state to InactivePending
 						smContext.ChangeState(smf_context.SmStateInActivePending)
-						smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+						smContext.SubCtxLog.Debugf(
+							"PDUSessionSMContextUpdate SUPI[%s], State changed to: %s",
+							smContext.Supi, smContext.SMContextState.String(),
+						)
 				*/
+
 			} else {
 				// Modify Success
+				smContext.SubPduSessLog.Infof(
+					"SUPI[%s] PFCP Session Modify successful",
+					smContext.Supi,
+				)
+
 				httpResponse = &httpwrapper.Response{
 					Status: http.StatusOK,
 					Body:   response,
 				}
 
 				smContext.ChangeState(smf_context.SmStateActive)
-				smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Debugf(
+					"SUPI[%s] SMContextState changed to: %s",
+					smContext.Supi, smContext.SMContextState.String(),
+				)
 			}
 		}
 

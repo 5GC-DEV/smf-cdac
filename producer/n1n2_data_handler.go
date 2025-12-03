@@ -379,6 +379,10 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 	case models.N2SmInfoType_PDU_RES_SETUP_RSP:
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
 			smContextUpdateData.N2SmInfoType)
+		smContext.SubPduSessLog.Infof(
+			"PDUSessionSMContextUpdate SUPI[%s], sending PFCP Session Modification",
+			smContext.Supi,
+		)
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes Active again
 			// TODO: implement sleep wait in concurrent architecture
