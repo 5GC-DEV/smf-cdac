@@ -38,9 +38,10 @@ type pfcpParam struct {
 	removeQER []*smf_context.QER
 }
 
-func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction) error {
+func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction, pfcpParam *pfcpParam) error {
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
+	tunnel := smContext.Tunnel
 
 	if body.BinaryDataN1SmMessage != nil {
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, Binary Data N1 SmMessage isn't nil")
@@ -152,24 +153,77 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			smContext.SubPduSessLog.Debug("PDU Session ID in Rel Req: ", pduSessIDRelReq)
 			pduSessIDSmCxt := smContext.PDUSessionID
 			smContext.SubPduSessLog.Debug("PDU Session ID in SM Context: ", pduSessIDSmCxt)
-			eventData := &SmEventData{Txn: txn}
-			smContext.SubPduSessLog.Infof("EventData created: Txn=%+v", eventData.Txn)
-			smContext.SubPduSessLog.Infof("EventData Details: %+v", eventData)
 			if pduSessIDRelReq == pduSessIDSmCxt {
-				// Call the existing creation handler
-				err := HandlePDUSessionSMContextUpdate(eventData.Txn)
-				if err != nil {
-					smContext.SubPduSessLog.Infof("Re-establishment via UpdateSMContext failed: %+v", err)
+				if smContext.SMContextState != context.SmStateActive {
+					// Wait till the state becomes Active again
+					// TODO: implement sleep wait in concurrent architecture
+					smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be Active",
+						smContext.SMContextState.String())
+				}
+				smContext.ChangeState(context.SmStateModify)
+				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				pdrList := []*context.PDR{}
+				farList := []*context.FAR{}
+
+				smContext.PendingUPF = make(context.PendingUPF)
+				for _, dataPath := range tunnel.DataPathPool {
+					if dataPath.Activated {
+						ANUPF := dataPath.FirstDPNode
+						for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+							DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
+							DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
+								DestinationInterface: context.DestinationInterface{
+									InterfaceValue: context.DestinationInterfaceAccess,
+								},
+								NetworkInstance: []byte(smContext.Dnn),
+							}
+
+							DLPDR.State = context.RULE_UPDATE
+							DLPDR.FAR.State = context.RULE_UPDATE
+
+							pdrList = append(pdrList, DLPDR)
+							farList = append(farList, DLPDR.FAR)
+
+							if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+								smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+							}
+						}
+					}
+				}
+
+				pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
+				pfcpParam.farList = append(pfcpParam.farList, farList...)
+
+				pfcpAction.sendPfcpModify = true
+				smContext.ChangeState(context.SmStatePfcpModify)
+				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+					// PFCP modify failed — revert state and return error
+					smContext.SubCtxLog.Errorf("PFCP session modify error: %v", err)
+					// smContext.ChangeState(prevState)
+					smContext.SubCtxLog.Infof("SMContext[%s-%02d] state reverted to %s after PFCP error",
+						smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
+
+					// Build HTTP error response for the original transaction
+					httpResponse := makePduCtxtModifyErrRsp(smContext, err.Error())
+					txn.Err = err
+					txn.Rsp = httpResponse
 					return err
 				}
-				// SmStateActive
-				//smContext.ChangeState(context.SmStateActive)
-				// return smf_context.SmStateActive, err
+				// Set response and change state to active
+				smContext.ChangeState(smf_context.SmStateActive)
+				smContext.SubCtxLog.Info("PFCP Modify success and N1N2 Msg sent, new state:", smContext.SMContextState.String())
+
+				httpResponse := &httpwrapper.Response{
+					Status: http.StatusCreated,
+					Body:   nil,
+				}
+				txn.Rsp = httpResponse
+
 				return nil
 			} else {
 				smContext.SubPduSessLog.Infof("Invalid PDU Session ID")
 				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionDoesNotExist")
-				// rejection
 			}
 		}
 	} else {

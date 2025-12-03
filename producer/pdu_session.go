@@ -8,6 +8,7 @@ package producer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -135,6 +136,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
 		return fmt.Errorf("IpAllocError")
 	} else {
+		logger.CtxLog.Infof("PDUSessionSMContextCreate: Allocated IP for SUPI %s: %s (before assigning to PDUAddress)", smContext.Supi, ip.String())
 		smContext.PDUAddress = &smf_context.UeIpAddr{Ip: ip, UpfProvided: false}
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, IP alloc success IP[%s]",
 			smContext.PDUAddress.Ip.String())
@@ -352,11 +354,6 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 	var response models.UpdateSmContextResponse
 	response.JsonData = new(models.SmContextUpdatedData)
 
-	// N1 Msg Handling
-	if err := HandleUpdateN1Msg(txn, &response, pfcpAction); err != nil {
-		return err
-	}
-
 	pfcpParam := &pfcpParam{
 		pdrList: []*smf_context.PDR{},
 		farList: []*smf_context.FAR{},
@@ -364,6 +361,10 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 		qerList: []*smf_context.QER{},
 	}
 
+	// N1 Msg Handling
+	if err := HandleUpdateN1Msg(txn, &response, pfcpAction, pfcpParam); err != nil {
+		return err
+	}
 	// UP Cnx State handling
 	if err := HandleUpCnxState(txn, &response, pfcpAction, pfcpParam); err != nil {
 		return err
@@ -441,7 +442,25 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 					Status: http.StatusOK,
 					Body:   response,
 				}
-
+				smContext.SubCtxLog.Info("---httpResponse.Status: with imsi: ", httpResponse.Status, smContext.Supi)
+				smContext.SubCtxLog.Info("---httpResponse.Body: ", httpResponse.Body)
+				fmt.Printf("---Actual type: %T\n", httpResponse.Body)
+				fmt.Printf("---Actual value: %#v\n", httpResponse.Body)
+				resp, ok := httpResponse.Body.(models.UpdateSmContextResponse)
+				if !ok {
+					fmt.Printf("---Body type is: %T\n", httpResponse.Body)
+					return errors.New("body type err")
+				}
+				if resp.JsonData != nil {
+					smContext.SubCtxLog.Infof("N2SmInfoType: %v for imsi: %s", resp.JsonData.N2SmInfoType, smContext.Supi)
+				}
+				// resp, ok := httpResponse.Body.(*models.UpdateSmContextResponse)
+				// if !ok {
+				// 	fmt.Println("---Body is not UpdateSmContextResponse")
+				// }
+				// smContext.SubCtxLog.Info("---JsonData: %+v\n with imsi: ", resp.JsonData, smContext.Supi)
+				// smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfoType: %v, with imsi: ", resp.JsonData.N2SmInfoType, smContext.Supi)
+				// smContext.SubCtxLog.Info("---resp.JsonData.N2SmInfo: %v, with imsi: ", resp.JsonData.N2SmInfo, smContext.Supi)
 				smContext.ChangeState(smf_context.SmStateActive)
 				smContext.SubCtxLog.Debugln("SMContextState Change State:", smContext.SMContextState.String())
 			}
@@ -468,7 +487,8 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 			Body:   response,
 		}
 	}
-
+	smContext.SubCtxLog.Debugln("---body", httpResponse.Body)
+	smContext.SubCtxLog.Debugln("---status", httpResponse.Status)
 	txn.Rsp = httpResponse
 	return nil
 }

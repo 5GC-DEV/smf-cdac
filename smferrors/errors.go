@@ -112,7 +112,7 @@ var (
 	PDUSessionDoesNotExist = models.ProblemDetails{
 		Title:         "PduSession Does Not Exist",
 		Status:        http.StatusNotFound,
-		Detail:        "PDU Session Establishment Request Rejected as PDU Session Does Not Exist.",
+		Detail:        "PDU Session Establishment Request Rejected as PDU Session Does Not Exist .",
 		Cause:         "REQUEST_REJECTED",
 		InvalidParams: nil,
 	}
