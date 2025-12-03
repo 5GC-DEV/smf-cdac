@@ -149,7 +149,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				// TODO: implement sleep wait in concurrent architecture
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
 			}
-			pduSessIDRelReq := int32(m.PDUSessionReleaseRequest.GetPDUSessionID())
+			pduSessIDRelReq := int32(m.PDUSessionEstablishmentRequest.GetPDUSessionID())
 			smContext.SubPduSessLog.Debug("PDU Session ID in Rel Req: ", pduSessIDRelReq)
 			pduSessIDSmCxt := smContext.PDUSessionID
 			smContext.SubPduSessLog.Debug("PDU Session ID in SM Context: ", pduSessIDSmCxt)
