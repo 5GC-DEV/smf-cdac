@@ -150,10 +150,10 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
 			}
 			pduSessIDRelReq := int32(m.PDUSessionEstablishmentRequest.GetPDUSessionID())
-			smContext.SubPduSessLog.Debug("PDU Session ID in Rel Req: ", pduSessIDRelReq)
+			smContext.SubPduSessLog.Infof("PDU Session ID in Rel Req: ", pduSessIDRelReq)
 			pduSessIDSmCxt := smContext.PDUSessionID
-			smContext.SubPduSessLog.Debug("PDU Session ID in SM Context: ", pduSessIDSmCxt)
-			if pduSessIDRelReq == pduSessIDSmCxt {
+			smContext.SubPduSessLog.Infof("PDU Session ID in SM Context: ", pduSessIDSmCxt)
+			if pduSessIDRelReq == pduSessIDSmCxt && pduSessIDSmCxt != 0 {
 				if smContext.SMContextState != context.SmStateActive {
 					// Wait till the state becomes Active again
 					// TODO: implement sleep wait in concurrent architecture
@@ -161,7 +161,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 						smContext.SMContextState.String())
 				}
 				smContext.ChangeState(context.SmStateModify)
-				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				pdrList := []*context.PDR{}
 				farList := []*context.FAR{}
 
@@ -196,7 +196,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 				pfcpAction.sendPfcpModify = true
 				smContext.ChangeState(context.SmStatePfcpModify)
-				smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
 					// PFCP modify failed — revert state and return error
 					smContext.SubCtxLog.Errorf("PFCP session modify error: %v", err)
