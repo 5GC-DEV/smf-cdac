@@ -358,10 +358,26 @@ func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
 }
 
 func (smContext *SMContext) ReleaseUeIpAddr() error {
+	if smContext.PDUAddress == nil {
+		smContext.SubPduSessLog.Infof("[ReleaseUeIpAddr] PDUAddress is nil, nothing to release")
+		return nil
+	}
 	if ip := smContext.PDUAddress.Ip; ip != nil && !smContext.PDUAddress.UpfProvided {
 		smContext.SubPduSessLog.Infof("Release IP[%s]", smContext.PDUAddress.Ip.String())
 		smContext.DNNInfo.UeIPAllocator.Release(smContext.Supi, ip)
 		smContext.PDUAddress.Ip = net.IPv4(0, 0, 0, 0)
+	}
+	return nil
+}
+
+func (smContext *SMContext) ReleasePduSessionID() error {
+	// Check if a PDU Session ID is currently assigned
+	if smContext.PDUSessionID != 0 {
+		smContext.SubPduSessLog.Infof("[ReleasePduSessionID] Releasing PDU Session ID [%d] for SUPI [%s]", smContext.PDUSessionID, smContext.Supi)
+		// Reset the ID to 0 to indicate it is no longer associated with this context
+		smContext.PDUSessionID = 0
+	} else {
+		smContext.SubPduSessLog.Infof("[ReleasePduSessionID] PDU Session ID is 0 or already released")
 	}
 	return nil
 }
