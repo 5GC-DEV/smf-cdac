@@ -150,9 +150,4 @@ func (smContext *SMContext) HandlePDUSessionReleaseRequest(req *nasMessage.PDUSe
 	if err != nil {
 		smContext.SubGsmLog.Errorf("release UE IP Addr failed: %s", err)
 	}
-
-	err = smContext.ReleasePduSessionID()
-	if err != nil {
-		smContext.SubGsmLog.Infof("release PDU Session ID failed: %s", err)
-	}
 }
