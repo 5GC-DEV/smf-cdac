@@ -105,7 +105,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				}
 
-				err = smContext.ReleasePduSessionID()
+				err := smContext.ReleasePduSessionID()
 				if err != nil {
 					smContext.SubGsmLog.Infof("release PDU Session ID failed: %s", err)
 				}
