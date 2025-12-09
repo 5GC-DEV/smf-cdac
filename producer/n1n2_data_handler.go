@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/5GC-DEV/nas-cdac"
+	"github.com/5GC-DEV/nas-cdac/nasMessage" // Imports as "nasMessage" <-- ADD THIS
 	"github.com/5GC-DEV/openapi-cdac/Nsmf_PDUSession"
 	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/5GC-DEV/util-cdac/httpwrapper"
@@ -227,8 +228,53 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 				return nil
 			} else {
-				smContext.SubPduSessLog.Infof("Invalid PDU Session ID")
-				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionDoesNotExist")
+				// smContext.SubPduSessLog.Infof("Invalid PDU Session ID")
+				// txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionDoesNotExist")
+
+				smContext.SubPduSessLog.Warnf("Invalid PDU Session ID: Request[%d] != Context[%d]. Rejecting with Cause 54.", pduSessIDRelReq, pduSessIDSmCxt)
+
+				// 1. Build NAS Reject Manually
+				m := nas.NewMessage()
+				m.GsmMessage = nas.NewGsmMessage()
+				m.GsmHeader.SetMessageType(nas.MsgTypePDUSessionEstablishmentReject)
+				m.GsmHeader.SetExtendedProtocolDiscriminator(nasMessage.Epd5GSSessionManagementMessage)
+
+				// Create the body
+				m.PDUSessionEstablishmentReject = nasMessage.NewPDUSessionEstablishmentReject(0x0)
+
+				// Set ID on the Body (Encoder moves it to header)
+				m.PDUSessionEstablishmentReject.SetPDUSessionID(uint8(pduSessIDRelReq))
+
+				// --- CHANGED HERE ---
+				// Set Cause 54 (0x36) explicitly for "PDU session does not exist"
+				m.PDUSessionEstablishmentReject.SetCauseValue(0x36)
+				// --------------------
+
+				m.PDUSessionEstablishmentReject.SetPTI(smContext.Pti)
+
+				nasBuf, err := m.PlainNasEncode()
+				if err != nil {
+					smContext.SubPduSessLog.Errorf("NAS Encode Error: %v", err)
+					return err
+				}
+
+				// 2. Build HTTP Error Response (404 Not Found)
+				var problemDetails models.ProblemDetails
+				problemDetails.Cause = "PDUSessionDoesNotExist"
+				problemDetails.Status = http.StatusNotFound
+
+				txn.Rsp = &httpwrapper.Response{
+					Status: http.StatusNotFound,
+					Body: models.UpdateSmContextErrorResponse{
+						JsonData: &models.SmContextUpdateError{
+							Error:   &problemDetails,
+							N1SmMsg: &models.RefToBinaryData{ContentId: "n1SmMsg"},
+						},
+						BinaryDataN1SmMessage: nasBuf,
+					},
+				}
+
+				return nil
 			}
 		}
 	} else {
