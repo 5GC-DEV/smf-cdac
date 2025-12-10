@@ -155,6 +155,9 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				// TODO: implement sleep wait in concurrent architecture
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
 			}
+
+			smContext := txn.Ctxt.(*smf_context.SMContext)
+
 			pduSessIDRelReq := int32(m.PDUSessionEstablishmentRequest.GetPDUSessionID())
 			smContext.SubPduSessLog.Infof("PDU Session ID in Rel Req: ", pduSessIDRelReq)
 			pduSessIDSmCxt := smContext.PDUSessionID
@@ -166,6 +169,12 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be Active",
 						smContext.SMContextState.String())
 				}
+
+				if smContext.PDUSessionID == 0 {
+					smContext.SubPduSessLog.Infof("Context PDU Session ID is 0. Updating Context to Request ID: %d", pduSessIDRelReq)
+					smContext.PDUSessionID = pduSessIDRelReq
+				}
+
 				smContext.ChangeState(context.SmStateModify)
 				smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				pdrList := []*context.PDR{}
@@ -228,6 +237,10 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 				return nil
 			} else {
+				if smContext.PDUSessionID == 0 {
+					smContext.SubPduSessLog.Infof("Context PDU Session ID is 0. Updating Context to Request ID: %d", pduSessIDRelReq)
+					smContext.PDUSessionID = pduSessIDRelReq
+				}
 				smContext.SubPduSessLog.Infof("Invalid PDU Session ID")
 				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionDoesNotExist")
 				return fmt.Errorf("SnssaiError")
