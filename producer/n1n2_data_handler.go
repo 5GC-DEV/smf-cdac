@@ -6,6 +6,7 @@
 package producer
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/5GC-DEV/nas-cdac"
@@ -34,9 +35,10 @@ type pfcpParam struct {
 	removeQER []*smf_context.QER
 }
 
-func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction) error {
+func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction, pfcpParam *pfcpParam) error {
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
+	tunnel := smContext.Tunnel
 
 	if body.BinaryDataN1SmMessage != nil {
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, Binary Data N1 SmMessage isn't nil")
@@ -97,6 +99,10 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					smContext.ChangeState(context.SmStateModify)
 					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				}
+				err := smContext.ReleasePduSessionID()
+				if err != nil {
+					smContext.SubGsmLog.Infof("release PDU Session ID failed: %s", err)
+				}
 			} else {
 				smContext.SubPduSessLog.Errorf("Invalid PDU Session ID")
 				if buf, err := context.BuildGSMPDUSessionReleaseRejectWithCause(smContext, pduSessIDRelReq, "InvalidPDUSessionIdentity"); err != nil {
@@ -135,6 +141,103 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
 			}*/
 			smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
+		case nas.MsgTypePDUSessionEstablishmentRequest:
+			smContext.SubPduSessLog.Infoln("PDUSessionSMContextUpdate, N1 Msg PDU Session Establishment Request received")
+			if smContext.SMContextState != context.SmStateInActivePending {
+				// Wait till the state becomes SmStateActive again
+				// TODO: implement sleep wait in concurrent architecture
+				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
+			}
+
+			smContext := txn.Ctxt.(*smf_context.SMContext)
+
+			pduSessIDRelReq := int32(m.PDUSessionEstablishmentRequest.GetPDUSessionID())
+			smContext.SubPduSessLog.Infof("PDU Session ID in Rel Req: ", pduSessIDRelReq)
+			pduSessIDSmCxt := smContext.PDUSessionID
+			smContext.SubPduSessLog.Infof("PDU Session ID in SM Context: ", pduSessIDSmCxt)
+			if pduSessIDRelReq == pduSessIDSmCxt && pduSessIDSmCxt != 0 {
+				if smContext.SMContextState != context.SmStateActive {
+					// Wait till the state becomes Active again
+					// TODO: implement sleep wait in concurrent architecture
+					smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be Active",
+						smContext.SMContextState.String())
+				}
+
+				if smContext.PDUSessionID == 0 {
+					smContext.SubPduSessLog.Infof("Context PDU Session ID is 0. Updating Context to Request ID: %d", pduSessIDRelReq)
+					smContext.PDUSessionID = pduSessIDRelReq
+				}
+
+				smContext.ChangeState(context.SmStateModify)
+				smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				pdrList := []*context.PDR{}
+				farList := []*context.FAR{}
+
+				smContext.PendingUPF = make(context.PendingUPF)
+				for _, dataPath := range tunnel.DataPathPool {
+					if dataPath.Activated {
+						ANUPF := dataPath.FirstDPNode
+						for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+							DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
+							DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
+								DestinationInterface: context.DestinationInterface{
+									InterfaceValue: context.DestinationInterfaceAccess,
+								},
+								NetworkInstance: []byte(smContext.Dnn),
+							}
+
+							DLPDR.State = context.RULE_UPDATE
+							DLPDR.FAR.State = context.RULE_UPDATE
+
+							pdrList = append(pdrList, DLPDR)
+							farList = append(farList, DLPDR.FAR)
+
+							if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+								smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+							}
+						}
+					}
+				}
+
+				pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
+				pfcpParam.farList = append(pfcpParam.farList, farList...)
+
+				pfcpAction.sendPfcpModify = true
+				smContext.ChangeState(context.SmStatePfcpModify)
+				smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+					// PFCP modify failed — revert state and return error
+					smContext.SubCtxLog.Errorf("PFCP session modify error: %v", err)
+					// smContext.ChangeState(prevState)
+					smContext.SubCtxLog.Infof("SMContext[%s-%02d] state reverted to %s after PFCP error",
+						smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
+
+					// Build HTTP error response for the original transaction
+					httpResponse := makePduCtxtModifyErrRsp(smContext, err.Error())
+					txn.Err = err
+					txn.Rsp = httpResponse
+					return err
+				}
+				// Set response and change state to active
+				smContext.ChangeState(smf_context.SmStateActive)
+				smContext.SubCtxLog.Info("PFCP Modify success and N1N2 Msg sent, new state:", smContext.SMContextState.String())
+
+				httpResponse := &httpwrapper.Response{
+					Status: http.StatusCreated,
+					Body:   nil,
+				}
+				txn.Rsp = httpResponse
+
+				return nil
+			} else {
+				if smContext.PDUSessionID == 0 {
+					smContext.SubPduSessLog.Infof("Context PDU Session ID is 0. Updating Context to Request ID: %d", pduSessIDRelReq)
+					smContext.PDUSessionID = pduSessIDRelReq
+				}
+				smContext.SubPduSessLog.Infof("Invalid PDU Session ID")
+				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionDoesNotExist")
+				return fmt.Errorf("SnssaiError")
+			}
 		}
 	} else {
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, Binary Data N1 SmMessage is nil")
