@@ -353,16 +353,16 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 	var response models.UpdateSmContextResponse
 	response.JsonData = new(models.SmContextUpdatedData)
 
-	// N1 Msg Handling
-	if err := HandleUpdateN1Msg(txn, &response, pfcpAction); err != nil {
-		return err
-	}
-
 	pfcpParam := &pfcpParam{
 		pdrList: []*smf_context.PDR{},
 		farList: []*smf_context.FAR{},
 		barList: []*smf_context.BAR{},
 		qerList: []*smf_context.QER{},
+	}
+
+	// N1 Msg Handling
+	if err := HandleUpdateN1Msg(txn, &response, pfcpAction, pfcpParam); err != nil {
+		return err
 	}
 
 	// UP Cnx State handling

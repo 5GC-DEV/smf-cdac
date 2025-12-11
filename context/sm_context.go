@@ -366,6 +366,18 @@ func (smContext *SMContext) ReleaseUeIpAddr() error {
 	return nil
 }
 
+func (smContext *SMContext) ReleasePduSessionID() error {
+	// Check if a PDU Session ID is currently assigned
+	if smContext.PDUSessionID != 0 {
+		smContext.SubPduSessLog.Debugf("[ReleasePduSessionID] Releasing PDU Session ID [%d] for SUPI [%s]", smContext.PDUSessionID, smContext.Supi)
+		// Reset the ID to 0 to indicate it is no longer associated with this context
+		smContext.PDUSessionID = 0
+	} else {
+		smContext.SubPduSessLog.Debugf("[ReleasePduSessionID] PDU Session ID is 0 or already released")
+	}
+	return nil
+}
+
 // *** add unit test ***//
 func (smContext *SMContext) SetCreateData(createData *models.SmContextCreateData) {
 	smContext.Gpsi = createData.Gpsi
@@ -653,10 +665,11 @@ func (smContextState SMContextState) String() string {
 
 func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) *httpwrapper.Response {
 	var httpResponse *httpwrapper.Response
-
+	smContext.SubPduSessLog.Debugf("Generating PDU Session Establishment Reject for SUPI[%s] with Cause Key: [%s]", smContext.Supi, cause)
 	if buf, err := BuildGSMPDUSessionEstablishmentReject(
 		smContext,
 		errors.ErrorCause[cause]); err != nil {
+		smContext.SubPduSessLog.Debugf("Failed to build GSM NAS Reject message: %v", err)
 		httpResponse = &httpwrapper.Response{
 			Header: nil,
 			Status: int(errors.ErrorType[cause].Status),
@@ -668,6 +681,7 @@ func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) 
 			},
 		}
 	} else {
+		smContext.SubPduSessLog.Debugf("Successfully built NAS Reject message (Size: %d bytes). Returning HTTP Status: %d", len(buf), int(errors.ErrorType[cause].Status))
 		httpResponse = &httpwrapper.Response{
 			Header: nil,
 			Status: int(errors.ErrorType[cause].Status),
