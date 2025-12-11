@@ -142,19 +142,19 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			}*/
 			smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
 		case nas.MsgTypePDUSessionEstablishmentRequest:
-			smContext.SubPduSessLog.Infoln("PDUSessionSMContextUpdate, N1 Msg PDU Session Establishment Request received")
+			smContext.SubPduSessLog.Debugf("PDUSessionSMContextUpdate, N1 Msg PDU Session Establishment Request received")
 			if smContext.SMContextState != context.SmStateInActivePending {
 				// Wait till the state becomes SmStateActive again
 				// TODO: implement sleep wait in concurrent architecture
-				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
+				smContext.SubPduSessLog.Debugf("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
 			}
 
 			smContext := txn.Ctxt.(*smf_context.SMContext)
 
 			pduSessIDRelReq := int32(m.PDUSessionEstablishmentRequest.GetPDUSessionID())
-			smContext.SubPduSessLog.Infof("PDU Session ID in Rel Req: ", pduSessIDRelReq)
+			smContext.SubPduSessLog.Debugf("PDU Session ID in Rel Req: ", pduSessIDRelReq)
 			pduSessIDSmCxt := smContext.PDUSessionID
-			smContext.SubPduSessLog.Infof("PDU Session ID in SM Context: ", pduSessIDSmCxt)
+			smContext.SubPduSessLog.Debugf("PDU Session ID in SM Context: ", pduSessIDSmCxt)
 			if pduSessIDRelReq == pduSessIDSmCxt && pduSessIDSmCxt != 0 {
 				if smContext.SMContextState != context.SmStateActive {
 					// Wait till the state becomes Active again
@@ -164,12 +164,12 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				}
 
 				if smContext.PDUSessionID == 0 {
-					smContext.SubPduSessLog.Infof("Context PDU Session ID is 0. Updating Context to Request ID: %d", pduSessIDRelReq)
+					smContext.SubPduSessLog.Debugf("Context PDU Session ID is 0. Updating Context to Request ID: %d", pduSessIDRelReq)
 					smContext.PDUSessionID = pduSessIDRelReq
 				}
 
 				smContext.ChangeState(context.SmStateModify)
-				smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Debugf("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				pdrList := []*context.PDR{}
 				farList := []*context.FAR{}
 
@@ -204,12 +204,12 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 				pfcpAction.sendPfcpModify = true
 				smContext.ChangeState(context.SmStatePfcpModify)
-				smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Debugf("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
 					// PFCP modify failed — revert state and return error
 					smContext.SubCtxLog.Errorf("PFCP session modify error: %v", err)
 					// smContext.ChangeState(prevState)
-					smContext.SubCtxLog.Infof("SMContext[%s-%02d] state reverted to %s after PFCP error",
+					smContext.SubCtxLog.Debugf("SMContext[%s-%02d] state reverted to %s after PFCP error",
 						smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
 
 					// Build HTTP error response for the original transaction
@@ -220,7 +220,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				}
 				// Set response and change state to active
 				smContext.ChangeState(smf_context.SmStateActive)
-				smContext.SubCtxLog.Info("PFCP Modify success and N1N2 Msg sent, new state:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Debugf("PFCP Modify success and N1N2 Msg sent, new state:", smContext.SMContextState.String())
 
 				httpResponse := &httpwrapper.Response{
 					Status: http.StatusCreated,
@@ -234,9 +234,9 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					smContext.SubPduSessLog.Infof("Context PDU Session ID is 0. Updating Context to Request ID: %d", pduSessIDRelReq)
 					smContext.PDUSessionID = pduSessIDRelReq
 				}
-				smContext.SubPduSessLog.Infof("Invalid PDU Session ID")
+				smContext.SubPduSessLog.Debugf("Invalid PDU Session ID")
 				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionDoesNotExist")
-				return fmt.Errorf("SnssaiError")
+				return fmt.Errorf("PDUSessionDoesNotExist")
 			}
 		}
 	} else {

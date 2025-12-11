@@ -665,11 +665,11 @@ func (smContextState SMContextState) String() string {
 
 func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) *httpwrapper.Response {
 	var httpResponse *httpwrapper.Response
-	smContext.SubPduSessLog.Infof("Generating PDU Session Establishment Reject for SUPI[%s] with Cause Key: [%s]", smContext.Supi, cause)
+	smContext.SubPduSessLog.Debugf("Generating PDU Session Establishment Reject for SUPI[%s] with Cause Key: [%s]", smContext.Supi, cause)
 	if buf, err := BuildGSMPDUSessionEstablishmentReject(
 		smContext,
 		errors.ErrorCause[cause]); err != nil {
-		smContext.SubPduSessLog.Infof("Failed to build GSM NAS Reject message: %v", err)
+		smContext.SubPduSessLog.Debugf("Failed to build GSM NAS Reject message: %v", err)
 		httpResponse = &httpwrapper.Response{
 			Header: nil,
 			Status: int(errors.ErrorType[cause].Status),
@@ -681,7 +681,7 @@ func (smContext *SMContext) GeneratePDUSessionEstablishmentReject(cause string) 
 			},
 		}
 	} else {
-		smContext.SubPduSessLog.Infof("Successfully built NAS Reject message (Size: %d bytes). Returning HTTP Status: %d", len(buf), int(errors.ErrorType[cause].Status))
+		smContext.SubPduSessLog.Debugf("Successfully built NAS Reject message (Size: %d bytes). Returning HTTP Status: %d", len(buf), int(errors.ErrorType[cause].Status))
 		httpResponse = &httpwrapper.Response{
 			Header: nil,
 			Status: int(errors.ErrorType[cause].Status),
