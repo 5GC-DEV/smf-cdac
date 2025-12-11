@@ -369,11 +369,11 @@ func (smContext *SMContext) ReleaseUeIpAddr() error {
 func (smContext *SMContext) ReleasePduSessionID() error {
 	// Check if a PDU Session ID is currently assigned
 	if smContext.PDUSessionID != 0 {
-		smContext.SubPduSessLog.Infof("[ReleasePduSessionID] Releasing PDU Session ID [%d] for SUPI [%s]", smContext.PDUSessionID, smContext.Supi)
+		smContext.SubPduSessLog.Debugf("[ReleasePduSessionID] Releasing PDU Session ID [%d] for SUPI [%s]", smContext.PDUSessionID, smContext.Supi)
 		// Reset the ID to 0 to indicate it is no longer associated with this context
 		smContext.PDUSessionID = 0
 	} else {
-		smContext.SubPduSessLog.Infof("[ReleasePduSessionID] PDU Session ID is 0 or already released")
+		smContext.SubPduSessLog.Debugf("[ReleasePduSessionID] PDU Session ID is 0 or already released")
 	}
 	return nil
 }
