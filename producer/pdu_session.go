@@ -161,6 +161,18 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	if sessSubData, rsp, err := SubscriberDataManagementClient.
 		SessionManagementSubscriptionDataRetrievalApi.
 		GetSmData(context.Background(), smContext.Supi, smDataParams); err != nil {
+		statusText := "NO_RESPONSE"
+		if rsp != nil {
+			statusText = http.StatusText(rsp.StatusCode)
+		}
+
+		metrics.IncrementSvcUdmMsgStats(
+			smf_context.SMF_Self().NfInstanceID,
+			string(svcmsgtypes.SmSubscriptionDataRetrieval),
+			"In",
+			statusText,
+			err.Error(),
+		)
 		metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), err.Error())
 		if smContext == nil {
 			logger.PduSessLog.Errorln("PDUSessionSMContextCreate: smContext is NIL")
