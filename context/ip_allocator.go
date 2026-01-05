@@ -209,16 +209,18 @@ func (i *_IDPool) allocate() (id int64, err error) {
 
 	logger.CtxLog.Debugf("IDPool: Wrapping around, checking IDs from 1 to %d", i.index-1)
 	logger.CtxLog.Infof("IDPool WRAP >>> index reset from %d to minValue=%d", i.index, i.minValue)
-
-	for id = int64((smfCount-1)*2500 + 1); id <= i.index; id++ {
-		logger.CtxLog.Infof("IDPool WRAP LOOP >>> trying id=%d", id)
-		if _, exist := i.isUsed[id]; !exist {
-			i.isUsed[id] = true
-			i.index = id + 1
-			logger.CtxLog.Infof("IDPool: Allocated ID %d (wrap-around), next index set to %d", id, i.index)
-			return id, nil
-		} else {
-			logger.CtxLog.Infof("IDPool: ID %d already in use (wrap-around)", id)
+	id_init := int64((smfCount-1)*2500 + 1)
+	if id_init >= i.maxValue {
+		for id = id_init; id <= i.index; id++ {
+			logger.CtxLog.Infof("IDPool WRAP LOOP >>> trying id=%d", id)
+			if _, exist := i.isUsed[id]; !exist {
+				i.isUsed[id] = true
+				i.index = id + 1
+				logger.CtxLog.Infof("IDPool: Allocated ID %d (wrap-around), next index set to %d", id, i.index)
+				return id, nil
+			} else {
+				logger.CtxLog.Infof("IDPool: ID %d already in use (wrap-around)", id)
+			}
 		}
 	}
 	logger.CtxLog.Infof("IDPool EXHAUSTED >>> no free IDs (used=%d maxValue=%d)", len(i.isUsed), i.maxValue)
