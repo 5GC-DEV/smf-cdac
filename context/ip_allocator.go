@@ -179,6 +179,7 @@ func newIDPool(minValue int64, maxValue int64) (idPool *_IDPool) {
 func (i *_IDPool) allocate() (id int64, err error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
+	logger.CtxLog.Infof("IDPool ALLOCATE START >>> index=%d min=%d max=%d usedCount=%d", i.index, i.minValue, i.maxValue, len(i.isUsed))
 	logger.CtxLog.Debugf("IDPool: Starting ID allocation from index %d to maxValue %d", i.index, i.maxValue)
 	smfCountStr := os.Getenv("SMF_COUNT")
 	if smfCountStr == "" {
@@ -189,7 +190,9 @@ func (i *_IDPool) allocate() (id int64, err error) {
 		logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
 	}
 	for id = i.index; id <= i.maxValue; id++ {
+		logger.CtxLog.Infof("IDPool LOOP >>> trying id=%d (index=%d max=%d)", id, i.index, i.maxValue)
 		if _, exist := i.isUsed[id]; !exist {
+			logger.CtxLog.Infof("IDPool LOOP >>> id=%d already in use, continue", id)
 			i.isUsed[id] = true
 			i.index = (id % i.maxValue) + 1
 			if i.index == 1 {
@@ -203,18 +206,22 @@ func (i *_IDPool) allocate() (id int64, err error) {
 	}
 
 	logger.CtxLog.Debugf("IDPool: Wrapping around, checking IDs from 1 to %d", i.index-1)
-
-	for id = int64((smfCount-1)*2500 + 1); id <= i.index; id++ {
-		if _, exist := i.isUsed[id]; !exist {
-			i.isUsed[id] = true
-			i.index = id + 1
-			logger.CtxLog.Infof("IDPool: Allocated ID %d (wrap-around), next index set to %d", id, i.index)
-			return id, nil
-		} else {
-			logger.CtxLog.Infof("IDPool: ID %d already in use (wrap-around)", id)
+	logger.CtxLog.Infof("IDPool WRAP >>> index reset from %d to minValue=%d", i.index, i.minValue)
+	id_init := int64((smfCount-1)*2500 + 1)
+	if id_init >= i.maxValue {
+		for id = id_init; id <= i.index; id++ {
+			logger.CtxLog.Infof("IDPool WRAP LOOP >>> trying id=%d", id)
+			if _, exist := i.isUsed[id]; !exist {
+				i.isUsed[id] = true
+				i.index = id + 1
+				logger.CtxLog.Infof("IDPool: Allocated ID %d (wrap-around), next index set to %d", id, i.index)
+				return id, nil
+			} else {
+				logger.CtxLog.Infof("IDPool: ID %d already in use (wrap-around)", id)
+			}
 		}
 	}
-
+	logger.CtxLog.Infof("IDPool EXHAUSTED >>> no free IDs (used=%d maxValue=%d)", len(i.isUsed), i.maxValue)
 	logger.CtxLog.Infof("IDPool: No available value range to allocate ID")
 	return 0, errors.New("no available value range to allocate id")
 }
