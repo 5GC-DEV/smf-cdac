@@ -210,7 +210,7 @@ func (i *_IDPool) allocate() (id int64, err error) {
 	logger.CtxLog.Debugf("IDPool: Wrapping around, checking IDs from 1 to %d", i.index-1)
 	logger.CtxLog.Infof("IDPool WRAP >>> index reset from %d to minValue=%d", i.index, i.minValue)
 	id_init := int64((smfCount-1)*2500 + 1)
-	if id_init >= i.maxValue {
+	if id_init <= i.maxValue {
 		for id = id_init; id <= i.index; id++ {
 			logger.CtxLog.Infof("IDPool WRAP LOOP >>> trying id=%d", id)
 			if _, exist := i.isUsed[id]; !exist {
