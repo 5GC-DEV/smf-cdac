@@ -107,7 +107,7 @@ func (a *IPAllocator) Allocate(imsi string) (net.IP, error) {
 		logger.CtxLog.Infof("  Allocated IP: %s", ip.String())
 		logger.CtxLog.Infof("unique id - ip %v", ip)
 		logger.CtxLog.Infof("unique id - offset %v", offset)
-		logger.CtxLog.Infof("unique id - smfCount %v", smfCount)
+		logger.CtxLog.Infof("unique id after allocate- smfCount %v", smfCount)
 		if a.ipNetwork != nil {
 			logger.CtxLog.Infof("  Base network IP: %s", a.ipNetwork.IP.String())
 			logger.CtxLog.Infof("  IP Network Mask: %s", a.ipNetwork.Mask.String())
@@ -175,6 +175,7 @@ func newIDPool(minValue int64, maxValue int64) (idPool *_IDPool) {
 	}
 	idPool.index = int64((smfCount-1)*2500 + 1)
 	logger.CtxLog.Infof("IDPool INIT >>> minValue=%d maxValue=%d index=%d", minValue, maxValue, idPool.index)
+	logger.CtxLog.Infof("IDPool INIT >>> smfCount=%d", smfCount)
 	return
 }
 
@@ -188,6 +189,7 @@ func (i *_IDPool) allocate() (id int64, err error) {
 		smfCountStr = "1"
 	}
 	smfCount, err := strconv.Atoi(smfCountStr)
+	logger.CtxLog.Infof("IDPool ALLOCATE START >>> smfCount=%d", smfCount)
 	if err != nil {
 		logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
 	}
