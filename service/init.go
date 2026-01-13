@@ -334,7 +334,7 @@ func (smf *SMF) Start() {
 	// Init UE Specific Config
 	context.InitSMFUERouting(&factory.UERoutingConfig)
 
-	//SetupSmfCollection ->so that db updated then newpool created will set index
+	// SetupSmfCollection ->so that db updated then newpool created will set index
 	if factory.SmfConfig.Configuration.EnableDbStore {
 		logger.InitLog.Infoln("SetupSmfCollection")
 		context.SetupSmfCollection()
@@ -393,7 +393,9 @@ func (smf *SMF) Start() {
 			eventexposure.AddService(router)
 		}
 	}
-	//setupsmfcollection->later
+
+	// setupsmfcollection->later
+
 	// Init Kafka stream
 	if err := metrics.InitialiseKafkaStream(factory.SmfConfig.Configuration); err != nil {
 		logger.InitLog.Errorf("initialise kafka stream failed, %v ", err.Error())
