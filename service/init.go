@@ -333,6 +333,17 @@ func (smf *SMF) Start() {
 
 	// Init UE Specific Config
 	context.InitSMFUERouting(&factory.UERoutingConfig)
+	//SetupSmfCollection ->so that db updated then newpool created will set index
+	if factory.SmfConfig.Configuration.EnableDbStore {
+		logger.InitLog.Infoln("SetupSmfCollection")
+		context.SetupSmfCollection()
+		// Init DRSM for unique FSEID/FTEID/IP-Addr
+		if err := smfCtxt.InitDrsm(); err != nil {
+			logger.InitLog.Errorf("initialise drsm failed, %v ", err.Error())
+		}
+	} else {
+		logger.InitLog.Infoln("DB is disabled, not initialising drsm")
+	}
 
 	// Wait for additional/updated config from config pod
 	if os.Getenv("MANAGED_BY_CONFIG_POD") == "true" {
@@ -382,16 +393,7 @@ func (smf *SMF) Start() {
 		}
 	}
 
-	if factory.SmfConfig.Configuration.EnableDbStore {
-		logger.InitLog.Infoln("SetupSmfCollection")
-		context.SetupSmfCollection()
-		// Init DRSM for unique FSEID/FTEID/IP-Addr
-		if err := smfCtxt.InitDrsm(); err != nil {
-			logger.InitLog.Errorf("initialise drsm failed, %v ", err.Error())
-		}
-	} else {
-		logger.InitLog.Infoln("DB is disabled, not initialising drsm")
-	}
+	//setupsmfcollection->later
 
 	// Init Kafka stream
 	if err := metrics.InitialiseKafkaStream(factory.SmfConfig.Configuration); err != nil {
