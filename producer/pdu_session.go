@@ -161,7 +161,26 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	if sessSubData, rsp, err := SubscriberDataManagementClient.
 		SessionManagementSubscriptionDataRetrievalApi.
 		GetSmData(context.Background(), smContext.Supi, smDataParams); err != nil {
-		metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), err.Error())
+		statusText := "NO_RESPONSE"
+		if rsp != nil {
+			statusText = http.StatusText(rsp.StatusCode)
+			logger.PduSessLog.Errorln("PDUSessionSMContextCreate: rsp is not NIL %s", smContext.Supi)
+		}
+		metrics.IncrementSvcUdmMsgStats(
+			smf_context.SMF_Self().NfInstanceID,
+			string(svcmsgtypes.SmSubscriptionDataRetrieval),
+			"In",
+			statusText,
+			err.Error(),
+		)
+		if smContext == nil {
+			logger.PduSessLog.Errorln("PDUSessionSMContextCreate: smContext is NIL")
+			return fmt.Errorf("smContext nil")
+		}
+		if rsp == nil {
+			logger.PduSessLog.Errorln("PDUSessionSMContextCreate: response is NIL")
+			return fmt.Errorf("response nil")
+		}
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, get SessionManagementSubscriptionData error: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("SubscriptionDataFetchError")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
