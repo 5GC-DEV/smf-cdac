@@ -53,7 +53,17 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	txn.CtxtKey = smContextRef
 	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
 	<-txn.Status // wait for txn to complete at SMF
-	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
+	rsp, ok := txn.Rsp.(*httpwrapper.Response)
+	if !ok || rsp == nil {
+		logger.PduSessLog.Errorln("Txn completed but txn.Rsp is nil or invalid")
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "SMF internal error: no response from transaction",
+		})
+		return
+	}
+	HTTPResponse := rsp
+
 	// HTTPResponse := producer.HandleSMPolicyUpdateNotify(smContextRef, reqWrapper.Body.(models.SmPolicyNotification))
 
 	for key, val := range HTTPResponse.Header {
