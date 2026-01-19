@@ -254,7 +254,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// Set PDI and outer header removal for access interface
 			ulPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceAccess}
 			ulPDR.PDI.LocalFTeid = &smf_context.FTEID{Ch: true}
-			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
+			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn("ims")
 			ulPDR.OuterHeaderRemoval = &smf_context.OuterHeaderRemoval{
 				OuterHeaderRemovalDescription: smf_context.OuterHeaderRemovalGtpUUdpIpv4,
 			}
