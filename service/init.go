@@ -325,21 +325,19 @@ func (smf *SMF) Start() {
 		os.Exit(0)
 	}()
 
-	// SetupSmfCollection->moves here
-	// Setup DB first (if enabled)
-	if factory.SmfConfig.Configuration.EnableDbStore {
-		logger.InitLog.Infoln("SetupSmfCollection")
-		context.SetupSmfCollection()
-	}
-
 	// Init SMF Context ONCE
 	smfCtxt := context.InitSmfContext(&factory.SmfConfig)
 
-	// Init DRSM only if DB enabled
+	// Setup SMF Collection
 	if factory.SmfConfig.Configuration.EnableDbStore {
+		logger.InitLog.Infoln("SetupSmfCollection")
+		context.SetupSmfCollection()
+		// Init DRSM for unique FSEID/FTEID/IP-Addr
 		if err := smfCtxt.InitDrsm(); err != nil {
 			logger.InitLog.Errorf("initialise drsm failed, %v ", err.Error())
 		}
+	} else {
+		logger.InitLog.Infoln("DB is disabled, not initialising drsm")
 	}
 
 	// allocate id for each upf
