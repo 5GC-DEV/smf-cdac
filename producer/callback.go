@@ -193,9 +193,20 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				dlPDR.Precedence = 1
 			}
 
+			logger.PduSessLog.Infof(
+				"[PFCP][DL PDR] Building DL PDR | DNN=%v | SourceInterface=CORE",
+				smContext.Dnn,
+			)
+
 			// Set PDI fields for core interface
 			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
 			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
+
+			logger.PduSessLog.Infof(
+				"[PFCP][DL PDR] Configured PDI | SourceInterface=%v | NetworkInstance=%v",
+				dlPDR.PDI.SourceInterface.InterfaceValue,
+				dlPDR.PDI.NetworkInstance,
+			)
 
 			// Configure FAR for downlink traffic
 			dlFAR := dlPDR.FAR
@@ -236,7 +247,10 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			if ulPDR.Precedence == 0 {
 				ulPDR.Precedence = 1
 			}
-
+			logger.PduSessLog.Infof(
+				"[PFCP][UL PDR] Building UL PDR | DNN=%v | SourceInterface=CORE",
+				smContext.Dnn,
+			)
 			// Set PDI and outer header removal for access interface
 			ulPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceAccess}
 			ulPDR.PDI.LocalFTeid = &smf_context.FTEID{Ch: true}
@@ -244,6 +258,11 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			ulPDR.OuterHeaderRemoval = &smf_context.OuterHeaderRemoval{
 				OuterHeaderRemovalDescription: smf_context.OuterHeaderRemovalGtpUUdpIpv4,
 			}
+			logger.PduSessLog.Infof(
+				"[PFCP][UL PDR] Configured PDI | SourceInterface=%v | NetworkInstance=%v",
+				ulPDR.PDI.SourceInterface.InterfaceValue,
+				ulPDR.PDI.NetworkInstance,
+			)
 
 			// Configure FAR for UL traffic
 			ulFAR := ulPDR.FAR
