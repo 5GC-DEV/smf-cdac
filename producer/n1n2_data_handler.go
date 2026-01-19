@@ -479,6 +479,57 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 	tunnel := smContext.Tunnel
 
 	switch smContextUpdateData.N2SmInfoType {
+	case models.N2SmInfoType_PDU_RES_MOD_RSP:
+		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
+			smContextUpdateData.N2SmInfoType)
+		if smContext.SMContextState != context.SmStateActive {
+			// Wait till the state becomes Active again
+			// TODO: implement sleep wait in concurrent architecture
+			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be Active",
+				smContext.SMContextState.String())
+		}
+		smContext.ChangeState(context.SmStateModify)
+		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		pdrList := []*context.PDR{}
+		farList := []*context.FAR{}
+
+		smContext.PendingUPF = make(context.PendingUPF)
+		for _, dataPath := range tunnel.DataPathPool {
+			if dataPath.Activated {
+				ANUPF := dataPath.FirstDPNode
+				for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
+					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
+						DestinationInterface: context.DestinationInterface{
+							InterfaceValue: context.DestinationInterfaceAccess,
+						},
+						NetworkInstance: []byte(smContext.Dnn),
+					}
+
+					DLPDR.State = context.RULE_UPDATE
+					DLPDR.FAR.State = context.RULE_UPDATE
+
+					pdrList = append(pdrList, DLPDR)
+					farList = append(farList, DLPDR.FAR)
+
+					if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+					}
+				}
+			}
+		}
+
+		if err := context.
+			HandlePDUSessionResourceModifyResponseTransfer(body.BinaryDataN2SmInformation, smContext); err != nil {
+			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, handle PDUSessionResourceSetupResponseTransfer failed: %+v", err)
+		}
+
+		pfcpParam.pdrList = append(pfcpParam.pdrList, pdrList...)
+		pfcpParam.farList = append(pfcpParam.farList, farList...)
+
+		pfcpAction.sendPfcpModify = true
+		smContext.ChangeState(context.SmStatePfcpModify)
+		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 	case models.N2SmInfoType_PDU_RES_SETUP_RSP:
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
 			smContextUpdateData.N2SmInfoType)

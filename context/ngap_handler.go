@@ -54,6 +54,45 @@ func HandlePDUSessionResourceSetupResponseTransfer(b []byte, ctx *SMContext) (er
 	return nil
 }
 
+func HandlePDUSessionResourceModifyResponseTransfer(b []byte, ctx *SMContext) (err error) {
+	resourceSetupResponseTransfer := ngapType.PDUSessionResourceSetupResponseTransfer{}
+
+	err = aper.UnmarshalWithParams(b, &resourceSetupResponseTransfer, "valueExt")
+	if err != nil {
+		return err
+	}
+
+	QosFlowPerTNLInformation := resourceSetupResponseTransfer.DLQosFlowPerTNLInformation
+
+	if QosFlowPerTNLInformation.UPTransportLayerInformation.Present !=
+		ngapType.UPTransportLayerInformationPresentGTPTunnel {
+		return errors.New("resourceSetupResponseTransfer.QosFlowPerTNLInformation.UPTransportLayerInformation.Present")
+	}
+
+	gtpTunnel := QosFlowPerTNLInformation.UPTransportLayerInformation.GTPTunnel
+
+	teid := binary.BigEndian.Uint32(gtpTunnel.GTPTEID.Value)
+
+	ctx.Tunnel.ANInformation.IPAddress = gtpTunnel.TransportLayerAddress.Value.Bytes
+	ctx.Tunnel.ANInformation.TEID = teid
+
+	for _, dataPath := range ctx.Tunnel.DataPathPool {
+		if dataPath.Activated {
+			ANUPF := dataPath.FirstDPNode
+			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+				DLPDR.FAR.ForwardingParameters.OuterHeaderCreation = new(OuterHeaderCreation)
+				dlOuterHeaderCreation := DLPDR.FAR.ForwardingParameters.OuterHeaderCreation
+				dlOuterHeaderCreation.OuterHeaderCreationDescription = OuterHeaderCreationGtpUUdpIpv4
+				dlOuterHeaderCreation.Teid = teid
+				dlOuterHeaderCreation.Ipv4Address = ctx.Tunnel.ANInformation.IPAddress.To4()
+			}
+		}
+	}
+
+	ctx.UpCnxState = models.UpCnxState_ACTIVATED
+	return nil
+}
+
 func HandlePDUSessionResourceSetupUnsuccessfulTransfer(b []byte, ctx *SMContext) (err error) {
 	resourceSetupUnsuccessfulTransfer := ngapType.PDUSessionResourceSetupUnsuccessfulTransfer{}
 
