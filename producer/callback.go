@@ -200,7 +200,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 			// Set PDI fields for core interface
 			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
-			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
+			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn("ims")
 
 			logger.PduSessLog.Infof(
 				"[PFCP][DL PDR] Configured PDI | SourceInterface=%v | NetworkInstance=%v",
@@ -271,7 +271,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				DestinationInterface: smf_context.DestinationInterface{
 					InterfaceValue: smf_context.DestinationInterfaceCore,
 				},
-				NetworkInstance: []byte(smContext.Dnn),
+				NetworkInstance: []byte("ims"),
 			}
 
 			// Append to PFCP param lists
