@@ -200,7 +200,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// Configure FAR for downlink traffic
 			dlFAR := dlPDR.FAR
 			dlFAR.ApplyAction = smf_context.ApplyAction{
-				Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: true,
+				Buff: true, Drop: false, Dupl: false, Forw: false, Nocp: true,
 			}
 
 			// Append to PFCP param lists
