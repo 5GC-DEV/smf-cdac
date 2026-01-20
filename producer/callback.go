@@ -31,13 +31,20 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 	txn := eventData.(*transaction.Transaction)
 	request := txn.Req.(models.SmPolicyNotification)
 	smContext := txn.Ctxt.(*smfContext.SMContext)
+	ctx5qi := smContext.DnnConfiguration.Var5gQosProfile.Var5qi
+
+	if ctx5qi != 5 {
+		logger.PduSessLog.Infof("Ignoring policy update for 5QI=%d, session=%d",
+			ctx5qi, smContext.PDUSessionID)
+		return nil
+	}
 
 	smContext.SMLock.Lock()
 	defer smContext.SMLock.Unlock()
 
 	logger.PduSessLog.Infoln("In HandleSMPolicyUpdateNotify")
 	pcfPolicyDecision := request.SmPolicyDecision
-
+	logger.PduSessLog.Infof("SMContext[%s-%02d] should be SmStateActive", smContext.Supi, smContext.PDUSessionID)
 	if smContext.SMContextState != smf_context.SmStateActive {
 		logger.PduSessLog.Warnf("SMContext[%s-%02d] should be SmStateActive, but actual %s",
 			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
