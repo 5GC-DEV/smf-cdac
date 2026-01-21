@@ -16,6 +16,7 @@ package callback
 
 import (
 	"net/http"
+	"path"
 
 	"github.com/5GC-DEV/openapi-cdac"
 	"github.com/5GC-DEV/openapi-cdac/models"
@@ -46,11 +47,22 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	reqWrapper := httpwrapper.NewRequest(c.Request, request)
 	reqWrapper.Params["smContextRef"] = c.Params.ByName("smContextRef")
 
-	smContextRef := reqWrapper.Params["smContextRef"]
-	logger.PduSessLog.Infof("HTTPSmPolicyUpdateNotification received for UUID = %v", smContextRef)
+	//smContextRef := reqWrapper.Params["smContextRef"]
+	// logger.PduSessLog.Infof("HTTPSmPolicyUpdateNotification received for UUID = %v", smContextRef)
+
+	// txn := transaction.NewTransaction(reqWrapper.Body.(models.SmPolicyNotification), nil, svcmsgtypes.SmPolicyUpdateNotification)
+	// txn.CtxtKey = smContextRef
+	assocId := path.Base(reqWrapper.Params["smContextRef"])
+
+	smCtx := smf_context.GetSmContextByPolicyAssocId(assocId)
+	if smCtx == nil {
+		logger.PduSessLog.Errorf("Unknown policy assocId: %s", assocId)
+		c.JSON(404, gin.H{"error": "Unknown policy association"})
+		return
+	}
 
 	txn := transaction.NewTransaction(reqWrapper.Body.(models.SmPolicyNotification), nil, svcmsgtypes.SmPolicyUpdateNotification)
-	txn.CtxtKey = smContextRef
+	txn.Ctxt = smCtx
 	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
 	<-txn.Status // wait for txn to complete at SMF
 	HTTPResponse := txn.Rsp.(*httpwrapper.Response)

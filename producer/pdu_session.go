@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/5GC-DEV/nas-cdac"
 	"github.com/5GC-DEV/nas-cdac/nasMessage"
@@ -209,7 +210,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	// PCF Policy Association
 	var smPolicyDecision *models.SmPolicyDecision
 	metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationCreate), "Out", "", "")
-	if smPolicyDecisionRsp, httpStatus, err := consumer.SendSMPolicyAssociationCreate(smContext); err != nil {
+	if smPolicyDecisionRsp, location, httpStatus, err := consumer.SendSMPolicyAssociationCreate(smContext); err != nil {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationCreate), "In", http.StatusText(httpStatus), err.Error())
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SMPolicyAssociationCreate error: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFPolicyCreateFailure")
@@ -224,7 +225,12 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	} else {
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, Policy association create success")
 		smPolicyDecision = smPolicyDecisionRsp
-
+		// ✅ ADD THIS BLOCK
+		assocId := path.Base(location)
+		smContext.PcfPolicyAssocId = assocId
+		smf_context.StoreSmPolicyAssoc(assocId, smContext)
+		smContext.SubPduSessLog.Infof("Stored PCF Policy Assoc ID = %s for SUPI=%s PDU=%d",
+			assocId, smContext.Supi, smContext.PDUSessionID)
 		// smPolicyDecision = qos.TestMakeSamplePolicyDecision()
 		// Derive QoS change(compare existing vs received Policy Decision)
 		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, received SM policy data: %v",
@@ -360,30 +366,53 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 		qerList: []*smf_context.QER{},
 	}
 
+	logger.PduSessLog.Infof("[SMF][PFCP-MODIFY] pfcpAction=%v pfcpParam: PDR=%d FAR=%d QER=%d removePDR=%d",
+		pfcpAction,
+		len(pfcpParam.pdrList),
+		len(pfcpParam.farList),
+		len(pfcpParam.qerList),
+		len(pfcpParam.removePDR),
+	)
+
 	// N1 Msg Handling
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] Handling N1 message update...")
 	if err := HandleUpdateN1Msg(txn, &response, pfcpAction, pfcpParam); err != nil {
+		logger.PduSessLog.Errorf("[SMF][PFCP-MODIFY] HandleUpdateN1Msg failed: %v", err)
 		return err
 	}
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] N1 message update done")
 
 	// UP Cnx State handling
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] Handling UP connection state update...")
 	if err := HandleUpCnxState(txn, &response, pfcpAction, pfcpParam); err != nil {
+		logger.PduSessLog.Errorf("[SMF][PFCP-MODIFY] HandleUpCnxState failed: %v", err)
 		return err
 	}
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] UP connection state update done")
 
 	// N2 Msg Handling
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] Handling N2 message update...")
 	if err := HandleUpdateN2Msg(txn, &response, pfcpAction, pfcpParam); err != nil {
+		logger.PduSessLog.Errorf("[SMF][PFCP-MODIFY] HandleUpdateN2Msg failed: %v", err)
 		return err
 	}
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] N2 message update done")
 
-	// Ho state handling
+	// HO state handling
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] Handling HO state update...")
 	if err := HandleUpdateHoState(txn, &response, pfcpAction, pfcpParam); err != nil {
+		logger.PduSessLog.Errorf("[SMF][PFCP-MODIFY] HandleUpdateHoState failed: %v", err)
 		return err
 	}
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] HO state update done")
 
 	// Cause handling
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] Handling cause update...")
 	if err := HandleUpdateCause(txn, &response, pfcpAction); err != nil {
+		logger.PduSessLog.Errorf("[SMF][PFCP-MODIFY] HandleUpdateCause failed: %v", err)
 		return err
 	}
+	logger.PduSessLog.Infoln("[SMF][PFCP-MODIFY] Cause update done")
 
 	var httpResponse *httpwrapper.Response
 	// Check FSM and take corresponding action

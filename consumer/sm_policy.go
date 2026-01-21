@@ -19,10 +19,11 @@ import (
 )
 
 // SendSMPolicyAssociationCreate create the session management association to the PCF
-func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.SmPolicyDecision, int, error) {
+func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.SmPolicyDecision, string, int, error) {
 	httpRspStatusCode := http.StatusInternalServerError
+
 	if smContext.SMPolicyClient == nil {
-		return nil, httpRspStatusCode, errors.Errorf("smContext not selected PCF")
+		return nil, "", httpRspStatusCode, errors.Errorf("smContext not selected PCF")
 	}
 
 	smPolicyData := models.SmPolicyContextData{}
@@ -49,23 +50,35 @@ func SendSMPolicyAssociationCreate(smContext *smf_context.SMContext) (*models.Sm
 	}
 	smPolicyData.SuppFeat = "F"
 
-	var smPolicyDecision *models.SmPolicyDecision
-	if smPolicyDecisionFromPCF, httpRsp, err := smContext.SMPolicyClient.
-		DefaultApi.SmPoliciesPost(context.Background(), smPolicyData); err != nil {
+	smPolicyDecisionFromPCF, httpRsp, err := smContext.SMPolicyClient.
+		DefaultApi.SmPoliciesPost(context.Background(), smPolicyData)
+
+	if err != nil {
 		if httpRsp != nil {
 			httpRspStatusCode = httpRsp.StatusCode
 		}
-		return nil, httpRspStatusCode, fmt.Errorf("setup sm policy association failed: %s", err.Error())
-	} else {
-		httpRspStatusCode = http.StatusCreated
-		smPolicyDecision = &smPolicyDecisionFromPCF
+		return nil, "", httpRspStatusCode, fmt.Errorf("setup sm policy association failed: %s", err.Error())
 	}
 
+	// ✅ SUCCESS PATH
+	httpRspStatusCode = http.StatusCreated
+
+	location := httpRsp.Header.Get("Location")
+	if location == "" {
+		return nil, "", httpRspStatusCode, fmt.Errorf("PCF did not return Location header")
+	}
+
+	smPolicyDecision := &smPolicyDecisionFromPCF
+
+	// Optional validation
 	if err := validateSmPolicyDecision(smPolicyDecision); err != nil {
-		return nil, httpRspStatusCode, fmt.Errorf("setup sm policy association failed: %s", err.Error())
+		return nil, "", httpRspStatusCode, fmt.Errorf("invalid sm policy decision: %s", err.Error())
 	}
 
-	return smPolicyDecision, httpRspStatusCode, nil
+	// ✅ STORE IN CONTEXT
+	smContext.PcfPolicyUri = location
+
+	return smPolicyDecision, location, httpRspStatusCode, nil
 }
 
 func SendSMPolicyAssociationModify(smContext *smf_context.SMContext) {

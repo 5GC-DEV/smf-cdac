@@ -44,9 +44,11 @@ const (
 )
 
 var (
-	smContextPool    sync.Map
-	canonicalRef     sync.Map
-	seidSMContextMap sync.Map
+	smContextPool      sync.Map
+	canonicalRef       sync.Map
+	seidSMContextMap   sync.Map
+	smPolicyAssocStore sync.Map // key = assocId, value = *SMContext
+
 )
 
 var (
@@ -86,6 +88,21 @@ func decSMContextActive() uint64 {
 func GetSMContextCount() uint64 {
 	atomic.AddUint64(&smContextCount, 1)
 	return smContextCount
+}
+
+func StoreSmPolicyAssoc(assocId string, smCtx *SMContext) {
+	smPolicyAssocStore.Store(assocId, smCtx)
+}
+
+func GetSmContextByPolicyAssocId(assocId string) *SMContext {
+	if val, ok := smPolicyAssocStore.Load(assocId); ok {
+		return val.(*SMContext)
+	}
+	return nil
+}
+
+func DeleteSmPolicyAssoc(assocId string) {
+	smPolicyAssocStore.Delete(assocId)
 }
 
 type UeIpAddr struct {
@@ -177,6 +194,8 @@ type SMContext struct {
 	// NAS
 	Pti                     uint8 `json:"pti,omitempty" yaml:"pti" bson:"pti,omitempty"` // ignore
 	EstAcceptCause5gSMValue uint8 `json:"estAcceptCause5gSMValue,omitempty" yaml:"estAcceptCause5gSMValue" bson:"estAcceptCause5gSMValue,omitempty"`
+	PcfPolicyUri            string
+	PcfPolicyAssocId        string
 }
 
 func canonicalName(identifier string, pduSessID int32) (canonical string) {
