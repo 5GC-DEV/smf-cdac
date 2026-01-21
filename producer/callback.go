@@ -207,7 +207,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 
 			// Set PDI fields for core interface
 			dlPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceCore}
-			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn("ims")
+			dlPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
 
 			logger.PduSessLog.Infof(
 				"[PFCP][DL PDR] Configured PDI | SourceInterface=%v | NetworkInstance=%v",
@@ -261,7 +261,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 			// Set PDI and outer header removal for access interface
 			ulPDR.PDI.SourceInterface = smf_context.SourceInterface{InterfaceValue: smf_context.SourceInterfaceAccess}
 			ulPDR.PDI.LocalFTeid = &smf_context.FTEID{Ch: true}
-			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn("ims")
+			ulPDR.PDI.NetworkInstance = util_3gpp.Dnn(smContext.Dnn)
 			ulPDR.OuterHeaderRemoval = &smf_context.OuterHeaderRemoval{
 				OuterHeaderRemovalDescription: smf_context.OuterHeaderRemovalGtpUUdpIpv4,
 			}
@@ -278,7 +278,7 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				DestinationInterface: smf_context.DestinationInterface{
 					InterfaceValue: smf_context.DestinationInterfaceCore,
 				},
-				NetworkInstance: []byte("ims"),
+				NetworkInstance: []byte(smContext.Dnn),
 			}
 
 			// Append to PFCP param lists

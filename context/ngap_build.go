@@ -340,7 +340,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		gbdownlink, gbuplink, qfi, priority)
 
 	// Add AMBR IE to NGAP message
-	ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
+	/*ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
 		Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate},
 		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
@@ -351,7 +351,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			},
 		},
 	}
-	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
+	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)*/
 
 	// Default ARP values
 	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
@@ -437,7 +437,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	)
 
 	// Build QoS AddOrModify IE
-	ie = ngapType.PDUSessionResourceModifyRequestTransferIEs{
+	ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
 		Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDQosFlowAddOrModifyRequestList},
 		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
@@ -456,6 +456,12 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 							PriorityLevelARP:        ngapType.PriorityLevelARP{Value: int64(priority)},
 							PreEmptionCapability:    ngapType.PreEmptionCapability{Value: arpPreemptCap},
 							PreEmptionVulnerability: ngapType.PreEmptionVulnerability{Value: arpPreemptVul},
+						},
+						GBRQosInformation: &ngapType.GBRQosInformation{
+							MaximumFlowBitRateDL:    ngapType.BitRate{Value: gbdownlink},
+							MaximumFlowBitRateUL:    ngapType.BitRate{Value: gbuplink},
+							GuaranteedFlowBitRateDL: ngapType.BitRate{Value: gbdownlink},
+							GuaranteedFlowBitRateUL: ngapType.BitRate{Value: gbuplink},
 						},
 					},
 				}},
