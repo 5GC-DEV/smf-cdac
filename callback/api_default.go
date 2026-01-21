@@ -47,19 +47,37 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	reqWrapper := httpwrapper.NewRequest(c.Request, request)
 	reqWrapper.Params["smContextRef"] = c.Params.ByName("smContextRef")
 
-	//smContextRef := reqWrapper.Params["smContextRef"]
-	// logger.PduSessLog.Infof("HTTPSmPolicyUpdateNotification received for UUID = %v", smContextRef)
+	rawParam := c.Params.ByName("smContextRef")
 
-	// txn := transaction.NewTransaction(reqWrapper.Body.(models.SmPolicyNotification), nil, svcmsgtypes.SmPolicyUpdateNotification)
-	// txn.CtxtKey = smContextRef
-	assocId := path.Base(reqWrapper.Params["smContextRef"])
+	logger.PduSessLog.Infof("PCF CALLBACK RAW PARAM smContextRef = [%s]", rawParam)
+	logger.PduSessLog.Infof("PCF CALLBACK Request URI = [%s]", c.Request.RequestURI)
 
-	smCtx := smf_context.GetSmContextByPolicyAssocId(assocId)
-	if smCtx == nil {
-		logger.PduSessLog.Errorf("Unknown policy assocId: %s", assocId)
+	assocIdBase := path.Base(rawParam)
+	logger.PduSessLog.Infof("PCF CALLBACK path.Base(smContextRef) = [%s]", assocIdBase)
+
+	// Try lookup with FULL key
+	logger.PduSessLog.Infof("Trying lookup with FULL key = [%s]", rawParam)
+	smCtxFull := smf_context.GetSmContextByPolicyAssocId(rawParam)
+
+	// Try lookup with BASE key
+	logger.PduSessLog.Infof("Trying lookup with BASE key = [%s]", assocIdBase)
+	smCtxBase := smf_context.GetSmContextByPolicyAssocId(assocIdBase)
+
+	if smCtxFull == nil && smCtxBase == nil {
+		logger.PduSessLog.Errorf("Unknown policy assocId! raw=[%s] base=[%s]", rawParam, assocIdBase)
 		c.JSON(404, gin.H{"error": "Unknown policy association"})
 		return
 	}
+
+	// Prefer FULL match
+	smCtx := smCtxFull
+	if smCtx == nil {
+		logger.PduSessLog.Warnf("Full key not found, but base key found")
+		smCtx = smCtxBase
+	}
+
+	logger.PduSessLog.Infof("Found SMContext for SUPI=%s PDU=%d using key",
+		smCtx.Supi, smCtx.PDUSessionID)
 
 	txn := transaction.NewTransaction(reqWrapper.Body.(models.SmPolicyNotification), nil, svcmsgtypes.SmPolicyUpdateNotification)
 	txn.Ctxt = smCtx
