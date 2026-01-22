@@ -339,6 +339,27 @@ func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
 	return smContext
 }
 
+func GetAllSMContextsFromDB() []*SMContext {
+	var result []*SMContext
+
+	list, err := mongoapi.CommonDBClient.RestfulAPIGetMany(SmContextDataColl, bson.M{})
+	if err != nil {
+		logger.DataRepoLog.Errorf("GetAllSMContextsFromDB error: %v", err)
+		return result
+	}
+
+	for _, item := range list {
+		sm := &SMContext{}
+		if err := json.Unmarshal(mapToByte(item), sm); err != nil {
+			logger.DataRepoLog.Errorf("Unmarshal SMContext failed: %v", err)
+			continue
+		}
+		result = append(result, sm)
+	}
+
+	return result
+}
+
 // GetSMContextBySEIDInDB GetSMContext By SEID from DB
 func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
 	seid := SeidConv(seidUint)

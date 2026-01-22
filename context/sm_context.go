@@ -345,6 +345,54 @@ func GetSMContext(ref string) (smContext *SMContext) {
 	return
 }
 
+func GetAllSMContexts() []*SMContext {
+	var result []*SMContext
+
+	// 1) From memory
+	smContextPool.Range(func(key, value any) bool {
+		sm := value.(*SMContext)
+		if sm != nil {
+			result = append(result, sm)
+		}
+		return true
+	})
+
+	// 2) From DB (optional)
+	if factory.SmfConfig.Configuration.EnableDbStore {
+		dbList := GetAllSMContextsFromDB()
+		for _, sm := range dbList {
+			if sm != nil {
+				result = append(result, sm)
+			}
+		}
+	}
+
+	return result
+}
+
+func GetSMContextsBySessRuleIdAndDNN(sessRuleId string, dnn string) []*SMContext {
+	var result []*SMContext
+
+	all := GetAllSMContexts()
+
+	for _, sm := range all {
+		if sm == nil {
+			continue
+		}
+
+		if sm.Dnn != dnn {
+			continue
+		}
+
+		activeRule := sm.SmPolicyData.SmCtxtSessionRules.ActiveRule.SessRuleId
+		if activeRule == sessRuleId {
+			result = append(result, sm)
+		}
+	}
+
+	return result
+}
+
 // *** add unit test ***//
 func RemoveSMContext(ref string) {
 	var smContext *SMContext

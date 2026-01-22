@@ -16,7 +16,9 @@ package callback
 
 import (
 	"net/http"
+	"net/url"
 	"path"
+	"strings"
 
 	"github.com/5GC-DEV/openapi-cdac"
 	"github.com/5GC-DEV/openapi-cdac/models"
@@ -37,6 +39,8 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	reqBody, err := c.GetRawData()
 	if err != nil {
 		logger.PduSessLog.Errorf("error reading body: %v", err)
+		c.JSON(400, gin.H{"error": "cannot read body"})
+		return
 	}
 
 	err = openapi.Deserialize(&request, reqBody, c.ContentType())
@@ -46,51 +50,87 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 		return
 	}
 
-	rawParam := c.Params.ByName("smContextRef")
-	smContextRef := path.Base(rawParam)
-
-	logger.PduSessLog.Infof("PCF CALLBACK raw smContextRef = [%s]", rawParam)
-	logger.PduSessLog.Infof("PCF CALLBACK parsed smContextRef = [%s]", smContextRef)
-
-	smCtx := smf_context.GetSMContext(smContextRef)
-	if smCtx == nil {
-		logger.PduSessLog.Errorf("Unknown smContextRef: %s", smContextRef)
-		c.JSON(404, gin.H{"error": "Unknown SM Context"})
+	// 1) Extract SessRuleId from request
+	if request.SmPolicyDecision == nil || len(request.SmPolicyDecision.SessRules) == 0 {
+		logger.PduSessLog.Errorln("No SessRules in PCF notification")
+		c.JSON(400, gin.H{"error": "No SessRules"})
 		return
 	}
 
-	logger.PduSessLog.Infof("Found SMContext for SUPI=%s PDU=%d DNN=%s",
-		smCtx.Supi, smCtx.PDUSessionID, smCtx.Dnn)
+	var incomingRuleId string
+	for ruleId := range request.SmPolicyDecision.SessRules {
+		incomingRuleId = ruleId
+		break
+	}
+	logger.PduSessLog.Infof("PCF CALLBACK received SessRuleId = [%s]", incomingRuleId)
 
-	txn := transaction.NewTransaction(
-		request,
-		nil,
-		svcmsgtypes.SmPolicyUpdateNotification,
-	)
-	txn.Ctxt = smCtx
-
-	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
-	<-txn.Status
-
-	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
-
-	for key, val := range HTTPResponse.Header {
-		c.Header(key, val[0])
+	// 2) Extract IMSI from ResourceUri
+	imsi := extractIMSIFromResourceURI(request.ResourceUri)
+	if imsi == "" {
+		logger.PduSessLog.Warnf("Failed to extract IMSI from ResourceUri [%s]", request.ResourceUri)
 	}
 
-	if HTTPResponse.Body != nil {
-		resBody, err := openapi.Serialize(HTTPResponse.Body, "application/json")
-		if err != nil {
-			logger.PduSessLog.Errorln("serialize error:", err)
-		} else {
-			_, err = c.Writer.Write(resBody)
-			if err != nil {
-				logger.PduSessLog.Errorf("write error: %v", err)
+	// 3) Get all IMS SMContexts
+	allIMSContexts := smf_context.GetSMContextsBySessRuleIdAndDNN(incomingRuleId, "ims")
+	if len(allIMSContexts) == 0 {
+		logger.PduSessLog.Errorf("No IMS SMContexts found for SessRuleId=%s", incomingRuleId)
+		c.JSON(404, gin.H{"error": "No matching IMS SMContext"})
+		return
+	}
+
+	// 4) Filter by IMSI if available
+	var matchedContexts []*smf_context.SMContext
+	if imsi != "" {
+		for _, smCtx := range allIMSContexts {
+			if smCtx != nil && smCtx.Supi == imsi {
+				matchedContexts = append(matchedContexts, smCtx)
 			}
 		}
+	} else {
+		matchedContexts = allIMSContexts
 	}
 
-	c.Status(HTTPResponse.Status)
+	if len(matchedContexts) == 0 {
+		logger.PduSessLog.Errorf("No IMS SMContext matched SessRuleId=%s and IMSI=%s", incomingRuleId, imsi)
+		c.JSON(404, gin.H{"error": "No matching IMS SMContext"})
+		return
+	}
+
+	logger.PduSessLog.Infof("Found %d IMS sessions for SessRuleId=%s, IMSI=%s",
+		len(matchedContexts), incomingRuleId, imsi)
+
+	// 5) Apply update to each context
+	for _, smCtx := range matchedContexts {
+		logger.PduSessLog.Infof("Applying PCF update to SUPI=%s PDU=%d Ref=%s",
+			smCtx.Supi, smCtx.PDUSessionID, smCtx.Ref)
+
+		txn := transaction.NewTransaction(
+			request,
+			nil,
+			svcmsgtypes.SmPolicyUpdateNotification,
+		)
+		txn.Ctxt = smCtx
+
+		go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
+		<-txn.Status
+	}
+
+	logger.PduSessLog.Infof("PCF policy update applied to %d IMS sessions", len(matchedContexts))
+	c.Status(http.StatusNoContent)
+}
+
+// Helper function to extract IMSI from ResourceUri
+func extractIMSIFromResourceURI(resourceURI string) string {
+	u, err := url.Parse(resourceURI)
+	if err != nil {
+		return ""
+	}
+
+	base := path.Base(u.Path) // "imsi-001010000000001-6"
+	if idx := strings.Index(base, "-"); idx != -1 {
+		base = base[:idx] // "imsi-001010000000001"
+	}
+	return base
 }
 
 func SmPolicyControlTerminationRequestNotification(c *gin.Context) {
