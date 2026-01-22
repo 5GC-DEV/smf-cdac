@@ -36,67 +36,58 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 
 	reqBody, err := c.GetRawData()
 	if err != nil {
-		logger.PduSessLog.Errorf("error: %v", err)
+		logger.PduSessLog.Errorf("error reading body: %v", err)
 	}
 
 	err = openapi.Deserialize(&request, reqBody, c.ContentType())
 	if err != nil {
-		logger.PduSessLog.Errorln("deserialize request failed")
-	}
-
-	reqWrapper := httpwrapper.NewRequest(c.Request, request)
-	reqWrapper.Params["smContextRef"] = c.Params.ByName("smContextRef")
-
-	rawParam := c.Params.ByName("smContextRef")
-
-	logger.PduSessLog.Infof("PCF CALLBACK RAW PARAM smContextRef = [%s]", rawParam)
-	logger.PduSessLog.Infof("PCF CALLBACK Request URI = [%s]", c.Request.RequestURI)
-
-	assocIdBase := path.Base(rawParam)
-	logger.PduSessLog.Infof("PCF CALLBACK path.Base(smContextRef) = [%s]", assocIdBase)
-
-	// Try lookup with FULL key
-	logger.PduSessLog.Infof("Trying lookup with FULL key = [%s]", rawParam)
-	smCtxFull := smf_context.GetSmContextByPolicyAssocId(rawParam)
-
-	// Try lookup with BASE key
-	logger.PduSessLog.Infof("Trying lookup with BASE key = [%s]", assocIdBase)
-	smCtxBase := smf_context.GetSmContextByPolicyAssocId(assocIdBase)
-
-	if smCtxFull == nil && smCtxBase == nil {
-		logger.PduSessLog.Errorf("Unknown policy assocId! raw=[%s] base=[%s]", rawParam, assocIdBase)
-		c.JSON(404, gin.H{"error": "Unknown policy association"})
+		logger.PduSessLog.Errorln("deserialize request failed:", err)
+		c.JSON(400, gin.H{"error": "invalid body"})
 		return
 	}
 
-	// Prefer FULL match
-	smCtx := smCtxFull
+	rawParam := c.Params.ByName("smContextRef")
+	smContextRef := path.Base(rawParam)
+
+	logger.PduSessLog.Infof("PCF CALLBACK raw smContextRef = [%s]", rawParam)
+	logger.PduSessLog.Infof("PCF CALLBACK parsed smContextRef = [%s]", smContextRef)
+
+	smCtx := smf_context.GetSMContext(smContextRef)
 	if smCtx == nil {
-		logger.PduSessLog.Warnf("Full key not found, but base key found")
-		smCtx = smCtxBase
+		logger.PduSessLog.Errorf("Unknown smContextRef: %s", smContextRef)
+		c.JSON(404, gin.H{"error": "Unknown SM Context"})
+		return
 	}
 
-	logger.PduSessLog.Infof("Found SMContext for SUPI=%s PDU=%d using key",
-		smCtx.Supi, smCtx.PDUSessionID)
+	logger.PduSessLog.Infof("Found SMContext for SUPI=%s PDU=%d DNN=%s",
+		smCtx.Supi, smCtx.PDUSessionID, smCtx.Dnn)
 
-	txn := transaction.NewTransaction(reqWrapper.Body.(models.SmPolicyNotification), nil, svcmsgtypes.SmPolicyUpdateNotification)
+	txn := transaction.NewTransaction(
+		request,
+		nil,
+		svcmsgtypes.SmPolicyUpdateNotification,
+	)
 	txn.Ctxt = smCtx
+
 	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
-	<-txn.Status // wait for txn to complete at SMF
+	<-txn.Status
+
 	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
-	// HTTPResponse := producer.HandleSMPolicyUpdateNotify(smContextRef, reqWrapper.Body.(models.SmPolicyNotification))
 
 	for key, val := range HTTPResponse.Header {
 		c.Header(key, val[0])
 	}
 
-	resBody, err := openapi.Serialize(HTTPResponse.Body, "application/json")
-	if err != nil {
-		logger.PduSessLog.Errorln(err)
-	}
-	_, err = c.Writer.Write(resBody)
-	if err != nil {
-		logger.PduSessLog.Errorf("error: %v", err)
+	if HTTPResponse.Body != nil {
+		resBody, err := openapi.Serialize(HTTPResponse.Body, "application/json")
+		if err != nil {
+			logger.PduSessLog.Errorln("serialize error:", err)
+		} else {
+			_, err = c.Writer.Write(resBody)
+			if err != nil {
+				logger.PduSessLog.Errorf("write error: %v", err)
+			}
+		}
 	}
 
 	c.Status(HTTPResponse.Status)

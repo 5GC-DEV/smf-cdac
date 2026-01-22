@@ -246,6 +246,21 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	return smContext
 }
 
+func GetAllImsSMContexts() []*SMContext {
+	imsContexts := make([]*SMContext, 0)
+
+	smContextPool.Range(func(key, value any) bool {
+		smCtx := value.(*SMContext)
+
+		if strings.EqualFold(smCtx.Dnn, "ims") {
+			imsContexts = append(imsContexts, smCtx)
+		}
+		return true
+	})
+
+	return imsContexts
+}
+
 func (smContext *SMContext) initLogTags() {
 	smContext.SubPfcpLog = logger.PfcpLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
 	smContext.SubCtxLog = logger.CtxLog.With("uuid", smContext.Ref, "id", smContext.Identifier, "pduid", smContext.PDUSessionID)
