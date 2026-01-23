@@ -39,8 +39,6 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	reqBody, err := c.GetRawData()
 	if err != nil {
 		logger.PduSessLog.Errorf("error reading body: %v", err)
-		c.JSON(400, gin.H{"error": "cannot read body"})
-		return
 	}
 
 	err = openapi.Deserialize(&request, reqBody, c.ContentType())
@@ -50,56 +48,24 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 		return
 	}
 
-	// 1) Extract SessRuleId from request
-	if request.SmPolicyDecision == nil || len(request.SmPolicyDecision.SessRules) == 0 {
-		logger.PduSessLog.Errorln("No SessRules in PCF notification")
-		c.JSON(400, gin.H{"error": "No SessRules"})
-		return
-	}
-
-	var incomingRuleId string
-	for ruleId := range request.SmPolicyDecision.SessRules {
-		incomingRuleId = ruleId
-		break
-	}
-	logger.PduSessLog.Infof("PCF CALLBACK received SessRuleId = [%s]", incomingRuleId)
-
-	// 2) Extract IMSI from ResourceUri
+	// 1) Extract IMSI from ResourceUri
 	imsi := extractIMSIFromResourceURI(request.ResourceUri)
-	if imsi == "" {
-		logger.PduSessLog.Warnf("Failed to extract IMSI from ResourceUri [%s]", request.ResourceUri)
-	}
 
-	// 3) Get all IMS SMContexts
-	allIMSContexts := smf_context.GetSMContextsBySessRuleIdAndDNN(incomingRuleId, "ims")
-	if len(allIMSContexts) == 0 {
-		logger.PduSessLog.Errorf("No IMS SMContexts found for SessRuleId=%s", incomingRuleId)
-		c.JSON(404, gin.H{"error": "No matching IMS SMContext"})
-		return
-	}
+	logger.PduSessLog.Infof("PCF CALLBACK ResourceUri=%s Parsed IMSI=%s",
+		request.ResourceUri, imsi)
 
-	// 4) Filter by IMSI if available
-	var matchedContexts []*smf_context.SMContext
-	if imsi != "" {
-		for _, smCtx := range allIMSContexts {
-			if smCtx != nil && smCtx.Supi == imsi {
-				matchedContexts = append(matchedContexts, smCtx)
-			}
-		}
-	} else {
-		matchedContexts = allIMSContexts
-	}
+	// 2) Get all IMS contexts (optionally filtered by IMSI)
+	matchedContexts := smf_context.GetSMContextsByDnnAndImsi("ims", imsi)
 
 	if len(matchedContexts) == 0 {
-		logger.PduSessLog.Errorf("No IMS SMContext matched SessRuleId=%s and IMSI=%s", incomingRuleId, imsi)
+		logger.PduSessLog.Errorf("No IMS SMContext found for IMSI=%s", imsi)
 		c.JSON(404, gin.H{"error": "No matching IMS SMContext"})
 		return
 	}
 
-	logger.PduSessLog.Infof("Found %d IMS sessions for SessRuleId=%s, IMSI=%s",
-		len(matchedContexts), incomingRuleId, imsi)
+	logger.PduSessLog.Infof("Applying PCF update to %d IMS sessions", len(matchedContexts))
 
-	// 5) Apply update to each context
+	// 3) Apply update to each context
 	for _, smCtx := range matchedContexts {
 		logger.PduSessLog.Infof("Applying PCF update to SUPI=%s PDU=%d Ref=%s",
 			smCtx.Supi, smCtx.PDUSessionID, smCtx.Ref)
@@ -115,7 +81,6 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 		<-txn.Status
 	}
 
-	logger.PduSessLog.Infof("PCF policy update applied to %d IMS sessions", len(matchedContexts))
 	c.Status(http.StatusNoContent)
 }
 

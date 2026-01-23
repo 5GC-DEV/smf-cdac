@@ -370,7 +370,7 @@ func GetAllSMContexts() []*SMContext {
 	return result
 }
 
-func GetSMContextsBySessRuleIdAndDNN(sessRuleId string, dnn string) []*SMContext {
+func GetSMContextsByDnnAndImsi(dnn string, imsi string) []*SMContext {
 	var result []*SMContext
 
 	all := GetAllSMContexts()
@@ -380,14 +380,17 @@ func GetSMContextsBySessRuleIdAndDNN(sessRuleId string, dnn string) []*SMContext
 			continue
 		}
 
+		// Filter by DNN
 		if sm.Dnn != dnn {
 			continue
 		}
 
-		activeRule := sm.SmPolicyData.SmCtxtSessionRules.ActiveRule.SessRuleId
-		if activeRule == sessRuleId {
-			result = append(result, sm)
+		// Optional filter by IMSI/SUPI
+		if imsi != "" && sm.Supi != imsi {
+			continue
 		}
+
+		result = append(result, sm)
 	}
 
 	return result
