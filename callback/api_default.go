@@ -75,7 +75,9 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 			nil,
 			svcmsgtypes.SmPolicyUpdateNotification,
 		)
+
 		txn.Ctxt = smCtx
+		txn.CtxtKey = smCtx.Ref
 
 		go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
 		<-txn.Status
