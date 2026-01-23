@@ -92,9 +92,16 @@ func extractIMSIFromResourceURI(resourceURI string) string {
 	}
 
 	base := path.Base(u.Path) // "imsi-001010000000001-6"
-	if idx := strings.Index(base, "-"); idx != -1 {
+
+	// Remove last "-<pduSessionId>"
+	if idx := strings.LastIndex(base, "-"); idx > 0 {
 		base = base[:idx] // "imsi-001010000000001"
 	}
+
+	if !strings.HasPrefix(base, "imsi-") {
+		return ""
+	}
+
 	return base
 }
 
