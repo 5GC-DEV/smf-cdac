@@ -16,6 +16,9 @@ package callback
 
 import (
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 
 	"github.com/5GC-DEV/openapi-cdac"
 	"github.com/5GC-DEV/openapi-cdac/models"
@@ -35,41 +38,73 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 
 	reqBody, err := c.GetRawData()
 	if err != nil {
-		logger.PduSessLog.Errorf("error: %v", err)
+		logger.PduSessLog.Errorf("error reading body: %v", err)
 	}
 
 	err = openapi.Deserialize(&request, reqBody, c.ContentType())
 	if err != nil {
-		logger.PduSessLog.Errorln("deserialize request failed")
+		logger.PduSessLog.Errorln("deserialize request failed:", err)
+		c.JSON(400, gin.H{"error": "invalid body"})
+		return
 	}
 
-	reqWrapper := httpwrapper.NewRequest(c.Request, request)
-	reqWrapper.Params["smContextRef"] = c.Params.ByName("smContextRef")
+	// 1) Extract IMSI from ResourceUri
+	imsi := extractIMSIFromResourceURI(request.ResourceUri)
 
-	smContextRef := reqWrapper.Params["smContextRef"]
-	logger.PduSessLog.Infof("HTTPSmPolicyUpdateNotification received for UUID = %v", smContextRef)
+	logger.PduSessLog.Infof("PCF CALLBACK ResourceUri=%s Parsed IMSI=%s",
+		request.ResourceUri, imsi)
 
-	txn := transaction.NewTransaction(reqWrapper.Body.(models.SmPolicyNotification), nil, svcmsgtypes.SmPolicyUpdateNotification)
-	txn.CtxtKey = smContextRef
-	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
-	<-txn.Status // wait for txn to complete at SMF
-	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
-	// HTTPResponse := producer.HandleSMPolicyUpdateNotify(smContextRef, reqWrapper.Body.(models.SmPolicyNotification))
+	// 2) Get all IMS contexts (optionally filtered by IMSI)
+	matchedContexts := smf_context.GetSMContextsByDnnAndImsi("ims", imsi)
 
-	for key, val := range HTTPResponse.Header {
-		c.Header(key, val[0])
+	if len(matchedContexts) == 0 {
+		logger.PduSessLog.Errorf("No IMS SMContext found for IMSI=%s", imsi)
+		c.JSON(404, gin.H{"error": "No matching IMS SMContext"})
+		return
 	}
 
-	resBody, err := openapi.Serialize(HTTPResponse.Body, "application/json")
+	logger.PduSessLog.Infof("Applying PCF update to %d IMS sessions", len(matchedContexts))
+
+	// 3) Apply update to each context
+	for _, smCtx := range matchedContexts {
+		logger.PduSessLog.Infof("Applying PCF update to SUPI=%s PDU=%d Ref=%s",
+			smCtx.Supi, smCtx.PDUSessionID, smCtx.Ref)
+
+		txn := transaction.NewTransaction(
+			request,
+			nil,
+			svcmsgtypes.SmPolicyUpdateNotification,
+		)
+
+		txn.Ctxt = smCtx
+		txn.CtxtKey = smCtx.Ref
+
+		go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
+		<-txn.Status
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// Helper function to extract IMSI from ResourceUri
+func extractIMSIFromResourceURI(resourceURI string) string {
+	u, err := url.Parse(resourceURI)
 	if err != nil {
-		logger.PduSessLog.Errorln(err)
-	}
-	_, err = c.Writer.Write(resBody)
-	if err != nil {
-		logger.PduSessLog.Errorf("error: %v", err)
+		return ""
 	}
 
-	c.Status(HTTPResponse.Status)
+	base := path.Base(u.Path) // "imsi-001010000000001-6"
+
+	// Remove last "-<pduSessionId>"
+	if idx := strings.LastIndex(base, "-"); idx > 0 {
+		base = base[:idx] // "imsi-001010000000001"
+	}
+
+	if !strings.HasPrefix(base, "imsi-") {
+		return ""
+	}
+
+	return base
 }
 
 func SmPolicyControlTerminationRequestNotification(c *gin.Context) {

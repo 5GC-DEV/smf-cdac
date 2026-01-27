@@ -311,6 +311,57 @@ func GetSMContext(ref string) (smContext *SMContext) {
 	return
 }
 
+func GetSMContextsByDnnAndImsi(dnn string, imsi string) []*SMContext {
+	var result []*SMContext
+
+	all := GetAllSMContexts()
+
+	for _, sm := range all {
+		if sm == nil {
+			continue
+		}
+
+		// Filter by DNN
+		if sm.Dnn != dnn {
+			continue
+		}
+
+		// Optional filter by IMSI/SUPI
+		if imsi != "" && sm.Supi != imsi {
+			continue
+		}
+
+		result = append(result, sm)
+	}
+
+	return result
+}
+
+func GetAllSMContexts() []*SMContext {
+	var result []*SMContext
+
+	// 1) From memory
+	smContextPool.Range(func(key, value any) bool {
+		sm := value.(*SMContext)
+		if sm != nil {
+			result = append(result, sm)
+		}
+		return true
+	})
+
+	// 2) From DB (optional)
+	if factory.SmfConfig.Configuration.EnableDbStore {
+		dbList := GetAllSMContextsFromDB()
+		for _, sm := range dbList {
+			if sm != nil {
+				result = append(result, sm)
+			}
+		}
+	}
+
+	return result
+}
+
 // *** add unit test ***//
 func RemoveSMContext(ref string) {
 	var smContext *SMContext
