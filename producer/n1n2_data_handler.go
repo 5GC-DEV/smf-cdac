@@ -476,8 +476,11 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
 	smContextUpdateData := body.JsonData
+	if smContext.Tunnel == nil {
+		smContext.SubPduSessLog.Errorf("No tunnel present for SMContext %s during modify", smContext.Ref)
+		return nil
+	}
 	tunnel := smContext.Tunnel
-
 	switch smContextUpdateData.N2SmInfoType {
 	case models.N2SmInfoType_PDU_RES_SETUP_RSP:
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
@@ -494,6 +497,10 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 		farList := []*context.FAR{}
 
 		smContext.PendingUPF = make(context.PendingUPF)
+		if tunnel.DataPathPool == nil {
+			smContext.SubPduSessLog.Errorf("Tunnel DataPathPool is nil for %s", smContext.Ref)
+			return nil
+		}
 		for _, dataPath := range tunnel.DataPathPool {
 			if dataPath.Activated {
 				ANUPF := dataPath.FirstDPNode
@@ -609,6 +616,10 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 		pdrList := []*context.PDR{}
 		farList := []*context.FAR{}
 		smContext.PendingUPF = make(context.PendingUPF)
+		if tunnel.DataPathPool == nil {
+			smContext.SubPduSessLog.Errorf("Tunnel DataPathPool is nil for %s", smContext.Ref)
+			return nil
+		}
 		for _, dataPath := range tunnel.DataPathPool {
 			if dataPath.Activated {
 				ANUPF := dataPath.FirstDPNode
