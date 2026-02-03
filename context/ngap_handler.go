@@ -150,6 +150,9 @@ func HandleHandoverRequiredTransfer(b []byte, ctx *SMContext) (err error) {
 }
 
 func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err error) {
+	if ctx == nil || ctx.Tunnel == nil {
+		return fmt.Errorf("SMContext or Tunnel is nil in HandoverRequestAcknowledgeTransfer")
+	}
 	handoverRequestAcknowledgeTransfer := ngapType.HandoverRequestAcknowledgeTransfer{}
 
 	err = aper.UnmarshalWithParams(b, &handoverRequestAcknowledgeTransfer, "valueExt")
@@ -165,16 +168,32 @@ func HandleHandoverRequestAcknowledgeTransfer(b []byte, ctx *SMContext) (err err
 	teid := binary.BigEndian.Uint32(GTPTunnel.GTPTEID.Value)
 
 	for _, dataPath := range ctx.Tunnel.DataPathPool {
-		if dataPath.Activated {
-			ANUPF := dataPath.FirstDPNode
-			for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
-				DLPDR.FAR.ForwardingParameters.OuterHeaderCreation = new(OuterHeaderCreation)
-				dlOuterHeaderCreation := DLPDR.FAR.ForwardingParameters.OuterHeaderCreation
-				dlOuterHeaderCreation.OuterHeaderCreationDescription = OuterHeaderCreationGtpUUdpIpv4
-				dlOuterHeaderCreation.Teid = teid
-				dlOuterHeaderCreation.Ipv4Address = GTPTunnel.TransportLayerAddress.Value.Bytes
-				DLPDR.FAR.State = RULE_UPDATE
+		if !dataPath.Activated {
+			continue
+		}
+
+		ANUPF := dataPath.FirstDPNode
+		if ANUPF == nil {
+			continue
+		}
+
+		for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
+			if DLPDR.FAR == nil {
+				continue
 			}
+
+			if DLPDR.FAR.ForwardingParameters == nil {
+				DLPDR.FAR.ForwardingParameters = new(ForwardingParameters)
+			}
+
+			DLPDR.FAR.ForwardingParameters.OuterHeaderCreation = new(OuterHeaderCreation)
+
+			dlOuterHeaderCreation := DLPDR.FAR.ForwardingParameters.OuterHeaderCreation
+			dlOuterHeaderCreation.OuterHeaderCreationDescription = OuterHeaderCreationGtpUUdpIpv4
+			dlOuterHeaderCreation.Teid = teid
+			dlOuterHeaderCreation.Ipv4Address = GTPTunnel.TransportLayerAddress.Value.Bytes
+
+			DLPDR.FAR.State = RULE_UPDATE
 		}
 	}
 
