@@ -38,50 +38,37 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 
 	reqBody, err := c.GetRawData()
 	if err != nil {
-		logger.PduSessLog.Errorf("PCF CALLBACK: error reading body: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read body"})
-		return
+		logger.PduSessLog.Errorf("error reading body: %v", err)
 	}
 
 	err = openapi.Deserialize(&request, reqBody, c.ContentType())
 	if err != nil {
-		logger.PduSessLog.Errorf("PCF CALLBACK: deserialize failed: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
+		logger.PduSessLog.Errorln("deserialize request failed:", err)
+		c.JSON(400, gin.H{"error": "invalid body"})
 		return
 	}
 
 	// 1) Extract IMSI from ResourceUri
 	imsi := extractIMSIFromResourceURI(request.ResourceUri)
 
-	logger.PduSessLog.Infof(
-		"PCF CALLBACK received: ResourceUri=%s Parsed IMSI=%s",
-		request.ResourceUri, imsi,
-	)
+	logger.PduSessLog.Infof("PCF CALLBACK ResourceUri=%s Parsed IMSI=%s",
+		request.ResourceUri, imsi)
 
-	// 2) Fetch matching IMS SMContexts
+	// 2) Get all IMS contexts (optionally filtered by IMSI)
 	matchedContexts := smf_context.GetSMContextsByDnnAndImsi("ims", imsi)
 
 	if len(matchedContexts) == 0 {
-		logger.PduSessLog.Warnf(
-			"PCF CALLBACK: no IMS SMContext found for IMSI=%s",
-			imsi,
-		)
-		c.JSON(http.StatusNotFound, gin.H{"error": "No matching IMS SMContext"})
+		logger.PduSessLog.Errorf("No IMS SMContext found for IMSI=%s", imsi)
+		c.JSON(404, gin.H{"error": "No matching IMS SMContext"})
 		return
 	}
 
-	logger.PduSessLog.Infof(
-		"PCF CALLBACK: %d IMS SMContext(s) matched for IMSI=%s",
-		len(matchedContexts), imsi,
-	)
+	logger.PduSessLog.Infof("Applying PCF update to %d IMS sessions", len(matchedContexts))
 
-	// 3) Apply update to each SMContext (multiple transactions)
-	for idx, smCtx := range matchedContexts {
-		logger.PduSessLog.Infof(
-			"PCF CALLBACK [%d/%d]: creating transaction for SUPI=%s PDU=%d Ref=%s",
-			idx+1, len(matchedContexts),
-			smCtx.Supi, smCtx.PDUSessionID, smCtx.Ref,
-		)
+	// 3) Apply update to each context
+	for _, smCtx := range matchedContexts {
+		logger.PduSessLog.Infof("Applying PCF update to SUPI=%s PDU=%d Ref=%s",
+			smCtx.Supi, smCtx.PDUSessionID, smCtx.Ref)
 
 		txn := transaction.NewTransaction(
 			request,
@@ -92,26 +79,9 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 		txn.Ctxt = smCtx
 		txn.CtxtKey = smCtx.Ref
 
-		go func(tx *transaction.Transaction, ref string) {
-			logger.PduSessLog.Infof(
-				"PCF CALLBACK: starting transaction for SMContext Ref=%s",
-				ref,
-			)
-
-			tx.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
-
-			status := <-tx.Status
-			logger.PduSessLog.Infof(
-				"PCF CALLBACK: transaction completed for SMContext Ref=%s Status=%v",
-				ref, status,
-			)
-		}(txn, smCtx.Ref)
+		go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
+		<-txn.Status
 	}
-
-	logger.PduSessLog.Infof(
-		"PCF CALLBACK: all %d transaction(s) triggered for IMSI=%s",
-		len(matchedContexts), imsi,
-	)
 
 	c.Status(http.StatusNoContent)
 }
