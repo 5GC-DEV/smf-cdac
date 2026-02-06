@@ -325,8 +325,20 @@ func (smf *SMF) Start() {
 		os.Exit(0)
 	}()
 
-	// Init SMF Service
+	// Init SMF Context ONCE
 	smfCtxt := context.InitSmfContext(&factory.SmfConfig)
+
+	// Setup SMF Collection
+	if factory.SmfConfig.Configuration.EnableDbStore {
+		logger.InitLog.Infoln("SetupSmfCollection")
+		context.SetupSmfCollection()
+		// Init DRSM for unique FSEID/FTEID/IP-Addr
+		if err := smfCtxt.InitDrsm(); err != nil {
+			logger.InitLog.Errorf("initialise drsm failed, %v ", err.Error())
+		}
+	} else {
+		logger.InitLog.Infoln("DB is disabled, not initialising drsm")
+	}
 
 	// allocate id for each upf
 	context.AllocateUPFID()
@@ -382,16 +394,7 @@ func (smf *SMF) Start() {
 		}
 	}
 
-	if factory.SmfConfig.Configuration.EnableDbStore {
-		logger.InitLog.Infoln("SetupSmfCollection")
-		context.SetupSmfCollection()
-		// Init DRSM for unique FSEID/FTEID/IP-Addr
-		if err := smfCtxt.InitDrsm(); err != nil {
-			logger.InitLog.Errorf("initialise drsm failed, %v ", err.Error())
-		}
-	} else {
-		logger.InitLog.Infoln("DB is disabled, not initialising drsm")
-	}
+	// set smf collection -> later
 
 	// Init Kafka stream
 	if err := metrics.InitialiseKafkaStream(factory.SmfConfig.Configuration); err != nil {
