@@ -136,12 +136,49 @@ func HTTPUpdateSmContext(c *gin.Context) {
 	txn.CtxtKey = smContextRef
 	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
 	<-txn.Status
-	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
-	// HTTPResponse := producer.HandlePDUSessionSMContextUpdate(
-	//	smContextRef, req.Body.(models.UpdateSmContextRequest))
+	if txn.Err != nil {
+		logger.PduSessLog.Errorf("UpdateSmContext txn failed: %v", txn.Err)
 
+		problem := models.ProblemDetails{
+			Title:  "SM Context not found",
+			Status: http.StatusNotFound,
+			Detail: txn.Err.Error(),
+		}
+
+		stats.IncrementN11MsgStats(
+			smf_context.SMF_Self().NfInstanceID,
+			string(svcmsgtypes.UpdateSmContext),
+			"Out",
+			http.StatusText(http.StatusNotFound),
+			txn.Err.Error(),
+		)
+
+		c.JSON(http.StatusNotFound, problem)
+		return
+	}
+	if txn.Rsp == nil {
+		logger.PduSessLog.Errorln("UpdateSmContext txn completed with NIL response")
+
+		problem := models.ProblemDetails{
+			Title:  "Internal error",
+			Status: http.StatusInternalServerError,
+			Detail: "Transaction response is nil",
+		}
+
+		c.JSON(http.StatusInternalServerError, problem)
+		return
+	}
+
+	HTTPResponse, ok := txn.Rsp.(*httpwrapper.Response)
+	if !ok {
+		logger.PduSessLog.Errorln("Invalid response type from txn")
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "invalid transaction response type",
+		})
+		return
+	}
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "Out", http.StatusText(HTTPResponse.Status), "")
-
 	if HTTPResponse.Status < 300 {
 		c.Render(HTTPResponse.Status, openapi.MultipartRelatedRender{Data: HTTPResponse.Body})
 	} else {
