@@ -8,6 +8,7 @@ package producer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -409,7 +410,7 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 	switch smContext.SMContextState {
 	case smf_context.SmStatePfcpModify:
 
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, ctxt in PFCP Modification State")
+		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, ctxt in PFCP Modification State %s", smContext.Supi)
 		var err error
 
 		// Initiate PFCP Delete
@@ -456,6 +457,9 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 						smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 				*/
 			} else {
+				respBytes, _ := json.MarshalIndent(response, "", "  ")
+				smContext.SubPduSessLog.Infof("HTTP Modify Response Body:\n%s", string(respBytes))
+
 				// Modify Success
 				httpResponse = &httpwrapper.Response{
 					Status: http.StatusOK,
