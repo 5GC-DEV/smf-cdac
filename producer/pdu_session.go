@@ -441,7 +441,7 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 			// Initiate PFCP Modify
 			if err = SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
 				// Modify failure
-				smContext.SubCtxLog.Errorf("pfcp session modify error: %v ", err.Error())
+				smContext.SubCtxLog.Errorf("pfcp session modify error: %v  %s", err.Error(), smContext.Supi)
 
 				// Form Modify err rsp
 				httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
@@ -498,23 +498,84 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 }
 
 func makePduCtxtModifyErrRsp(smContext *smf_context.SMContext, errStr string) *httpwrapper.Response {
+
+	smContext.SubPduSessLog.Errorf(
+		"makePduCtxtModifyErrRsp: Enter - SUPI=%s PDU=%d ErrStr=%s",
+		smContext.Supi,
+		smContext.PDUSessionID,
+		errStr,
+	)
+
 	problemDetail := models.ProblemDetails{
 		Title:  errStr,
 		Status: http.StatusInternalServerError,
 		Detail: errStr,
 		Cause:  "UPF_NOT_RESPONDING",
 	}
+
 	var n1buf, n2buf []byte
 	var err error
-	if n1buf, err = smf_context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
-		smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
+
+	// --- Build N1 ---
+	n1buf, err = smf_context.BuildGSMPDUSessionReleaseCommand(smContext)
+	if err != nil {
+		smContext.SubPduSessLog.Errorf(
+			"makePduCtxtModifyErrRsp: SUPI=%s PDU=%d BuildGSMPDUSessionReleaseCommand failed: %+v",
+			smContext.Supi,
+			smContext.PDUSessionID,
+			err,
+		)
+	} else {
+		smContext.SubPduSessLog.Infof(
+			"makePduCtxtModifyErrRsp: SUPI=%s PDU=%d N1 Release built successfully len=%d",
+			smContext.Supi,
+			smContext.PDUSessionID,
+			len(n1buf),
+		)
 	}
 
-	if n2buf, err = smf_context.BuildPDUSessionResourceReleaseCommandTransfer(smContext); err != nil {
-		smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSessionResourceReleaseCommandTransfer failed: %+v", err)
+	// --- Build N2 ---
+	n2buf, err = smf_context.BuildPDUSessionResourceReleaseCommandTransfer(smContext)
+	if err != nil {
+		smContext.SubPduSessLog.Errorf(
+			"makePduCtxtModifyErrRsp: SUPI=%s PDU=%d BuildPDUSessionResourceReleaseCommandTransfer failed: %+v",
+			smContext.Supi,
+			smContext.PDUSessionID,
+			err,
+		)
+	} else {
+		smContext.SubPduSessLog.Infof(
+			"makePduCtxtModifyErrRsp: SUPI=%s PDU=%d N2 Release built successfully len=%d",
+			smContext.Supi,
+			smContext.PDUSessionID,
+			len(n2buf),
+		)
 	}
 
-	// It is just a template
+	if n1buf == nil {
+		smContext.SubPduSessLog.Warnf(
+			"makePduCtxtModifyErrRsp: SUPI=%s PDU=%d N1 buffer is NIL",
+			smContext.Supi,
+			smContext.PDUSessionID,
+		)
+	}
+
+	if n2buf == nil {
+		smContext.SubPduSessLog.Warnf(
+			"makePduCtxtModifyErrRsp: SUPI=%s PDU=%d N2 buffer is NIL",
+			smContext.Supi,
+			smContext.PDUSessionID,
+		)
+	}
+
+	smContext.SubPduSessLog.Infof(
+		"makePduCtxtModifyErrRsp: SUPI=%s PDU=%d Creating HTTP error response Cause=%s N2Type=%s",
+		smContext.Supi,
+		smContext.PDUSessionID,
+		problemDetail.Cause,
+		models.N2SmInfoType_PDU_RES_REL_CMD,
+	)
+
 	httpResponse := &httpwrapper.Response{
 		Status: http.StatusServiceUnavailable,
 		Body: models.UpdateSmContextErrorResponse{
@@ -526,8 +587,17 @@ func makePduCtxtModifyErrRsp(smContext *smf_context.SMContext, errStr string) *h
 			},
 			BinaryDataN1SmMessage:     n1buf,
 			BinaryDataN2SmInformation: n2buf,
-		}, // Depends on the reason why N4 fail
+		},
 	}
+
+	smContext.SubPduSessLog.Infof(
+		"makePduCtxtModifyErrRsp: Exit - SUPI=%s PDU=%d HTTPStatus=%d N1Len=%d N2Len=%d",
+		smContext.Supi,
+		smContext.PDUSessionID,
+		httpResponse.Status,
+		len(n1buf),
+		len(n2buf),
+	)
 
 	return httpResponse
 }
