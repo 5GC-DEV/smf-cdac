@@ -453,7 +453,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 							},
 						},
 						AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{
-							PriorityLevelARP:        ngapType.PriorityLevelARP{Value: int64(priority)},
+							PriorityLevelARP:        ngapType.PriorityLevelARP{Value: int64(2)},
 							PreEmptionCapability:    ngapType.PreEmptionCapability{Value: arpPreemptCap},
 							PreEmptionVulnerability: ngapType.PreEmptionVulnerability{Value: arpPreemptVul},
 						},
