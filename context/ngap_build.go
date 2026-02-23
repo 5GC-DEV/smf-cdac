@@ -355,7 +355,8 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 
 	// Default ARP values
 	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
-	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
+	// arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
+	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentPreEmptable
 
 	// ----------------------------------------------------
 	// Step 5: Handle policy updates (QoS flow add/modify)
