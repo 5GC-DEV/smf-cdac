@@ -16,9 +16,9 @@ package callback
 
 import (
 	"net/http"
-	"net/url"
-	"path"
-	"strings"
+	// "net/url"
+	// "path"
+	// "strings"
 
 	"github.com/5GC-DEV/openapi-cdac"
 	"github.com/5GC-DEV/openapi-cdac/models"
@@ -33,7 +33,7 @@ import (
 )
 
 // SubscriptionsPost -
-func HTTPSmPolicyUpdateNotification(c *gin.Context) {
+/*func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	var request models.SmPolicyNotification
 
 	reqBody, err := c.GetRawData()
@@ -84,10 +84,75 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}*/
+func HTTPSmPolicyUpdateNotification(c *gin.Context) {
+	var request models.SmPolicyNotification
+
+	logger.PduSessLog.Infof("Received SmPolicyUpdateNotification HTTP request")
+
+	reqBody, err := c.GetRawData()
+	if err != nil {
+		logger.PduSessLog.Errorf("Failed to read request body: %v", err)
+		return
+	}
+	logger.PduSessLog.Infof("Raw request body: %s", string(reqBody))
+
+	err = openapi.Deserialize(&request, reqBody, c.ContentType())
+	if err != nil {
+		logger.PduSessLog.Errorf("Failed to deserialize SmPolicyNotification: %v", err)
+		return
+	}
+	logger.PduSessLog.Infof("Successfully deserialized SmPolicyNotification: %+v", request)
+
+	reqWrapper := httpwrapper.NewRequest(c.Request, request)
+	reqWrapper.Params["smContextRef"] = c.Params.ByName("smContextRef")
+
+	smContextRef := reqWrapper.Params["smContextRef"]
+	logger.PduSessLog.Infof("HTTPSmPolicyUpdateNotification received for smContextRef: %v", smContextRef)
+
+	logger.PduSessLog.Infof("Creating transaction for SmPolicyUpdateNotification")
+
+	txn := transaction.NewTransaction(reqWrapper.Body.(models.SmPolicyNotification), nil, svcmsgtypes.SmPolicyUpdateNotification)
+	txn.CtxtKey = smContextRef
+
+	logger.PduSessLog.Infof("Transaction created. CtxtKey: %s, MsgType: %v", txn.CtxtKey, svcmsgtypes.SmPolicyUpdateNotification)
+
+	logger.PduSessLog.Infof("Starting transaction lifecycle for smContextRef: %s", smContextRef)
+
+	go txn.StartTxnLifeCycle(fsm.SmfTxnFsmHandle)
+
+	logger.PduSessLog.Infof("Waiting for transaction completion for smContextRef: %s", smContextRef)
+
+	<-txn.Status // wait for txn to complete
+
+	logger.PduSessLog.Infof("Transaction completed for smContextRef: %s", smContextRef)
+
+	HTTPResponse := txn.Rsp.(*httpwrapper.Response)
+
+	logger.PduSessLog.Infof("Preparing HTTP response for smContextRef: %s, Status: %d", smContextRef, HTTPResponse.Status)
+
+	for key, val := range HTTPResponse.Header {
+		c.Header(key, val[0])
+	}
+
+	resBody, err := openapi.Serialize(HTTPResponse.Body, "application/json")
+	if err != nil {
+		logger.PduSessLog.Errorf("Failed to serialize response body: %v", err)
+		return
+	}
+
+	_, err = c.Writer.Write(resBody)
+	if err != nil {
+		logger.PduSessLog.Errorf("Failed to write response body: %v", err)
+	}
+
+	logger.PduSessLog.Infof("Sending HTTP response for smContextRef: %s with status %d", smContextRef, HTTPResponse.Status)
+
+	c.Status(HTTPResponse.Status)
 }
 
 // Helper function to extract IMSI from ResourceUri
-func extractIMSIFromResourceURI(resourceURI string) string {
+/*func extractIMSIFromResourceURI(resourceURI string) string {
 	u, err := url.Parse(resourceURI)
 	if err != nil {
 		return ""
@@ -105,7 +170,7 @@ func extractIMSIFromResourceURI(resourceURI string) string {
 	}
 
 	return base
-}
+}*/
 
 func SmPolicyControlTerminationRequestNotification(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
