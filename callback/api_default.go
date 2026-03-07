@@ -16,9 +16,9 @@ package callback
 
 import (
 	"net/http"
-	// "net/url"
-	// "path"
-	// "strings"
+	"net/url"
+	"path"
+	"strings"
 
 	"github.com/5GC-DEV/openapi-cdac"
 	"github.com/5GC-DEV/openapi-cdac/models"
@@ -33,7 +33,7 @@ import (
 )
 
 // SubscriptionsPost -
-/*func HTTPSmPolicyUpdateNotification(c *gin.Context) {
+func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	var request models.SmPolicyNotification
 
 	reqBody, err := c.GetRawData()
@@ -84,8 +84,9 @@ import (
 	}
 
 	c.Status(http.StatusNoContent)
-}*/
-func HTTPSmPolicyUpdateNotification(c *gin.Context) {
+}
+
+/*func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	var request models.SmPolicyNotification
 
 	logger.PduSessLog.Infof("Received SmPolicyUpdateNotification HTTP request")
@@ -149,10 +150,10 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	logger.PduSessLog.Infof("Sending HTTP response for smContextRef: %s with status %d", smContextRef, HTTPResponse.Status)
 
 	c.Status(HTTPResponse.Status)
-}
+}*/
 
 // Helper function to extract IMSI from ResourceUri
-/*func extractIMSIFromResourceURI(resourceURI string) string {
+func extractIMSIFromResourceURI(resourceURI string) string {
 	u, err := url.Parse(resourceURI)
 	if err != nil {
 		return ""
@@ -170,7 +171,7 @@ func HTTPSmPolicyUpdateNotification(c *gin.Context) {
 	}
 
 	return base
-}*/
+}
 
 func SmPolicyControlTerminationRequestNotification(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})

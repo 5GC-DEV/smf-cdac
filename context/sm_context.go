@@ -314,25 +314,39 @@ func GetSMContext(ref string) (smContext *SMContext) {
 func GetSMContextsByDnnAndImsi(dnn string, imsi string) []*SMContext {
 	var result []*SMContext
 
+	logger.PduSessLog.Infof("GetSMContextsByDnnAndImsi called with DNN=%s IMSI=%s", dnn, imsi)
+
 	all := GetAllSMContexts()
+	logger.PduSessLog.Infof("Total SMContexts available: %d", len(all))
 
 	for _, sm := range all {
 		if sm == nil {
+			logger.PduSessLog.Warnf("Encountered nil SMContext, skipping")
 			continue
 		}
 
+		logger.PduSessLog.Debugf("Checking SMContext: Supi=%s Dnn=%s PduSessionId=%d",
+			sm.Supi, sm.Dnn, sm.PDUSessionID)
+
 		// Filter by DNN
 		if sm.Dnn != dnn {
+			logger.PduSessLog.Debugf("DNN mismatch. Expected=%s Found=%s", dnn, sm.Dnn)
 			continue
 		}
 
 		// Optional filter by IMSI/SUPI
 		if imsi != "" && sm.Supi != imsi {
+			logger.PduSessLog.Debugf("IMSI mismatch. Expected=%s Found=%s", imsi, sm.Supi)
 			continue
 		}
 
+		logger.PduSessLog.Infof("SMContext matched: Supi=%s Dnn=%s PduSessionId=%d",
+			sm.Supi, sm.Dnn, sm.PDUSessionID)
+
 		result = append(result, sm)
 	}
+
+	logger.PduSessLog.Infof("Total matched SMContexts: %d", len(result))
 
 	return result
 }
