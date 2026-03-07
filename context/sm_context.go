@@ -318,6 +318,7 @@ func GetSMContextsByDnnAndImsi(dnn string, imsi string) []*SMContext {
 
 	all := GetAllSMContexts()
 	logger.PduSessLog.Infof("Total SMContexts available: %d", len(all))
+	seen := make(map[int32]bool)
 
 	for _, sm := range all {
 		if sm == nil {
@@ -340,8 +341,15 @@ func GetSMContextsByDnnAndImsi(dnn string, imsi string) []*SMContext {
 			continue
 		}
 
+		// avoid duplicate PDU session
+		if seen[sm.PDUSessionID] {
+			continue
+		}
+
 		logger.PduSessLog.Infof("SMContext matched: Supi=%s Dnn=%s PduSessionId=%d",
 			sm.Supi, sm.Dnn, sm.PDUSessionID)
+
+		seen[sm.PDUSessionID] = true
 
 		result = append(result, sm)
 	}
