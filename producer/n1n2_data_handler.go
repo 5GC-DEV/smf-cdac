@@ -384,28 +384,49 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 	case models.HoState_COMPLETED:
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, Ho state %v received", smContextUpdateData.HoState)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, in HoState_COMPLETED")
+
 		if smContext.SMContextState != context.SmStateActive {
-			// Wait till the state becomes SmStateActive again
-			// TODO: implement sleep wait in concurrent architecture
-			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive",
+			err := fmt.Errorf("invalid SMContext state %v for HoState_COMPLETED",
 				smContext.SMContextState.String())
+			smContext.SubPduSessLog.Error(err)
+			return err
+		}
+
+		if tunnel == nil {
+			err := fmt.Errorf("tunnel is nil during HoState_COMPLETED")
+			smContext.SubPduSessLog.Error(err)
+			return err
+		}
+
+		if tunnel.DataPathPool == nil {
+			err := fmt.Errorf("DataPathPool is nil during HoState_COMPLETED")
+			smContext.SubPduSessLog.Error(err)
+			return err
 		}
 
 		pdrList := []*context.PDR{}
 		farList := []*context.FAR{}
 
 		smContext.PendingUPF = make(context.PendingUPF)
+
 		for _, dataPath := range tunnel.DataPathPool {
+			if dataPath == nil {
+				continue
+			}
+
 			if dataPath.Activated {
 				ANUPF := dataPath.FirstDPNode
+				if ANUPF == nil || ANUPF.DownLinkTunnel == nil {
+					continue
+				}
+
 				for _, DLPDR := range ANUPF.DownLinkTunnel.PDR {
-					DLPDR.FAR.ApplyAction = context.ApplyAction{Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false}
-					DLPDR.FAR.ForwardingParameters = &context.ForwardingParameters{
-						OuterHeaderCreation: DLPDR.FAR.ForwardingParameters.OuterHeaderCreation,
-						DestinationInterface: context.DestinationInterface{
-							InterfaceValue: context.DestinationInterfaceAccess,
-						},
-						NetworkInstance: []byte(smContext.Dnn),
+					if DLPDR == nil || DLPDR.FAR == nil {
+						continue
+					}
+
+					DLPDR.FAR.ApplyAction = context.ApplyAction{
+						Buff: false, Drop: false, Dupl: false, Forw: true, Nocp: false,
 					}
 
 					DLPDR.State = context.RULE_UPDATE
@@ -426,7 +447,11 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 
 		pfcpAction.sendPfcpModify = true
 		smContext.ChangeState(context.SmStatePfcpModify)
-		smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+
+		smContext.SubCtxLog.Infoln(
+			"PDUSessionSMContextUpdate, SMContextState Change State:",
+			smContext.SMContextState.String(),
+		)
 
 		smContext.HoState = models.HoState_COMPLETED
 		response.JsonData.HoState = models.HoState_COMPLETED
