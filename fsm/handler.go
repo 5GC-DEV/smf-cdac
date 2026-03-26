@@ -64,6 +64,8 @@ func InitFsm() {
 	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessRelease] = HandleStateActiveEventPduSessRelease
 	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessN1N2TransferFailureIndication] = HandleStateActiveEventPduSessN1N2TransFailInd
 	SmfFsmHandler[smf_context.SmStateActive][SmEventPolicyUpdateNotify] = HandleStateActiveEventPolicyUpdateNotify
+	SmfFsmHandler[smf_context.SmStatePfcpModify][SmEventPduSessModify] = HandleStatePfcpModifyEventPduSessModify
+
 }
 
 func HandleEvent(smContext *smf_context.SMContext, event SmEvent, eventData SmEventData) error {
@@ -217,4 +219,14 @@ func HandleStateActiveEventPolicyUpdateNotify(event SmEvent, eventData *SmEventD
 	}
 
 	return smf_context.SmStateActive, nil
+}
+
+func HandleStatePfcpModifyEventPduSessModify(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
+	txn := eventData.Txn.(*transaction.Transaction)
+	smCtxt := txn.Ctxt.(*smf_context.SMContext)
+
+	smCtxt.SubFsmLog.Warnf("Duplicate PduSessModify received in SmStatePfcpModify - ignoring")
+
+	// Stay in same state, do not fail
+	return smCtxt.SMContextState, nil
 }

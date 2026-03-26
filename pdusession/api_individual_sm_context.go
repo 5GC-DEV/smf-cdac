@@ -143,6 +143,7 @@ func HTTPUpdateSmContext(c *gin.Context) {
 			Title:  "SM Context not found",
 			Status: http.StatusNotFound,
 			Detail: txn.Err.Error(),
+			Cause:  "SUBSCRIPTION_NOT_FOUND",
 		}
 
 		stats.IncrementN11MsgStats(
@@ -163,6 +164,7 @@ func HTTPUpdateSmContext(c *gin.Context) {
 			Title:  "Internal error",
 			Status: http.StatusInternalServerError,
 			Detail: "Transaction response is nil",
+			Cause:  "SYSTEM_FAILURE",
 		}
 
 		c.JSON(http.StatusInternalServerError, problem)
