@@ -6,8 +6,11 @@ github.com/5GC-DEV/config5g-cdac v0.2.1 h1:7Cqwmqh5jqeWtwYTrITflrGotglIRBIb1P3EF
 github.com/5GC-DEV/config5g-cdac v0.2.1/go.mod h1:0OEL6UoNKKlx2tlNSoKpRtzckwxR2SL+pRBDAOCT4BU=
 github.com/5GC-DEV/nas-cdac v0.0.0-20251003065343-87d9d21b06f6 h1:Lxsv/n+2zpvlBEnkGBO5aDE/TYN520bwxF4vKOo5b9g=
 github.com/5GC-DEV/nas-cdac v0.0.0-20251003065343-87d9d21b06f6/go.mod h1:5pLUEpSbRMY3org3mxHjjvX60KzjKWnr9a5iFyeTvHw=
+github.com/5GC-DEV/openapi-cdac v1.0.0/go.mod h1:TFxV/NlwA7waEk3BqH6baTQ8oWpPMRDFC1YCEpPjl04=
 github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260326125607-095642ebdf2d h1:7FhGwgQl+J/cGI++LYeQnGxUHiIvLgc6OpqvKtUc0lg=
 github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260326125607-095642ebdf2d/go.mod h1:KLX5UeLe67E9SQC/vVNArCa4KK4luoDNAS0kRGkdE74=
+github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260401053051-3d0cafcc7f49 h1:LyBPzKmEI8bb/ff9yyvICC7CclKl+M7SeSkEDWx/lqE=
+github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260401053051-3d0cafcc7f49/go.mod h1:KLX5UeLe67E9SQC/vVNArCa4KK4luoDNAS0kRGkdE74=
 github.com/5GC-DEV/util-cdac v0.0.0-20250930103432-58951725c085 h1:KLL6S+ytEGgr3dX0sg6xDQ2TXZMtVt9TboPcu1j2nes=
 github.com/5GC-DEV/util-cdac v0.0.0-20250930103432-58951725c085/go.mod h1:IHTEJn2S2C/SDlKxFkgXbepYFhgxSTm7uhbxHOF42xQ=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=
