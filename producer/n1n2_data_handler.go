@@ -268,6 +268,7 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 		n2Buf, err := context.BuildPDUSessionResourceSetupRequestTransfer(smContext)
 		if err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSession Resource Setup Request Transfer Error(%s)", err.Error())
+			metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
 		}
 		smContext.UpCnxState = models.UpCnxState_ACTIVATING
 		response.BinaryDataN2SmInformation = n2Buf
@@ -345,6 +346,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 
 		if n2Buf, err := context.BuildPDUSessionResourceSetupRequestTransfer(smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSession Resource Setup Request Transfer Error(%s)", err.Error())
+			metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
 		} else {
 			response.BinaryDataN2SmInformation = n2Buf
 		}
