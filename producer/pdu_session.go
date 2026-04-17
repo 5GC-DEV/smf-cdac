@@ -749,6 +749,7 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 			logger.PduSessLog.Errorf("Failed to build PDUSessionResourceSetupRequestTransfer for SUPI: %s, PDU Session ID: %d, Error: %s",
 				smContext.Supi, smContext.PDUSessionID, err)
 			logger.PduSessLog.Errorf("build PDUSessionResourceSetupRequestTransfer failed: %s", err)
+			metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
 		} else {
 			logger.PduSessLog.Debugf("Successfully built PDUSessionResourceSetupRequestTransfer [len=%d] for SUPI: %s, PDU Session ID: %d",
 				len(n2Pdu), smContext.Supi, smContext.PDUSessionID)

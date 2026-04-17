@@ -697,6 +697,7 @@ func HandlePfcpSessionReportRequest(msg *udp.Message) {
 			n2SmBuf, err := smf_context.BuildPDUSessionResourceSetupRequestTransfer(smContext)
 			if err != nil {
 				smContext.SubPduSessLog.Errorln("Build PDUSessionResourceSetupRequestTransfer failed:", err)
+				metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
 			} else {
 				n1n2Request.BinaryDataN2Information = n2SmBuf
 			}

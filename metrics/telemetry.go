@@ -19,17 +19,18 @@ import (
 
 // SmfStats captures SMF level stats
 type SmfStats struct {
-	n11Msg      *prometheus.CounterVec
-	n4Msg       *prometheus.CounterVec
-	svcNrfMsg   *prometheus.CounterVec
-	svcPcfMsg   *prometheus.CounterVec
-	svcUdmMsg   *prometheus.CounterVec
-	sessions    *prometheus.GaugeVec
-	sessProfile *prometheus.GaugeVec
-	sessStats   *prometheus.CounterVec
-	sessRequest *prometheus.CounterVec
-	sessRelease *prometheus.CounterVec
-	sessFailure *prometheus.CounterVec
+	n11Msg          *prometheus.CounterVec
+	n4Msg           *prometheus.CounterVec
+	svcNrfMsg       *prometheus.CounterVec
+	svcPcfMsg       *prometheus.CounterVec
+	svcUdmMsg       *prometheus.CounterVec
+	sessions        *prometheus.GaugeVec
+	sessProfile     *prometheus.GaugeVec
+	sessStats       *prometheus.CounterVec
+	sessRequest     *prometheus.CounterVec
+	sessRelease     *prometheus.CounterVec
+	sessFailure     *prometheus.CounterVec
+	resSetupFailure *prometheus.CounterVec
 }
 
 var smfStats *SmfStats
@@ -90,6 +91,11 @@ func initSmfStats() *SmfStats {
 			Name: "smf_pdu_session_failures",
 			Help: "counter of SMF PDU session establishment failure",
 		}, []string{"smf_id", "msg_type", "direction", "result"}),
+
+		resSetupFailure: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "smf_resource_setup_failures",
+			Help: "counter of SMF PDU session resource setup failure",
+		}, []string{"smf_id", "supi", "pdu_session_id", "dnn"}),
 	}
 }
 
@@ -125,6 +131,9 @@ func (ps *SmfStats) register() error {
 		return err
 	}
 	if err := prometheus.Register(ps.sessFailure); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.resSetupFailure); err != nil {
 		return err
 	}
 	return nil
@@ -200,4 +209,9 @@ func IncrementSessReleaseStats(smfID, msgType, direction, result string) {
 // IncrementSessFailureStats increments session failure stats
 func IncrementSessFailureStats(smfID, msgType, direction, result string) {
 	smfStats.sessFailure.WithLabelValues(smfID, msgType, direction, result).Inc()
+}
+
+// IncrementResSetupFailureStats increments resource setup failure stats
+func IncrementResSetupFailureStats(smfID, supi, pduSessionId, dnn string) {
+	smfStats.resSetupFailure.WithLabelValues(smfID, supi, pduSessionId, dnn).Inc()
 }
