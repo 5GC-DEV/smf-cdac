@@ -70,6 +70,9 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SM Context State[%v] should be SmStateActive", smContext.SMContextState.String())
 			}
 			if pduSessIDRelReq == pduSessIDSmCxt {
+				if smContext.PDUAddress != nil && smContext.PDUAddress.Ip != nil {
+					metrics.DeleteUESessionIP(smContext.Supi, smContext.PDUAddress.Ip.String())
+				}
 				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
 				metrics.IncrementSessReleaseStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease), "Out", "success")
 				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {

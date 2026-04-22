@@ -19,18 +19,19 @@ import (
 
 // SmfStats captures SMF level stats
 type SmfStats struct {
-	n11Msg          *prometheus.CounterVec
-	n4Msg           *prometheus.CounterVec
-	svcNrfMsg       *prometheus.CounterVec
-	svcPcfMsg       *prometheus.CounterVec
-	svcUdmMsg       *prometheus.CounterVec
-	sessions        *prometheus.GaugeVec
-	sessProfile     *prometheus.GaugeVec
-	sessStats       *prometheus.CounterVec
-	sessRequest     *prometheus.CounterVec
-	sessRelease     *prometheus.CounterVec
-	sessFailure     *prometheus.CounterVec
-	resSetupFailure *prometheus.CounterVec
+	n11Msg             *prometheus.CounterVec
+	n4Msg              *prometheus.CounterVec
+	svcNrfMsg          *prometheus.CounterVec
+	svcPcfMsg          *prometheus.CounterVec
+	svcUdmMsg          *prometheus.CounterVec
+	sessions           *prometheus.GaugeVec
+	sessProfile        *prometheus.GaugeVec
+	sessStats          *prometheus.CounterVec
+	sessRequest        *prometheus.CounterVec
+	sessRelease        *prometheus.CounterVec
+	sessFailure        *prometheus.CounterVec
+	resSetupFailure    *prometheus.CounterVec
+	ue_session_ip_info *prometheus.GaugeVec
 }
 
 var smfStats *SmfStats
@@ -96,6 +97,11 @@ func initSmfStats() *SmfStats {
 			Name: "smf_resource_setup_failures",
 			Help: "counter of SMF PDU session resource setup failure",
 		}, []string{"smf_id", "supi", "pdu_session_id", "dnn"}),
+
+		ue_session_ip_info: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "ue_supi_ip_info",
+			Help: "Mapping of UE SUPI (IMSI) to allocated IP address",
+		}, []string{"ueid", "ueip"}),
 	}
 }
 
@@ -134,6 +140,9 @@ func (ps *SmfStats) register() error {
 		return err
 	}
 	if err := prometheus.Register(ps.resSetupFailure); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.ue_session_ip_info); err != nil {
 		return err
 	}
 	return nil
@@ -214,4 +223,12 @@ func IncrementSessFailureStats(smfID, msgType, direction, result string) {
 // IncrementResSetupFailureStats increments resource setup failure stats
 func IncrementResSetupFailureStats(smfID, supi, pduSessionId, dnn string) {
 	smfStats.resSetupFailure.WithLabelValues(smfID, supi, pduSessionId, dnn).Inc()
+}
+
+func SetUESessionIP(ueid, ueip string) {
+	smfStats.ue_session_ip_info.WithLabelValues(ueid, ueip).Set(1)
+}
+
+func DeleteUESessionIP(ueid, ueip string) {
+	smfStats.ue_session_ip_info.DeleteLabelValues(ueid, ueip)
 }
