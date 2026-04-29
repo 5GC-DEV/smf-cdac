@@ -196,33 +196,56 @@ func ResolveRef(identifier string, pduSessID int32) (ref string, err error) {
 }
 
 func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
+	logger.CtxLog.Infof("[SMContext][Create] Start - Identifier=%s, PduSessionID=%d", identifier, pduSessID)
+
 	smContext = new(SMContext)
+
 	// Create Ref and identifier
 	smContext.Ref = uuid.New().URN()
-	smContextPool.Store(smContext.Ref, smContext)
-	canonicalRef.Store(canonicalName(identifier, pduSessID), smContext.Ref)
+	logger.CtxLog.Infof("[SMContext][Create] Generated Ref=%s", smContext.Ref)
 
+	smContextPool.Store(smContext.Ref, smContext)
+	logger.CtxLog.Infof("[SMContext][Create] Stored in smContextPool Ref=%s", smContext.Ref)
+
+	canonical := canonicalName(identifier, pduSessID)
+	canonicalRef.Store(canonical, smContext.Ref)
+	logger.CtxLog.Infof("[SMContext][Create] Canonical mapping stored [%s -> %s]", canonical, smContext.Ref)
+
+	// Initial state
 	smContext.SMContextState = SmStateInit
 	smContext.Identifier = identifier
 	smContext.PDUSessionID = pduSessID
 	smContext.PFCPContext = make(map[string]*PFCPSessionContext)
+
+	logger.CtxLog.Infof("[SMContext][Create] State initialized - State=%v, Identifier=%s, PduSessionID=%d",
+		smContext.SMContextState, identifier, pduSessID)
 
 	// initialize SM Policy Data
 	smContext.SBIPFCPCommunicationChan = make(chan PFCPSessionResponseStatus, 1)
 	smContext.SmPolicyUpdates = make([]*qos.PolicyUpdate, 0)
 	smContext.SmPolicyData.Initialize()
 
+	logger.CtxLog.Info("[SMContext][Create] SM Policy Data initialized")
+
+	// Protocol Configuration Options
 	smContext.ProtocolConfigurationOptions = &ProtocolConfigurationOptions{
 		DNSIPv4Request: false,
 		DNSIPv6Request: false,
 	}
 
+	logger.CtxLog.Info("[SMContext][Create] Protocol Configuration Options initialized")
+
 	// Sess Stats
 	smContextActive := incSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 
+	logger.CtxLog.Infof("[SMContext][Create] Active SMContexts=%d", smContextActive)
+
 	// initialise log tags
 	smContext.initLogTags()
+
+	logger.CtxLog.Infof("[SMContext][Create] Completed - Ref=%s, Identifier=%s, PduSessionID=%d",
+		smContext.Ref, identifier, pduSessID)
 
 	return smContext
 }

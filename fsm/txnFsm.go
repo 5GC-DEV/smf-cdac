@@ -33,21 +33,47 @@ func (SmfTxnFsm) TxnLoadCtxt(txn *transaction.Transaction) (transaction.TxnEvent
 	case svcmsgtypes.CreateSmContext:
 		req := txn.Req.(models.PostSmContextsRequest)
 		createData := req.JsonData
+
+		txn.TxnFsmLog.Infof("[CreateSmContext] Received request: SUPI=%s, PDU Session ID=%d",
+			createData.Supi, createData.PduSessionId)
+
+		// Check if context already exists
 		if smCtxtRef, err := smf_context.ResolveRef(createData.Supi, createData.PduSessionId); err == nil {
-			// Previous context exist
+			txn.TxnFsmLog.Warnf("[CreateSmContext] Existing SM context found: SUPI=%s, PDU Session ID=%d, Ref=%v",
+				createData.Supi, createData.PduSessionId, smCtxtRef)
+
+			// Handle replacement
+			txn.TxnFsmLog.Infof("[CreateSmContext] Initiating context replacement for SUPI=%s, PDU Session ID=%d",
+				createData.Supi, createData.PduSessionId)
+
 			err := producer.HandlePduSessionContextReplacement(smCtxtRef)
 			if err != nil {
-				txn.TxnFsmLog.Errorf("handle event[%v], next-event[%v], error[%v] ",
-					transaction.TxnEventLoadCtxt.String(), transaction.TxnEventFailure.String(), err)
+				txn.TxnFsmLog.Errorf("[CreateSmContext] Context replacement failed: SUPI=%s, PDU Session ID=%d, Error=%v",
+					createData.Supi, createData.PduSessionId, err)
+			} else {
+				txn.TxnFsmLog.Infof("[CreateSmContext] Context replacement successful: SUPI=%s, PDU Session ID=%d",
+					createData.Supi, createData.PduSessionId)
 			}
+		} else {
+			txn.TxnFsmLog.Debugf("[CreateSmContext] No existing context found: SUPI=%s, PDU Session ID=%d",
+				createData.Supi, createData.PduSessionId)
 		}
+
 		// Create fresh context
+		txn.TxnFsmLog.Infof("[CreateSmContext] Creating new SM context: SUPI=%s, PDU Session ID=%d",
+			createData.Supi, createData.PduSessionId)
+
 		txn.Ctxt = smf_context.NewSMContext(createData.Supi, createData.PduSessionId)
+
 		CtxtKey, err := smf_context.ResolveRef(createData.Supi, createData.PduSessionId)
 		if err != nil {
-			txn.TxnFsmLog.Errorf("handle event[%v], next-event[%v], error[%v] ",
-				transaction.TxnEventLoadCtxt.String(), transaction.TxnEventFailure.String(), err)
+			txn.TxnFsmLog.Errorf("[CreateSmContext] Failed to resolve context key after creation: SUPI=%s, PDU Session ID=%d, Error=%v",
+				createData.Supi, createData.PduSessionId, err)
+		} else {
+			txn.TxnFsmLog.Infof("[CreateSmContext] New SM context created successfully: SUPI=%s, PDU Session ID=%d, CtxtKey=%v",
+				createData.Supi, createData.PduSessionId, CtxtKey)
 		}
+
 		txn.CtxtKey = CtxtKey
 	case svcmsgtypes.UpdateSmContext:
 		fallthrough
