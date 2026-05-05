@@ -17,7 +17,6 @@ import (
 	"github.com/omec-project/smf/context"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/metrics"
-	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/transaction"
 )
 
@@ -71,7 +70,6 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 			}
 			if pduSessIDRelReq == pduSessIDSmCxt {
 				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
-				metrics.IncrementSessReleaseStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease), "Out", "success")
 				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
 					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
 				} else {
@@ -110,7 +108,6 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				} else {
 					response.BinaryDataN1SmMessage = buf
 				}
-				metrics.IncrementSessReleaseStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease), "Out", "failure")
 				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
 				smContext.ChangeState(context.SmStateModify)
 				// smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
