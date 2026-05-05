@@ -240,11 +240,12 @@ func ToBsonM(data *SMContext) (ret bson.M) {
 
 // StoreSmContextInDB Store SmContext In DB
 func StoreSmContextInDB(smContext *SMContext) {
-	logger.DataRepoLog.Infoln("db - Store SMContext In DB w ref")
 	smContext.SMLock.Lock()
-	defer smContext.SMLock.Unlock()
 	smContextBsonA := ToBsonM(smContext)
-	filter := bson.M{"ref": smContext.Ref}
+	ref := smContext.Ref
+	smContext.SMLock.Unlock()
+	logger.DataRepoLog.Infoln("db - Store SMContext In DB w ref")
+	filter := bson.M{"ref": ref}
 	logger.DataRepoLog.Infof("filter: %+v", filter)
 
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
