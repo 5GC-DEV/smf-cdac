@@ -67,7 +67,8 @@ func HandleSMPolicyUpdateNotify(eventData interface{}) error {
 		// smContext.ChangeState(prevState)
 		logger.PduSessLog.Infof("SMContext[%s-%02d] state reverted to %s after PFCP error",
 			smContext.Supi, smContext.PDUSessionID, smContext.SMContextState.String())
-
+		smContext.ChangeState(smf_context.SmStateActive)
+		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 		// Build HTTP error response for the original transaction
 		httpResponse := makePduCtxtModifyErrRsp(smContext, err.Error())
 		txn.Err = err
