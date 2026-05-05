@@ -85,7 +85,7 @@ func initSmfStats() *SmfStats {
 		sessRelease: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_release",
 			Help: "Number of SMF PDU sessions release",
-		}, []string{"smf_id", "msg_type", "direction", "result"}),
+		}, []string{"smf_id", "msg_type"}),
 
 		sessFailure: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_failures",
@@ -202,8 +202,8 @@ func IncrementNoOfSessReq(smfID, msgType, result string) {
 }
 
 // IncrementSessReleaseStats increments session release stats
-func IncrementSessReleaseStats(smfID, msgType, direction, result string) {
-	smfStats.sessRelease.WithLabelValues(smfID, msgType, direction, result).Inc()
+func IncrementSessReleaseStats(smfID, msgType string) {
+	smfStats.sessRelease.WithLabelValues(smfID, msgType).Inc()
 }
 
 // IncrementSessFailureStats increments session failure stats

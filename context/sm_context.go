@@ -407,6 +407,7 @@ func RemoveSMContext(ref string) {
 	// Sess Stats
 	smContextActive := decSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
+	metrics.IncrementSessReleaseStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease))
 	if factory.SmfConfig.Configuration.EnableDbStore {
 		DeleteSmContextInDBByRef(smContext.Ref)
 	}
