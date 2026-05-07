@@ -351,22 +351,8 @@ func SendPfcpSessionModificationRequest(
 		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] RemoveQER[%d] QERID=%d", i, qer.QERID)
 	}
 
-	pfcpMsg, err := BuildPfcpSessionModificationRequest(
-		seqNum,
-		pfcpContext.LocalSEID,
-		pfcpContext.RemoteSEID,
-		smf_context.SMF_Self().CPNodeID.ResolveNodeIdToIp(),
-		pdrList,
-		farList,
-		qerList,
-		removePDR,
-		removeFAR,
-		removeQER,
-	)
-
+	pfcpMsg, err := BuildPfcpSessionModificationRequest(seqNum, pfcpContext.LocalSEID, pfcpContext.RemoteSEID, smf_context.SMF_Self().CPNodeID.ResolveNodeIdToIp(), pdrList, farList, qerList, removePDR, removeFAR, removeQER)
 	if err != nil {
-		logger.PfcpLog.Errorf("[SendPfcpSessionModificationRequest] Build PFCP Session Modification Request failed: %v", err)
-
 		return err
 	}
 
@@ -382,7 +368,6 @@ func SendPfcpSessionModificationRequest(
 	logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Destination UPF Address=%s", upaddr.String())
 
 	if factory.SmfConfig.Configuration.EnableUpfAdapter {
-
 		logger.PfcpLog.Debugln("[SendPfcpSessionModificationRequest] Sending PFCP Session Modification Request via UPF Adapter")
 
 		if rsp, err := SendPfcpMsgToAdapter(
@@ -392,16 +377,13 @@ func SendPfcpSessionModificationRequest(
 			nil,
 			UPFAdapterURL,
 		); err != nil {
-
 			logger.PfcpLog.Errorf("send pfcp session modify msg to upf-adapter error [%v]", err.Error())
 			return err
 
 		} else {
-
 			logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Adapter Response Status=%d", rsp.StatusCode)
 
 			if rsp.StatusCode == http.StatusOK {
-
 				pfcpMsgBytes, err := io.ReadAll(rsp.Body)
 				if err != nil {
 					logger.PfcpLog.Fatalln(err)
@@ -433,11 +415,9 @@ func SendPfcpSessionModificationRequest(
 		}
 
 	} else {
-
 		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Inserting PFCP Transaction SeqNum=%d", pfcpMsg.Sequence())
 
 		InsertPfcpTxn(pfcpMsg.Sequence(), &upNodeID)
-
 		eventData := udp.PfcpEventData{
 			LSEID:      ctx.PFCPContext[nodeIDtoIP].LocalSEID,
 			ErrHandler: HandlePfcpSendError,
