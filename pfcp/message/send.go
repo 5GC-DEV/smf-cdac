@@ -379,10 +379,8 @@ func SendPfcpSessionModificationRequest(
 		); err != nil {
 			logger.PfcpLog.Errorf("send pfcp session modify msg to upf-adapter error [%v]", err.Error())
 			return err
-
 		} else {
 			logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Adapter Response Status=%d", rsp.StatusCode)
-
 			if rsp.StatusCode == http.StatusOK {
 				pfcpMsgBytes, err := io.ReadAll(rsp.Body)
 				if err != nil {
@@ -413,10 +411,8 @@ func SendPfcpSessionModificationRequest(
 				}
 			}
 		}
-
 	} else {
 		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Inserting PFCP Transaction SeqNum=%d", pfcpMsg.Sequence())
-
 		InsertPfcpTxn(pfcpMsg.Sequence(), &upNodeID)
 		eventData := udp.PfcpEventData{
 			LSEID:      ctx.PFCPContext[nodeIDtoIP].LocalSEID,
