@@ -127,6 +127,7 @@ func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent,
 	var event SmEvent
 
 	if factory.SmfConfig.Configuration.EnableDbStore {
+		smContext.SMLock.Lock()
 		smContextPool := smf_context.GetSmContextPool()
 		val, ok := smContextPool.Load(smContext.Ref)
 		if ok {
@@ -134,6 +135,7 @@ func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent,
 		} else {
 			smf_context.StoreSmContextPool(smContext)
 		}
+		smContext.SMLock.Unlock()
 	}
 
 	switch txn.MsgType {

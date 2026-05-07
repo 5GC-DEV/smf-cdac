@@ -165,7 +165,7 @@ type SMContext struct {
 	SMTxnBusLock sync.Mutex `json:"-" yaml:"smTxnBusLock" bson:"-"` // ignore
 	// lock
 	// SMLock sync.Mutex `json:"smLock,omitempty" yaml:"smLock" bson:"smLock,omitempty"` // ignore
-	SMLock sync.Mutex `json:"-" yaml:"smLock" bson:"-"` // ignore
+	SMLock sync.RWMutex `json:"-" yaml:"smLock" bson:"-"` // ignore
 
 	SMContextState                      SMContextState `json:"smContextState" yaml:"smContextState" bson:"smContextState"`
 	PDUSessionID                        int32          `json:"pduSessionID" yaml:"pduSessionID" bson:"pduSessionID"`

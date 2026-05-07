@@ -308,39 +308,103 @@ func SendPfcpSessionModificationRequest(
 ) error {
 	seqNum := getSeqNumber()
 	upNodeIDStr := upNodeID.ResolveNodeIdToIp().String()
+	logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest][Enter] Supi=%s PduSessionID=%d NodeID=%s SeqNum=%d", ctx.Supi, ctx.PDUSessionID, upNodeIDStr, seqNum)
+
 	pfcpContext, ok := ctx.PFCPContext[upNodeIDStr]
 	if !ok {
+		logger.PfcpLog.Errorf("[SendPfcpSessionModificationRequest] PFCP Context not found for NodeID[%s]", upNodeIDStr)
+
 		return fmt.Errorf("PFCP Context not found for NodeID[%s]", upNodeIDStr)
 	}
+
+	logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] LocalSEID=%d RemoteSEID=%d", pfcpContext.LocalSEID, pfcpContext.RemoteSEID)
+
+	logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] AddPDRs=%d AddFARs=%d AddQERs=%d RemovePDRs=%d RemoveFARs=%d RemoveQERs=%d", len(pdrList), len(farList), len(qerList), len(removePDR), len(removeFAR), len(removeQER))
+
+	// Debug PDR IDs
+	for i, pdr := range pdrList {
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] AddPDR[%d] PDRID=%d FARID=%d Precedence=%d", i, pdr.PDRID, pdr.FAR.FARID, pdr.Precedence)
+	}
+
+	// Debug FAR IDs
+	for i, far := range farList {
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] AddFAR[%d] FARID=%d", i, far.FARID)
+	}
+
+	// Debug QER IDs
+	for i, qer := range qerList {
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] AddQER[%d] QERID=%d QFI=%d", i, qer.QERID, qer.QFI.QFI)
+	}
+
+	// Debug Remove PDR IDs
+	for i, pdr := range removePDR {
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] RemovePDR[%d] PDRID=%d", i, pdr.PDRID)
+	}
+
+	// Debug Remove FAR IDs
+	for i, far := range removeFAR {
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] RemoveFAR[%d] FARID=%d", i, far.FARID)
+	}
+
+	// Debug Remove QER IDs
+	for i, qer := range removeQER {
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] RemoveQER[%d] QERID=%d", i, qer.QERID)
+	}
+
 	pfcpMsg, err := BuildPfcpSessionModificationRequest(seqNum, pfcpContext.LocalSEID, pfcpContext.RemoteSEID, smf_context.SMF_Self().CPNodeID.ResolveNodeIdToIp(), pdrList, farList, qerList, removePDR, removeFAR, removeQER)
 	if err != nil {
 		return err
 	}
+
+	logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] PFCP Message built successfully SeqNum=%d", seqNum)
+
 	nodeIDtoIP := upNodeID.ResolveNodeIdToIp().String()
+
 	upaddr := &net.UDPAddr{
 		IP:   upNodeID.ResolveNodeIdToIp(),
 		Port: int(upfPort),
 	}
 
+	logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Destination UPF Address=%s", upaddr.String())
+
 	if factory.SmfConfig.Configuration.EnableUpfAdapter {
-		if rsp, err := SendPfcpMsgToAdapter(upNodeID, pfcpMsg, upaddr, nil, UPFAdapterURL); err != nil {
+		logger.PfcpLog.Debugln("[SendPfcpSessionModificationRequest] Sending PFCP Session Modification Request via UPF Adapter")
+
+		if rsp, err := SendPfcpMsgToAdapter(
+			upNodeID,
+			pfcpMsg,
+			upaddr,
+			nil,
+			UPFAdapterURL,
+		); err != nil {
 			logger.PfcpLog.Errorf("send pfcp session modify msg to upf-adapter error [%v]", err.Error())
 			return err
 		} else {
-			logger.PfcpLog.Debugf("send pfcp session modify response [%v]", rsp)
+			logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Adapter Response Status=%d", rsp.StatusCode)
 			if rsp.StatusCode == http.StatusOK {
 				pfcpMsgBytes, err := io.ReadAll(rsp.Body)
 				if err != nil {
 					logger.PfcpLog.Fatalln(err)
 				}
+
 				pfcpMsgString := string(pfcpMsgBytes)
-				logger.PfcpLog.Debugf("pfcp rsp status ok, %s", pfcpMsgString)
+
+				logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Adapter PFCP Response=%s", pfcpMsgString)
+
 				pfcpRspMsg, err := message.Parse(pfcpMsgBytes)
 				if err != nil {
 					logger.PfcpLog.Errorf("parse pfcp session modify response failed: %v", err)
+
 					return err
 				}
-				eventData := udp.PfcpEventData{LSEID: ctx.PFCPContext[nodeIDtoIP].LocalSEID, ErrHandler: HandlePfcpSendError}
+
+				eventData := udp.PfcpEventData{
+					LSEID:      ctx.PFCPContext[nodeIDtoIP].LocalSEID,
+					ErrHandler: HandlePfcpSendError,
+				}
+
+				logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Handling Adapter PFCP Response LSEID=%d", eventData.LSEID)
+
 				err = adapter.HandleAdapterPfcpRsp(pfcpRspMsg, &eventData)
 				if err != nil {
 					logger.PfcpLog.Errorf("handle adapter pfcp response failed: %v", err)
@@ -348,14 +412,27 @@ func SendPfcpSessionModificationRequest(
 			}
 		}
 	} else {
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Inserting PFCP Transaction SeqNum=%d", pfcpMsg.Sequence())
 		InsertPfcpTxn(pfcpMsg.Sequence(), &upNodeID)
-		eventData := udp.PfcpEventData{LSEID: ctx.PFCPContext[nodeIDtoIP].LocalSEID, ErrHandler: HandlePfcpSendError}
+		eventData := udp.PfcpEventData{
+			LSEID:      ctx.PFCPContext[nodeIDtoIP].LocalSEID,
+			ErrHandler: HandlePfcpSendError,
+		}
+
+		logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Sending PFCP Session Modification Request to UPF LSEID=%d RemoteAddr=%s", eventData.LSEID, upaddr.String())
+
 		err := udp.SendPfcp(pfcpMsg, upaddr, eventData)
 		if err != nil {
 			logger.PfcpLog.Errorf("send pfcp session modify msg to upf error [%v]", err.Error())
+
+			return err
 		}
 	}
+
 	ctx.SubPfcpLog.Infof("sent PFCP Session Modify Request to NodeID[%s]", upNodeID.ResolveNodeIdToIp().String())
+
+	logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest][Exit] Supi=%s PduSessionID=%d SeqNum=%d", ctx.Supi, ctx.PDUSessionID, seqNum)
+
 	return nil
 }
 
