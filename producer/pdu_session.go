@@ -10,6 +10,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"runtime"
+	"strings"
+	"time"
 
 	"github.com/5GC-DEV/nas-cdac"
 	"github.com/5GC-DEV/nas-cdac/nasMessage"
@@ -71,15 +75,26 @@ func formContextCreateErrRsp(httpStatus int, problemBody *models.ProblemDetails,
 }*/
 
 func HandlePduSessionContextReplacement(smCtxtRef string) error {
-	logger.PduSessLog.Infof("HandlePduSessionContextReplacement: ENTER ref=%s", smCtxtRef)
+	// Start watchdog
+	done := make(chan struct{})
+	defer close(done)
+
+	go func() {
+		select {
+		case <-done:
+			return // completed normally
+		case <-time.After(5 * time.Second): // ← tune this threshold
+			// Stuck! Dump all goroutines to file
+			dumpGoroutines(smCtxtRef)
+		}
+	}()
 
 	smCtxt := smf_context.GetSMContext(smCtxtRef)
 	if smCtxt == nil {
-		logger.PduSessLog.Warnf("HandlePduSessionContextReplacement: context nil ref=%s", smCtxtRef)
 		return nil
 	}
-	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: BEFORE_LOCK ref=%s", smCtxtRef)
 
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: BEFORE_LOCK ref=%s", smCtxtRef)
 	smCtxt.SMLock.Lock()
 	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: LOCK_ACQUIRED ref=%s", smCtxtRef)
 
@@ -94,13 +109,44 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 		smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: BEFORE_TUNNEL_RELEASE ref=%s", smCtxtRef)
 		releaseTunnel(smCtxt)
 		smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: TUNNEL_RELEASED ref=%s", smCtxtRef)
-	} else {
-		smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: NO_TUNNEL ref=%s", smCtxtRef)
 	}
 
 	smCtxt.SMLock.Unlock()
-	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: EXIT ref=%s", smCtxtRef)
 	return nil
+}
+
+func dumpGoroutines(smCtxtRef string) {
+	// 1. Collect stack trace
+	buf := make([]byte, 10<<20) // 10MB
+	n := runtime.Stack(buf, true)
+
+	// 2. Write to timestamped file
+	timestamp := time.Now().Format("20060102-150405")
+	filename := fmt.Sprintf("/tmp/smf-stuck-%s-%s.txt",
+		strings.ReplaceAll(smCtxtRef, ":", "_"),
+		timestamp)
+
+	// 3. Add context header
+	header := fmt.Sprintf(
+		"=== SMF STUCK GOROUTINE DUMP ===\n"+
+			"Time:    %s\n"+
+			"Ref:     %s\n"+
+			"Reason:  HandlePduSessionContextReplacement blocked >5s\n"+
+			"================================\n\n",
+		time.Now().Format(time.RFC3339),
+		smCtxtRef,
+	)
+
+	content := header + string(buf[:n])
+
+	if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
+		logger.PduSessLog.Errorf("dumpGoroutines: failed to write dump file: %v", err)
+		// Fallback: print to stderr
+		fmt.Fprintf(os.Stderr, content)
+		return
+	}
+
+	logger.PduSessLog.Errorf("dumpGoroutines: STUCK DETECTED ref=%s dump written to %s", smCtxtRef, filename)
 }
 
 func HandlePDUSessionSMContextCreate(eventData interface{}) error {
