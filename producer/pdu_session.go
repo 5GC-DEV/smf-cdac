@@ -142,7 +142,7 @@ func dumpGoroutines(smCtxtRef string) {
 	if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
 		logger.PduSessLog.Errorf("dumpGoroutines: failed to write dump file: %v", err)
 		// Fallback: print to stderr
-		fmt.Fprintf(os.Stderr, content)
+		fmt.Fprintf(os.Stderr, "%s", content)
 		return
 	}
 
