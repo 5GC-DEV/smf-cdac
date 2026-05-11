@@ -43,7 +43,7 @@ func formContextCreateErrRsp(httpStatus int, problemBody *models.ProblemDetails,
 	}
 }
 
-func HandlePduSessionContextReplacement(smCtxtRef string) error {
+/*func HandlePduSessionContextReplacement(smCtxtRef string) error {
 	smCtxt := smf_context.GetSMContext(smCtxtRef)
 
 	if smCtxt != nil {
@@ -67,6 +67,39 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 		smCtxt.SMLock.Unlock()
 	}
 
+	return nil
+}*/
+
+func HandlePduSessionContextReplacement(smCtxtRef string) error {
+	logger.PduSessLog.Infof("HandlePduSessionContextReplacement: ENTER ref=%s", smCtxtRef)
+
+	smCtxt := smf_context.GetSMContext(smCtxtRef)
+	if smCtxt == nil {
+		logger.PduSessLog.Warnf("HandlePduSessionContextReplacement: context nil ref=%s", smCtxtRef)
+		return nil
+	}
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: BEFORE_LOCK ref=%s", smCtxtRef)
+
+	smCtxt.SMLock.Lock()
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: LOCK_ACQUIRED ref=%s", smCtxtRef)
+
+	smCtxt.LocalPurged = true
+	smf_context.RemoveSMContext(smCtxt.Ref)
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: CONTEXT_REMOVED ref=%s", smCtxtRef)
+
+	smCtxt.PublishSmCtxtInfo()
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: PUBLISHED ref=%s", smCtxtRef)
+
+	if smCtxt.Tunnel != nil {
+		smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: BEFORE_TUNNEL_RELEASE ref=%s", smCtxtRef)
+		releaseTunnel(smCtxt)
+		smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: TUNNEL_RELEASED ref=%s", smCtxtRef)
+	} else {
+		smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: NO_TUNNEL ref=%s", smCtxtRef)
+	}
+
+	smCtxt.SMLock.Unlock()
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: EXIT ref=%s", smCtxtRef)
 	return nil
 }
 
