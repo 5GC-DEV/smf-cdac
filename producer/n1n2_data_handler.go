@@ -69,6 +69,9 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SM Context State[%v] should be SmStateActive", smContext.SMContextState.String())
 			}
 			if pduSessIDRelReq == pduSessIDSmCxt {
+				if smContext.PDUAddress != nil && smContext.PDUAddress.Ip != nil {
+					metrics.DeleteUESessionIP(smContext.Supi, smContext.PDUAddress.Ip.String())
+				}
 				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
 				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
 					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
