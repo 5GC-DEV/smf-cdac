@@ -634,122 +634,106 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 	body := txn.Req.(models.ReleaseSmContextRequest)
 	smContext := txn.Ctxt.(*smf_context.SMContext)
 
+	// ── Read-only data needed for PCF/PFCP calls ──────────────────────
+	// Extract everything needed BEFORE acquiring the lock
+	// so we never hold lock during network calls
+
+	// ── Lock only for state changes ───────────────────────────────────
 	smContext.SMLock.Lock()
-	defer smContext.SMLock.Unlock()
-
 	smContext.SubPduSessLog.Infof("PDUSessionSMContextRelease, PDU Session SMContext Release received")
+	smContext.ChangeState(smf_context.SmStatePfcpRelease)
+	smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
+	tunnelExists := smContext.Tunnel != nil
+	smContext.SMLock.Unlock()
+	// ── Lock released — now safe to make blocking network calls ───────
 
-	// Send Policy delete
+	// BLOCKING POINT 1: PCF policy delete (HTTP) — no lock held ✓
 	metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationDelete), "Out", "", "")
 	if httpStatus, err := consumer.SendSMPolicyAssociationDelete(smContext, &body); err != nil {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationDelete), "In", http.StatusText(httpStatus), err.Error())
 		smContext.SubCtxLog.Errorf("PDUSessionSMContextRelease, SM policy delete error [%v] ", err.Error())
 	} else {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationDelete), "In", http.StatusText(httpStatus), "")
-		smContext.SubCtxLog.Infof("PDUSessionSMContextRelease, SM policy delete success with http status [%v] ", httpStatus)
+		smContext.SubCtxLog.Infof("PDUSessionSMContextRelease, SM policy delete success [%v] ", httpStatus)
 	}
 
-	// Release UE IP-Address
-	err := smContext.ReleaseUeIpAddr()
-	if err != nil {
+	// Release UE IP — check if this mutates shared state
+	if err := smContext.ReleaseUeIpAddr(); err != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, release UE IP address failed: %v", err)
 	}
 
-	// Initiate PFCP release
-	smContext.ChangeState(smf_context.SmStatePfcpRelease)
-	smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
-
-	var httpResponse *httpwrapper.Response
-
-	// Release User-plane
-	if ok := releaseTunnel(smContext); !ok {
-		// already released
-		httpResponse = &httpwrapper.Response{
-			Status: http.StatusNoContent,
-			Body:   nil,
-		}
-
+	// BLOCKING POINT 2: PFCP tunnel release — no lock held ✓
+	if !tunnelExists {
+		// already released — skip PFCP wait entirely
+		httpResponse := &httpwrapper.Response{Status: http.StatusNoContent, Body: nil}
 		txn.Rsp = httpResponse
 		smf_context.RemoveSMContext(smContext.Ref)
 		return nil
 	}
 
+	if ok := releaseTunnel(smContext); !ok {
+		// releaseTunnel found tunnel already gone
+		httpResponse := &httpwrapper.Response{Status: http.StatusNoContent, Body: nil}
+		txn.Rsp = httpResponse
+		smf_context.RemoveSMContext(smContext.Ref)
+		return nil
+	}
+
+	// Wait for PFCP response — lock NOT held ✓
 	PFCPResponseStatus := <-smContext.SBIPFCPCommunicationChan
+
+	// ── Re-acquire lock only for state update after PFCP response ─────
+	smContext.SMLock.Lock()
+	defer smContext.SMLock.Unlock()
+
+	var httpResponse *httpwrapper.Response
 
 	switch PFCPResponseStatus {
 	case smf_context.SessionReleaseSuccess:
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, PFCP SessionReleaseSuccess")
 		smContext.ChangeState(smf_context.SmStatePfcpRelease)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
-		httpResponse = &httpwrapper.Response{
-			Status: http.StatusNoContent,
-			Body:   nil,
-		}
+		httpResponse = &httpwrapper.Response{Status: http.StatusNoContent, Body: nil}
 
 	case smf_context.SessionReleaseTimeout:
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, PFCP SessionReleaseTimeout")
 		smContext.ChangeState(smf_context.SmStateActive)
-		httpResponse = &httpwrapper.Response{
-			Status: int(http.StatusInternalServerError),
-		}
+		httpResponse = &httpwrapper.Response{Status: int(http.StatusInternalServerError)}
 
 	case smf_context.SessionReleaseFailed:
-		// Update SmContext Request(N1 PDU Session Release Request)
-		// Send PDU Session Release Reject
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, PFCP SessionReleaseFailed")
-		problemDetail := models.ProblemDetails{
-			Status: http.StatusInternalServerError,
-			Cause:  "SYSTEM_FAILULE",
-		}
-		httpResponse = &httpwrapper.Response{
-			Status: int(problemDetail.Status),
-		}
 		smContext.ChangeState(smf_context.SmStateActive)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
+		problemDetail := models.ProblemDetails{Status: http.StatusInternalServerError, Cause: "SYSTEM_FAILULE"}
+		httpResponse = &httpwrapper.Response{Status: int(problemDetail.Status)}
 		errResponse := models.UpdateSmContextErrorResponse{
-			JsonData: &models.SmContextUpdateError{
-				Error: &problemDetail,
-			},
+			JsonData: &models.SmContextUpdateError{Error: &problemDetail},
 		}
 		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
 		} else {
 			errResponse.BinaryDataN1SmMessage = buf
 		}
-
 		errResponse.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
 		httpResponse.Body = errResponse
-	default:
-		smContext.SubCtxLog.Warnf("PDUSessionSMContextRelease, The state shouldn't be [%s]\n", PFCPResponseStatus)
 
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, in case Unknown")
-		problemDetail := models.ProblemDetails{
-			Status: http.StatusInternalServerError,
-			Cause:  "SYSTEM_FAILULE",
-		}
-		httpResponse = &httpwrapper.Response{
-			Status: int(problemDetail.Status),
-		}
+	default:
+		smContext.SubCtxLog.Warnf("PDUSessionSMContextRelease, unexpected PFCP state [%s]", PFCPResponseStatus)
 		smContext.ChangeState(smf_context.SmStateActive)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextRelease, SMContextState Change State:", smContext.SMContextState.String())
+		problemDetail := models.ProblemDetails{Status: http.StatusInternalServerError, Cause: "SYSTEM_FAILULE"}
+		httpResponse = &httpwrapper.Response{Status: int(problemDetail.Status)}
 		errResponse := models.UpdateSmContextErrorResponse{
-			JsonData: &models.SmContextUpdateError{
-				Error: &problemDetail,
-			},
+			JsonData: &models.SmContextUpdateError{Error: &problemDetail},
 		}
 		if buf, err := smf_context.BuildGSMPDUSessionReleaseReject(smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextRelease, build GSM PDUSessionReleaseReject failed: %+v", err)
 		} else {
 			errResponse.BinaryDataN1SmMessage = buf
 		}
-
 		errResponse.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
 		httpResponse.Body = errResponse
 	}
 
 	txn.Rsp = httpResponse
 	smf_context.RemoveSMContext(smContext.Ref)
-
 	return nil
 }
 
