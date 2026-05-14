@@ -183,6 +183,8 @@ func IncrementSvcUdmMsgStats(smfID, msgType, direction, result, reason string) {
 
 // SetSessStats maintains Session level stats
 func SetSessStats(nodeId string, count uint64) {
+	logger.KafkaLog.Info("---in SetSessStats")
+	logger.KafkaLog.Info("---count: %d", count)
 	smfStats.sessions.WithLabelValues(nodeId).Set(float64(count))
 }
 

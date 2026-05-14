@@ -74,11 +74,13 @@ func init() {
 }
 
 func incSMContextActive() uint64 {
+	fmt.Print("---in incSMContextActive")
 	atomic.AddUint64(&smContextActive, 1)
 	return smContextActive
 }
 
 func decSMContextActive() uint64 {
+	fmt.Print("---in decSMContextActive")
 	atomic.AddUint64(&smContextActive, ^uint64(0))
 	return smContextActive
 }
@@ -220,6 +222,7 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	// Sess Stats
 	smContextActive := incSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
+	metrics.IncrementNoOfSessions(SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
 
 	// initialise log tags
 	smContext.initLogTags()
