@@ -338,6 +338,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, PDU session context create success ")
 	metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
+	metrics.SetUESessionIP(smContext.Supi, smContext.PDUAddress.Ip.String())
 
 	return nil
 	// TODO: UECM registration
@@ -559,6 +560,10 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 	defer smContext.SMLock.Unlock()
 
 	smContext.SubPduSessLog.Infof("PDUSessionSMContextRelease, PDU Session SMContext Release received")
+
+	if smContext.PDUAddress != nil && smContext.PDUAddress.Ip != nil {
+		metrics.DeleteUESessionIP(smContext.Supi, smContext.PDUAddress.Ip.String())
+	}
 
 	// Send Policy delete
 	metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationDelete), "Out", "", "")
