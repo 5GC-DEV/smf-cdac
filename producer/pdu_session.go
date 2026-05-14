@@ -21,6 +21,7 @@ import (
 	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/antihax/optional"
 	"github.com/omec-project/smf/consumer"
+	ctx "github.com/omec-project/smf/context"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/metrics"
@@ -676,6 +677,9 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 	txn.Rsp = httpResponse
 	smf_context.RemoveSMContext(smContext.Ref)
 	metrics.IncrementSessReleaseStats(string(svcmsgtypes.NsmfPDUSessionRelease))
+	smContextActive := ctx.DecSMContextActive()
+	smContext.SubCtxLog.Info("---smcontextactive rel: %d", smContextActive)
+	metrics.SetSessStats(string(smContext.PDUSessionID), smContextActive)
 	return nil
 }
 

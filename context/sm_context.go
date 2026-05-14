@@ -79,7 +79,7 @@ func incSMContextActive() uint64 {
 	return smContextActive
 }
 
-func decSMContextActive() uint64 {
+func DecSMContextActive() uint64 {
 	fmt.Print("---in decSMContextActive")
 	atomic.AddUint64(&smContextActive, ^uint64(0))
 	return smContextActive
@@ -409,9 +409,9 @@ func RemoveSMContext(ref string) {
 
 	canonicalRef.Delete(canonicalName(smContext.Supi, smContext.PDUSessionID))
 	// Sess Stats
-	smContextActive := decSMContextActive()
-	smContext.SubCtxLog.Info("---smcontextactive: %d", smContextActive)
-	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
+	// smContextActive := DecSMContextActive()
+	// smContext.SubCtxLog.Info("---smcontextactive: %d", smContextActive)
+	// metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	// metrics.IncrementSessReleaseStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease))
 	if factory.SmfConfig.Configuration.EnableDbStore {
 		DeleteSmContextInDBByRef(smContext.Ref)
