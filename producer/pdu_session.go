@@ -74,7 +74,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	txn := eventData.(*transaction.Transaction)
 	request := txn.Req.(models.PostSmContextsRequest)
 	smContext := txn.Ctxt.(*smf_context.SMContext)
-
+	smContext.SubPduSessLog.Info("---in HandlePDUSessionSMContextCreate")
 	// GSM State
 	// PDU Session Establishment Accept/Reject
 	var response models.PostSmContextsResponse
@@ -675,7 +675,7 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 
 	txn.Rsp = httpResponse
 	smf_context.RemoveSMContext(smContext.Ref)
-
+	metrics.IncrementSessReleaseStats(string(svcmsgtypes.NsmfPDUSessionRelease))
 	return nil
 }
 
