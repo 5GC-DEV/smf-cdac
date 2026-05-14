@@ -221,8 +221,9 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 
 	// Sess Stats
 	smContextActive := incSMContextActive()
+	fmt.Printf("---smcontextactive newsm: %d", smContextActive)
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
-	metrics.IncrementNoOfSessions(SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
+	// metrics.IncrementNoOfSessions(SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
 
 	// initialise log tags
 	smContext.initLogTags()
@@ -409,6 +410,7 @@ func RemoveSMContext(ref string) {
 	canonicalRef.Delete(canonicalName(smContext.Supi, smContext.PDUSessionID))
 	// Sess Stats
 	smContextActive := decSMContextActive()
+	smContext.SubCtxLog.Info("---smcontextactive: %d", smContextActive)
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	metrics.IncrementSessReleaseStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease))
 	if factory.SmfConfig.Configuration.EnableDbStore {

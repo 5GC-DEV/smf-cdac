@@ -76,7 +76,7 @@ func initSmfStats() *SmfStats {
 		sessStats: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_stats",
 			Help: "Counter of total session status",
-		}, []string{"smf_id", "msg_type", "result"}),
+		}, []string{"msg_type", "result"}),
 
 		sessRequest: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_requests",
@@ -203,8 +203,8 @@ func SetSessProfileStats(id, ip, state, upf, enterprise string, count uint64) {
 }
 
 // IncrementNoOfSessions increments session level stats
-func IncrementNoOfSessions(smfID, msgType, result string) {
-	smfStats.sessStats.WithLabelValues(smfID, msgType, result).Inc()
+func IncrementNoOfSessions(msgType, result string) {
+	smfStats.sessStats.WithLabelValues(msgType, result).Inc()
 }
 
 // IncrementNoOfSessReq increments pdu session requests stats
