@@ -634,14 +634,27 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			delete(smContext.PendingUPF, upfIP)
 			smContext.SubPduSessLog.Debugf("delete pending pfcp response: UPF IP [%s]", upfIP)
 
-			if smContext.PendingUPF.IsEmpty() && !smContext.LocalPurged {
+			/*if smContext.PendingUPF.IsEmpty() && !smContext.LocalPurged {
 				smContext.SubPfcpLog.Debugf("sent SessionReleaseSuccess to channel SEID[%d] ue %s", SEID, smContext.Supi)
+				smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
+			}*/
+			if smContext.PendingUPF.IsEmpty() {
+				// ↓ REMOVE !smContext.LocalPurged check
+				// Release goroutine is still waiting on channel even if LocalPurged = true
+				// It needs this signal to unblock and exit cleanly
+				smContext.SubPfcpLog.Debugf("sending SessionReleaseSuccess to channel SEID[%d] LocalPurged[%v]",
+					SEID, smContext.LocalPurged)
 				smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
 			}
 		}
 		smContext.SubPfcpLog.Infof("PFCP Session Deletion Success[%d]", SEID)
 	} else {
-		if smContext.SMContextState == smf_context.SmStatePfcpRelease && !smContext.LocalPurged {
+		/*if smContext.SMContextState == smf_context.SmStatePfcpRelease && !smContext.LocalPurged {
+			smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
+		}
+		smContext.SubPfcpLog.Infof("PFCP Session Deletion Failed[%d]", SEID)*/
+		if smContext.SMContextState == smf_context.SmStatePfcpRelease {
+			// ↓ REMOVE !smContext.LocalPurged check here too
 			smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
 		}
 		smContext.SubPfcpLog.Infof("PFCP Session Deletion Failed[%d]", SEID)
