@@ -73,7 +73,7 @@ const (
 func init() {
 }
 
-func incSMContextActive() uint64 {
+func IncSMContextActive() uint64 {
 	fmt.Print("---in incSMContextActive")
 	atomic.AddUint64(&smContextActive, 1)
 	return smContextActive
@@ -220,9 +220,9 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	}
 
 	// Sess Stats
-	smContextActive := incSMContextActive()
-	fmt.Printf("---smcontextactive newsm: %d", smContextActive)
-	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
+	// smContextActive := IncSMContextActive()
+	// fmt.Printf("---smcontextactive newsm: %d", smContextActive)
+	// metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	// metrics.IncrementNoOfSessions(SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
 
 	// initialise log tags

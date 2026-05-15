@@ -571,6 +571,9 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 		smContext.ChangeState(context.SmStatePfcpModify)
 		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
 		metrics.IncrementNoOfSessions(string(svcmsgtypes.CreateSmContext), "success")
+		smContextActive := ctx.IncSMContextActive()
+		fmt.Printf("---smcontextactive newsm: %d", smContextActive)
+		metrics.SetSessStats(string(smContext.PDUSessionID), smContextActive)
 	case models.N2SmInfoType_PDU_RES_SETUP_FAIL:
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
 			smContextUpdateData.N2SmInfoType)
