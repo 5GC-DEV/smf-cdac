@@ -635,6 +635,7 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			smContext.SubPduSessLog.Debugf("delete pending pfcp response: UPF IP [%s]", upfIP)
 
 			if smContext.PendingUPF.IsEmpty() && !smContext.LocalPurged {
+				smContext.SubPfcpLog.Debugf("sent SessionReleaseSuccess to channel SEID[%d] ue %s", SEID, smContext.Supi)
 				smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
 			}
 		}
