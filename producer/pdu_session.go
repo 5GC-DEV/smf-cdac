@@ -680,14 +680,30 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		smContext.SMContextState,
 	)
 
-	PFCPResponseStatus := <-smContext.SBIPFCPCommunicationChan
+	/*PFCPResponseStatus := <-smContext.SBIPFCPCommunicationChan
 
 	smContext.SubCtxLog.Debugf(
 		"[PFCP] Channel event received Supi[%s] PduSessID[%d] Event[%+v]",
 		smContext.Supi,
 		smContext.PDUSessionID,
 		PFCPResponseStatus,
+	)*/
+	PFCPResponseStatus := <-smContext.SBIPFCPCommunicationChan
+
+	smContext.SubCtxLog.Debugf(
+		"[PFCP] Channel event received Supi[%s] PduSessID[%d] Event[%+v]",
+		smContext.Supi, smContext.PDUSessionID, PFCPResponseStatus,
 	)
+
+	// ← ADD THIS CHECK after unblocking
+	if smContext.LocalPurged {
+		smContext.SubCtxLog.Infof(
+			"PDUSessionSMContextRelease, context already purged by replacement, skipping cleanup Supi[%s]",
+			smContext.Supi,
+		)
+		txn.Rsp = &httpwrapper.Response{Status: http.StatusNoContent, Body: nil}
+		return nil // RemoveSMContext already done by HandlePduSessionContextReplacement
+	}
 
 	switch PFCPResponseStatus {
 	case smf_context.SessionReleaseSuccess:
