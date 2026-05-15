@@ -15,6 +15,7 @@ import (
 	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/omec-project/smf/consumer"
 	"github.com/omec-project/smf/context"
+	ctx "github.com/omec-project/smf/context"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
@@ -142,6 +143,10 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
 			}*/
 			smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
+			metrics.IncrementSessReleaseStats(string(svcmsgtypes.NsmfPDUSessionRelease))
+			smContextActive := ctx.DecSMContextActive()
+			smContext.SubCtxLog.Info("---smcontextactive rel count: %d", smContextActive)
+			metrics.SetSessStats(string(smContext.PDUSessionID), smContextActive)
 		case nas.MsgTypePDUSessionEstablishmentRequest:
 			smContext.SubPduSessLog.Debugf("PDUSessionSMContextUpdate, N1 Msg PDU Session Establishment Request received")
 			if smContext.SMContextState != context.SmStateInActivePending {
