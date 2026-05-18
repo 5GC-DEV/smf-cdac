@@ -629,7 +629,6 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 
 	if causeValue == ie.CauseRequestAccepted {
 		if smContext.SMContextState == smf_context.SmStatePfcpRelease {
-
 			upfNodeID := smContext.GetNodeIDByLocalSEID(SEID)
 			upfIP := upfNodeID.ResolveNodeIdToIp().String()
 
@@ -658,7 +657,6 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			)
 
 			if smContext.PendingUPF.IsEmpty() && !smContext.LocalPurged {
-
 				smContext.SubPfcpLog.Debugf(
 					"[PFCP] Sending SessionReleaseSuccess to channel SEID[%d] UE[%s]",
 					SEID,
@@ -682,10 +680,8 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 		)
 
 	} else {
-
 		if smContext.SMContextState == smf_context.SmStatePfcpRelease &&
 			!smContext.LocalPurged {
-
 			smContext.SubPfcpLog.Debugf(
 				"[PFCP] Sending SessionReleaseSuccess on failure path SEID[%d] UE[%s]",
 				SEID,
