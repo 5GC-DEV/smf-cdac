@@ -678,7 +678,6 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			SEID,
 			smContext.Supi,
 		)
-
 	} else {
 		if smContext.SMContextState == smf_context.SmStatePfcpRelease &&
 			!smContext.LocalPurged {
