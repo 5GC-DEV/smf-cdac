@@ -19,18 +19,19 @@ import (
 
 // SmfStats captures SMF level stats
 type SmfStats struct {
-	n11Msg          *prometheus.CounterVec
-	n4Msg           *prometheus.CounterVec
-	svcNrfMsg       *prometheus.CounterVec
-	svcPcfMsg       *prometheus.CounterVec
-	svcUdmMsg       *prometheus.CounterVec
-	sessions        *prometheus.GaugeVec
-	sessProfile     *prometheus.GaugeVec
-	sessStats       *prometheus.CounterVec
-	sessRequest     *prometheus.CounterVec
-	sessRelease     *prometheus.CounterVec
-	sessFailure     *prometheus.CounterVec
-	resSetupFailure *prometheus.CounterVec
+	n11Msg             *prometheus.CounterVec
+	n4Msg              *prometheus.CounterVec
+	svcNrfMsg          *prometheus.CounterVec
+	svcPcfMsg          *prometheus.CounterVec
+	svcUdmMsg          *prometheus.CounterVec
+	sessions           *prometheus.GaugeVec
+	sessProfile        *prometheus.GaugeVec
+	sessStats          *prometheus.CounterVec
+	sessRequest        *prometheus.CounterVec
+	sessRelease        *prometheus.CounterVec
+	sessFailure        *prometheus.CounterVec
+	resSetupFailure    *prometheus.CounterVec
+	ue_session_ip_info *prometheus.GaugeVec
 }
 
 var smfStats *SmfStats
@@ -75,7 +76,7 @@ func initSmfStats() *SmfStats {
 		sessStats: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_stats",
 			Help: "Counter of total session status",
-		}, []string{"smf_id", "msg_type", "result"}),
+		}, []string{"msg_type", "result"}),
 
 		sessRequest: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_requests",
@@ -96,6 +97,11 @@ func initSmfStats() *SmfStats {
 			Name: "smf_resource_setup_failures",
 			Help: "counter of SMF PDU session resource setup failure",
 		}, []string{"smf_id", "supi", "pdu_session_id", "dnn"}),
+
+		ue_session_ip_info: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "ue_supi_ip_info",
+			Help: "Mapping of UE SUPI (IMSI) to allocated IP address",
+		}, []string{"ueid", "ueip"}),
 	}
 }
 
@@ -134,6 +140,9 @@ func (ps *SmfStats) register() error {
 		return err
 	}
 	if err := prometheus.Register(ps.resSetupFailure); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.ue_session_ip_info); err != nil {
 		return err
 	}
 	return nil
@@ -192,8 +201,8 @@ func SetSessProfileStats(id, ip, state, upf, enterprise string, count uint64) {
 }
 
 // IncrementNoOfSessions increments session level stats
-func IncrementNoOfSessions(smfID, msgType, result string) {
-	smfStats.sessStats.WithLabelValues(smfID, msgType, result).Inc()
+func IncrementNoOfSessions(msgType, result string) {
+	smfStats.sessStats.WithLabelValues(msgType, result).Inc()
 }
 
 // IncrementNoOfSessReq increments pdu session requests stats
@@ -202,8 +211,8 @@ func IncrementNoOfSessReq(smfID, msgType, result string) {
 }
 
 // IncrementSessReleaseStats increments session release stats
-func IncrementSessReleaseStats(smfID, msgType, direction, result string) {
-	smfStats.sessRelease.WithLabelValues(smfID, msgType, direction, result).Inc()
+func IncrementSessReleaseStats(msgType, direction, result string) {
+	smfStats.sessRelease.WithLabelValues(msgType, direction, result).Inc()
 }
 
 // IncrementSessFailureStats increments session failure stats
@@ -214,4 +223,12 @@ func IncrementSessFailureStats(smfID, msgType, direction, result string) {
 // IncrementResSetupFailureStats increments resource setup failure stats
 func IncrementResSetupFailureStats(smfID, supi, pduSessionId, dnn string) {
 	smfStats.resSetupFailure.WithLabelValues(smfID, supi, pduSessionId, dnn).Inc()
+}
+
+func SetUESessionIP(ueid, ueip string) {
+	smfStats.ue_session_ip_info.WithLabelValues(ueid, ueip).Set(1)
+}
+
+func DeleteUESessionIP(ueid, ueip string) {
+	smfStats.ue_session_ip_info.DeleteLabelValues(ueid, ueip)
 }
