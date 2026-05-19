@@ -44,27 +44,35 @@ func formContextCreateErrRsp(httpStatus int, problemBody *models.ProblemDetails,
 }
 
 func HandlePduSessionContextReplacement(smCtxtRef string) error {
+	logger.PduSessLog.Debugf("HandlePduSessionContextReplacement: ENTER ref=%s", smCtxtRef)
 	smCtxt := smf_context.GetSMContext(smCtxtRef)
 
 	if smCtxt != nil {
 		smCtxt.SubPduSessLog.Warn("PDUSessionSMContextCreate, old context exist, purging")
+		smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: BEFORE_LOCK ref=%s", smCtxtRef)
 		smCtxt.SMLock.Lock()
-
+		smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: LOCK_ACQUIRED ref=%s", smCtxtRef)
 		smCtxt.LocalPurged = true
 
 		// Disassociate ctxt from any look-ups(Report-Req from UPF shouldn't get this context)
 		smf_context.RemoveSMContext(smCtxt.Ref)
-
+		smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: CONTEXT_REMOVED ref=%s", smCtxtRef)
 		smCtxt.PublishSmCtxtInfo()
+		smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: PUBLISHED ref=%s", smCtxtRef)
 		// check if PCF session set, send release(Npcf_SMPolicyControl_Delete)
 		// TODO: not done as part of ctxt release
 
 		// Check if UPF session set, send release
 		if smCtxt.Tunnel != nil {
+			smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: BEFORE_TUNNEL_RELEASE ref=%s", smCtxtRef)
 			releaseTunnel(smCtxt)
+			smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: TUNNEL_RELEASED ref=%s", smCtxtRef)
+		} else {
+			smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: NO_TUNNEL ref=%s", smCtxtRef)
 		}
 
 		smCtxt.SMLock.Unlock()
+		smCtxt.SubPduSessLog.Debugf("HandlePduSessionContextReplacement: EXIT ref=%s", smCtxtRef)
 	}
 
 	return nil
@@ -595,7 +603,21 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 		return nil
 	}
 
+	smContext.SubCtxLog.Debugf(
+		"[PFCP] Waiting for release response on channel Supi[%s] PduSessID[%d] State[%s]",
+		smContext.Supi,
+		smContext.PDUSessionID,
+		smContext.SMContextState,
+	)
+
 	PFCPResponseStatus := <-smContext.SBIPFCPCommunicationChan
+
+	smContext.SubCtxLog.Debugf(
+		"[PFCP] Channel event received Supi[%s] PduSessID[%d] Event[%+v]",
+		smContext.Supi,
+		smContext.PDUSessionID,
+		PFCPResponseStatus,
+	)
 
 	switch PFCPResponseStatus {
 	case smf_context.SessionReleaseSuccess:
