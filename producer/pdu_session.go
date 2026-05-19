@@ -337,7 +337,6 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	}
 
 	smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, PDU session context create success ")
-	metrics.IncrementNoOfSessions(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
 	metrics.SetUESessionIP(smContext.Supi, smContext.PDUAddress.Ip.String())
 
 	return nil

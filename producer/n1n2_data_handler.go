@@ -74,7 +74,6 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					metrics.DeleteUESessionIP(smContext.Supi, smContext.PDUAddress.Ip.String())
 				}
 				smContext.HandlePDUSessionReleaseRequest(m.PDUSessionReleaseRequest)
-				metrics.IncrementSessReleaseStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease), "Out", "success")
 				if buf, err := context.BuildGSMPDUSessionReleaseCommand(smContext); err != nil {
 					smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build GSM PDUSessionReleaseCommand failed: %+v", err)
 				} else {
@@ -113,7 +112,6 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				} else {
 					response.BinaryDataN1SmMessage = buf
 				}
-				metrics.IncrementSessReleaseStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.NsmfPDUSessionRelease), "Out", "failure")
 				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
 				smContext.ChangeState(context.SmStateModify)
 				// smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
@@ -144,6 +142,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
 			}*/
 			smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, sent SMContext Status Notification successfully")
+			metrics.IncrementSessReleaseStats(string(svcmsgtypes.NsmfPDUSessionRelease), "Out", "")
 		case nas.MsgTypePDUSessionEstablishmentRequest:
 			smContext.SubPduSessLog.Debugf("PDUSessionSMContextUpdate, N1 Msg PDU Session Establishment Request received")
 			if smContext.SMContextState != context.SmStateInActivePending {

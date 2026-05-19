@@ -201,8 +201,8 @@ func SetSessProfileStats(id, ip, state, upf, enterprise string, count uint64) {
 }
 
 // IncrementNoOfSessions increments session level stats
-func IncrementNoOfSessions(smfID, msgType, result string) {
-	smfStats.sessStats.WithLabelValues(smfID, msgType, result).Inc()
+func IncrementNoOfSessions(msgType, result string) {
+	smfStats.sessStats.WithLabelValues(msgType, result).Inc()
 }
 
 // IncrementNoOfSessReq increments pdu session requests stats
@@ -211,8 +211,8 @@ func IncrementNoOfSessReq(smfID, msgType, result string) {
 }
 
 // IncrementSessReleaseStats increments session release stats
-func IncrementSessReleaseStats(smfID, msgType, direction, result string) {
-	smfStats.sessRelease.WithLabelValues(smfID, msgType, direction, result).Inc()
+func IncrementSessReleaseStats(msgType, direction, result string) {
+	smfStats.sessRelease.WithLabelValues(msgType, direction, result).Inc()
 }
 
 // IncrementSessFailureStats increments session failure stats
