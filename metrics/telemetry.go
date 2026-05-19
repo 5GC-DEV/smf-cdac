@@ -76,7 +76,7 @@ func initSmfStats() *SmfStats {
 		sessStats: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_stats",
 			Help: "Counter of total session status",
-		}, []string{"smf_id", "msg_type", "result"}),
+		}, []string{"msg_type", "result"}),
 
 		sessRequest: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_requests",
