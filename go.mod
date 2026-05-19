@@ -4,8 +4,9 @@ go 1.24.0
 
 require (
 	github.com/5GC-DEV/config5g-cdac v0.2.1
-	github.com/5GC-DEV/nas-cdac v0.0.0-20251003065343-87d9d21b06f6
-	github.com/5GC-DEV/openapi-cdac v1.0.1-0.20250930103916-588dd800f7e9
+	github.com/5GC-DEV/nas-cdac v0.4.2
+	github.com/5GC-DEV/openapi-cdac v0.4.2
+	github.com/5GC-DEV/util-cdac v0.0.0-20250930103432-58951725c085
 	github.com/antihax/optional v1.0.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
@@ -22,10 +23,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require (
-	github.com/5GC-DEV/util-cdac v0.0.0-20250930103432-58951725c085 // indirect
-	github.com/omec-project/openapi v1.4.1 // indirect
-)
+require github.com/omec-project/openapi v1.4.1 // indirect
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -95,13 +93,13 @@ require (
 	go4.org/intern v0.0.0-20220617035311-6925f38cc365 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230525183740-e7c30c78aeb2 // indirect
 	golang.org/x/arch v0.17.0 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
-	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/grpc v1.72.2 // indirect
