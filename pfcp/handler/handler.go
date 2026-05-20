@@ -627,79 +627,11 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 		return
 	}
 
-	smContext.SMLock.Lock()
-	defer smContext.SMLock.Unlock()
-
 	if causeValue == ie.CauseRequestAccepted {
 		if smContext.SMContextState == smf_context.SmStatePfcpRelease {
 
 			upfNodeID := smContext.GetNodeIDByLocalSEID(SEID)
 			upfIP := upfNodeID.ResolveNodeIdToIp().String()
-			smContext.SubPduSessLog.Debugf(
-				"[PFCP] Before delete pending UPF count[%d] SEID[%d] UE[%s]",
-				len(smContext.PendingUPF),
-				SEID,
-				smContext.Supi,
-			)
-
-			delete(smContext.PendingUPF, upfIP)
-			smContext.SubPduSessLog.Debugf(
-				"[PFCP] After delete pending UPF count[%d] Empty[%t] SEID[%d] UE[%s]",
-				len(smContext.PendingUPF),
-				smContext.PendingUPF.IsEmpty(),
-				SEID,
-				smContext.Supi,
-			)
-
-			smContext.SubPfcpLog.Debugf(
-				"[PFCP] LocalPurged[%v] SEID[%d] UE[%s]",
-				smContext.LocalPurged,
-				SEID,
-				smContext.Supi,
-			)
-
-			if smContext.PendingUPF.IsEmpty() && !smContext.LocalPurged {
-				smContext.SubPfcpLog.Debugf(
-					"[PFCP] Sending SessionReleaseSuccess to channel SEID[%d] UE[%s]",
-					SEID,
-					smContext.Supi,
-				)
-
-				smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
-
-				smContext.SubPfcpLog.Debugf(
-					"[PFCP] SessionReleaseSuccess sent successfully SEID[%d] UE[%s]",
-					SEID,
-					smContext.Supi,
-				)
-			}
-		}
-	} else {
-
-		if smContext.SMContextState == smf_context.SmStatePfcpRelease &&
-			!smContext.LocalPurged {
-
-			smContext.SubPfcpLog.Debugf(
-				"[PFCP] Sending SessionReleaseSuccess on failure path SEID[%d] UE[%s]",
-				SEID,
-				smContext.Supi,
-			)
-
-			smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
-		}
-
-		smContext.SubPfcpLog.Infof(
-			"[PFCP] Session Deletion Failed SEID[%d] UE[%s]",
-			SEID,
-			smContext.Supi,
-		)
-	}
-
-	/*if causeValue == ie.CauseRequestAccepted {
-		if smContext.SMContextState == smf_context.SmStatePfcpRelease {
-
-			upfNodeID := smContext.GetNodeIDByLocalSEID(SEID)
-			upfIP := upfNodeID.ResolveNodeIdToIp().String()
 
 			smContext.SubPduSessLog.Debugf(
 				"[PFCP] Before delete pending UPF count[%d] SEID[%d] UE[%s]",
@@ -740,6 +672,15 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 					SEID,
 					smContext.Supi,
 				)
+			} else {
+				smContext.SubPfcpLog.Debugf(
+					"[PFCP] Skipping SessionReleaseSuccess SEID[%d] UE[%s] PendingUPFEmpty[%v] LocalPurged[%v]",
+					SEID,
+					smContext.Supi,
+					smContext.PendingUPF.IsEmpty(),
+					smContext.LocalPurged,
+				)
+
 			}
 		}
 
@@ -768,7 +709,7 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			SEID,
 			smContext.Supi,
 		)
-	}*/
+	}
 }
 
 func HandlePfcpSessionReportRequest(msg *udp.Message) {
