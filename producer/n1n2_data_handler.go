@@ -193,6 +193,11 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 							farList = append(farList, DLPDR.FAR)
 
 							if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+								smContext.SubPfcpLog.Debugf(
+									"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+									smContext.Supi,
+									ANUPF.GetNodeIP(),
+								)
 								smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 							}
 						}
@@ -303,6 +308,11 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 						if DLPDR.FAR.ForwardingParameters != nil {
 							DLPDR.FAR.ForwardingParameters.OuterHeaderCreation = nil
 						}
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 						farList = append(farList, DLPDR.FAR)
 					}
@@ -436,6 +446,11 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 					farList = append(farList, DLPDR.FAR)
 
 					if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 					}
 				}
@@ -545,6 +560,11 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					farList = append(farList, DLPDR.FAR)
 
 					if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 					}
 				}
@@ -653,6 +673,11 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					farList = append(farList, DLPDR.FAR)
 
 					if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 					}
 				}

@@ -96,9 +96,10 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 
 	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: BEFORE_LOCK ref=%s", smCtxtRef)
 	smCtxt.SMLock.Lock()
-	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: LOCK_ACQUIRED ref=%s", smCtxtRef)
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: LOCK_ACQUIRED ref=%s UE=%s", smCtxtRef, smCtxt.Supi)
 
 	smCtxt.LocalPurged = true
+	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: after local purge set true ref=%s UE=%s", smCtxtRef, smCtxt.Supi)
 	smf_context.RemoveSMContext(smCtxt.Ref)
 	smCtxt.SubPduSessLog.Infof("HandlePduSessionContextReplacement: CONTEXT_REMOVED ref=%s", smCtxtRef)
 
@@ -915,6 +916,11 @@ func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
 				} else {
 					DLPDR.FAR.ApplyAction = smf_context.ApplyAction{Buff: false, Drop: true, Dupl: false, Forw: false, Nocp: false}
 					DLPDR.FAR.State = smf_context.RULE_UPDATE
+					smContext.SubPfcpLog.Debugf(
+						"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+						smContext.Supi,
+						ANUPF.GetNodeIP(),
+					)
 					smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 					farList = append(farList, DLPDR.FAR)
 				}
