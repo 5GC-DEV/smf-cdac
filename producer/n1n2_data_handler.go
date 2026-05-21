@@ -193,12 +193,26 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 							farList = append(farList, DLPDR.FAR)
 
 							if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
+
 								smContext.SubPfcpLog.Debugf(
-									"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+									"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+									smContext.PendingUPF,
+									smContext.PendingUPF,
+									len(smContext.PendingUPF),
 									smContext.Supi,
 									ANUPF.GetNodeIP(),
 								)
+
 								smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+
+								smContext.SubPfcpLog.Debugf(
+									"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+									smContext.PendingUPF,
+									smContext.PendingUPF,
+									len(smContext.PendingUPF),
+									smContext.Supi,
+									ANUPF.GetNodeIP(),
+								)
 							}
 						}
 					}
@@ -313,8 +327,24 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 							smContext.Supi,
 							ANUPF.GetNodeIP(),
 						)
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 						farList = append(farList, DLPDR.FAR)
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 					}
 				}
 			}
@@ -447,11 +477,22 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 
 					if _, exist := smContext.PendingUPF[ANUPF.GetNodeIP()]; !exist {
 						smContext.SubPfcpLog.Debugf(
-							"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+							"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
 							smContext.Supi,
 							ANUPF.GetNodeIP(),
 						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 					}
 				}
 			}
@@ -565,7 +606,23 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 							smContext.Supi,
 							ANUPF.GetNodeIP(),
 						)
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 					}
 				}
 			}
@@ -678,7 +735,23 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 							smContext.Supi,
 							ANUPF.GetNodeIP(),
 						)
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 						smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+						smContext.SubPfcpLog.Debugf(
+							"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+							smContext.PendingUPF,
+							smContext.PendingUPF,
+							len(smContext.PendingUPF),
+							smContext.Supi,
+							ANUPF.GetNodeIP(),
+						)
 					}
 				}
 			}

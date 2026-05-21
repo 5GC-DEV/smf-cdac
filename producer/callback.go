@@ -216,7 +216,23 @@ func BuildPfcpParam(smContext *smfContext.SMContext) *pfcpParam {
 				smContext.Supi,
 				ANUPF.GetNodeIP(),
 			)
+			smContext.SubPfcpLog.Debugf(
+				"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+				smContext.PendingUPF,
+				smContext.PendingUPF,
+				len(smContext.PendingUPF),
+				smContext.Supi,
+				ANUPF.GetNodeIP(),
+			)
 			smContext.PendingUPF[ANUPF.GetNodeIP()] = true
+			smContext.SubPfcpLog.Debugf(
+				"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+				smContext.PendingUPF,
+				smContext.PendingUPF,
+				len(smContext.PendingUPF),
+				smContext.Supi,
+				ANUPF.GetNodeIP(),
+			)
 		}
 
 		// ----------------------

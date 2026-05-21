@@ -787,8 +787,24 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 				if err != nil {
 					smContext.SubPduSessLog.Errorf("releaseTunnel, send PFCP session deletion request failed: %v", err)
 				}
+				smContext.SubPfcpLog.Debugf(
+					"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+					smContext.PendingUPF,
+					smContext.PendingUPF,
+					len(smContext.PendingUPF),
+					smContext.Supi,
+					curDataPathNode.GetNodeIP(),
+				)
 				deletedPFCPNode[curUPFID] = true
 				smContext.PendingUPF[curDataPathNode.GetNodeIP()] = true
+				smContext.SubPfcpLog.Debugf(
+					"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+					smContext.PendingUPF,
+					smContext.PendingUPF,
+					len(smContext.PendingUPF),
+					smContext.Supi,
+					curDataPathNode.GetNodeIP(),
+				)
 			}
 		}
 	}
@@ -917,12 +933,23 @@ func HandlePduSessN1N2TransFailInd(eventData interface{}) error {
 					DLPDR.FAR.ApplyAction = smf_context.ApplyAction{Buff: false, Drop: true, Dupl: false, Forw: false, Nocp: false}
 					DLPDR.FAR.State = smf_context.RULE_UPDATE
 					smContext.SubPfcpLog.Debugf(
-						"[PFCP] Adding UPF to PendingUPF UE[%s] UPF[%s]",
+						"[PFCP] Before add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddingUPF[%s]",
+						smContext.PendingUPF,
+						smContext.PendingUPF,
+						len(smContext.PendingUPF),
 						smContext.Supi,
 						ANUPF.GetNodeIP(),
 					)
 					smContext.PendingUPF[ANUPF.GetNodeIP()] = true
 					farList = append(farList, DLPDR.FAR)
+					smContext.SubPfcpLog.Debugf(
+						"[PFCP] After add PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+						smContext.PendingUPF,
+						smContext.PendingUPF,
+						len(smContext.PendingUPF),
+						smContext.Supi,
+						ANUPF.GetNodeIP(),
+					)
 				}
 			}
 		}
