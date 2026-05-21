@@ -591,7 +591,7 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 	}
 }
 
-/*func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
+func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 	rsp, ok := msg.PfcpMessage.(*message.SessionDeletionResponse)
 	if !ok {
 		logger.PfcpLog.Errorln("invalid message type for session deletion response")
@@ -634,7 +634,8 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 			upfIP := upfNodeID.ResolveNodeIdToIp().String()
 
 			smContext.SubPduSessLog.Debugf(
-				"[PFCP] Before delete pending UPF count[%d] SEID[%d] UE[%s]",
+				"[PFCP] Before delete pending UPF map address[%p] count[%d] SEID[%d] UE[%s]",
+				smContext.PendingUPF,
 				len(smContext.PendingUPF),
 				SEID,
 				smContext.Supi,
@@ -643,7 +644,8 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 			delete(smContext.PendingUPF, upfIP)
 
 			smContext.SubPduSessLog.Debugf(
-				"[PFCP] After delete pending UPF count[%d] Empty[%t] SEID[%d] UE[%s]",
+				"[PFCP] After delete pending UPF map address[%p] count[%d] Empty[%t] SEID[%d] UE[%s]",
+				smContext.PendingUPF,
 				len(smContext.PendingUPF),
 				smContext.PendingUPF.IsEmpty(),
 				SEID,
@@ -674,11 +676,12 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 				)
 			} else {
 				smContext.SubPfcpLog.Debugf(
-					"[PFCP] Skipping SessionReleaseSuccess SEID[%d] UE[%s] PendingUPFEmpty[%v] LocalPurged[%v]",
+					"[PFCP] Skipping SessionReleaseSuccess SEID[%d] UE[%s] PendingUPFEmpty[%v] LocalPurged[%v] map address[%p]",
 					SEID,
 					smContext.Supi,
 					smContext.PendingUPF.IsEmpty(),
 					smContext.LocalPurged,
+					smContext.PendingUPF,
 				)
 
 			}
@@ -695,150 +698,6 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 		if smContext.SMContextState == smf_context.SmStatePfcpRelease &&
 			!smContext.LocalPurged {
 
-			smContext.SubPfcpLog.Debugf(
-				"[PFCP] Sending SessionReleaseSuccess on failure path SEID[%d] UE[%s]",
-				SEID,
-				smContext.Supi,
-			)
-
-			smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
-		}
-
-		smContext.SubPfcpLog.Infof(
-			"[PFCP] Session Deletion Failed SEID[%d] UE[%s]",
-			SEID,
-			smContext.Supi,
-		)
-	}
-}*/
-
-func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
-	rsp, ok := msg.PfcpMessage.(*message.SessionDeletionResponse)
-	if !ok {
-		logger.PfcpLog.Errorln("invalid message type for session deletion response")
-		return
-	}
-	logger.PfcpLog.Infoln("handle PFCP Session Deletion Response")
-	SEID := rsp.SEID()
-
-	if SEID == 0 {
-		if eventData, ok := msg.EventData.(udp.PfcpEventData); !ok {
-			logger.PfcpLog.Warnln("PFCP Session Deletion Response found invalid event data, response discarded")
-			return
-		} else {
-			SEID = eventData.LSEID
-		}
-	}
-	smContext := smf_context.GetSMContextBySEID(SEID)
-
-	if smContext == nil {
-		logger.PfcpLog.Warnln("PFCP Session Deletion Response found SM context nil, response discarded")
-		return
-	}
-
-	if rsp.Cause == nil {
-		logger.PfcpLog.Errorln("PFCP Session Deletion Response missing Cause")
-		return
-	}
-
-	causeValue, err := rsp.Cause.Cause()
-	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse Cause IE: %+v", err)
-		return
-	}
-
-	if causeValue == ie.CauseRequestAccepted {
-		// Acquire the SM context lock before touching PendingUPF,
-		// so the empty-check and channel send are atomic with respect
-		// to any concurrent goroutine that also modifies PendingUPF.
-		smContext.SMLock.Lock()
-
-		if smContext.SMContextState == smf_context.SmStatePfcpRelease {
-
-			upfNodeID := smContext.GetNodeIDByLocalSEID(SEID)
-			upfIP := upfNodeID.ResolveNodeIdToIp().String()
-
-			smContext.SubPduSessLog.Debugf(
-				"[PFCP] Before delete pending UPF count[%d] SEID[%d] UE[%s]",
-				len(smContext.PendingUPF),
-				SEID,
-				smContext.Supi,
-			)
-
-			delete(smContext.PendingUPF, upfIP)
-
-			// Capture isEmpty immediately after delete while lock is still held,
-			// so no other goroutine can mutate PendingUPF before we act on it.
-			pendingUPFEmpty := smContext.PendingUPF.IsEmpty()
-			localPurged := smContext.LocalPurged
-
-			smContext.SubPduSessLog.Debugf(
-				"[PFCP] After delete pending UPF count[%d] Empty[%t] SEID[%d] UE[%s]",
-				len(smContext.PendingUPF),
-				pendingUPFEmpty,
-				SEID,
-				smContext.Supi,
-			)
-
-			smContext.SubPfcpLog.Debugf(
-				"[PFCP] LocalPurged[%v] SEID[%d] UE[%s]",
-				localPurged,
-				SEID,
-				smContext.Supi,
-			)
-
-			if pendingUPFEmpty && !localPurged {
-				smContext.SubPfcpLog.Debugf(
-					"[PFCP] Sending SessionReleaseSuccess to channel SEID[%d] UE[%s]",
-					SEID,
-					smContext.Supi,
-				)
-
-				// Unlock before the channel send to avoid deadlock:
-				// HandlePDUSessionSMContextRelease holds SMLock while
-				// waiting on this same channel, so sending while holding
-				// SMLock here would deadlock.
-				smContext.SMLock.Unlock()
-
-				smContext.SBIPFCPCommunicationChan <- smf_context.SessionReleaseSuccess
-
-				smContext.SubPfcpLog.Debugf(
-					"[PFCP] SessionReleaseSuccess sent successfully SEID[%d] UE[%s]",
-					SEID,
-					smContext.Supi,
-				)
-
-				// Lock already released; skip the deferred unlock path.
-				goto logSuccess
-			} else {
-				smContext.SubPfcpLog.Debugf(
-					"[PFCP] Skipping SessionReleaseSuccess SEID[%d] UE[%s] PendingUPFEmpty[%v] LocalPurged[%v]",
-					SEID,
-					smContext.Supi,
-					pendingUPFEmpty,
-					localPurged,
-				)
-			}
-		}
-
-		smContext.SMLock.Unlock()
-
-	logSuccess:
-		smContext.SubPfcpLog.Infof(
-			"[PFCP] Session Deletion Success SEID[%d] UE[%s]",
-			SEID,
-			smContext.Supi,
-		)
-
-	} else {
-		smContext.SMLock.Lock()
-
-		shouldNotify := smContext.SMContextState == smf_context.SmStatePfcpRelease &&
-			!smContext.LocalPurged
-
-		smContext.SMLock.Unlock()
-
-		if shouldNotify {
 			smContext.SubPfcpLog.Debugf(
 				"[PFCP] Sending SessionReleaseSuccess on failure path SEID[%d] UE[%s]",
 				SEID,
