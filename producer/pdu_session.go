@@ -767,7 +767,7 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 	return nil
 }
 
-func releaseTunnel(smContext *smf_context.SMContext) bool {
+/*func releaseTunnel(smContext *smf_context.SMContext) bool {
 	if smContext.Tunnel == nil {
 		smContext.SubPduSessLog.Errorf("releaseTunnel, pfcp tunnel already released")
 		return false
@@ -808,6 +808,79 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 			}
 		}
 	}
+	smContext.Tunnel = nil
+	return true
+}*/
+
+func releaseTunnel(smContext *smf_context.SMContext) bool {
+	if smContext.Tunnel == nil {
+		smContext.SubPduSessLog.Errorf("releaseTunnel, pfcp tunnel already released")
+		return false
+	}
+
+	deletedPFCPNode := make(map[string]bool)
+	smContext.PendingUPF = make(smf_context.PendingUPF)
+
+	// Phase 1: populate PendingUPF fully BEFORE sending any requests.
+	// If requests are sent first, responses can arrive and clear PendingUPF
+	// before all UPFs are added, causing IsEmpty() to fire prematurely.
+	for _, dataPath := range smContext.Tunnel.DataPathPool {
+		dataPath.DeactivateTunnelAndPDR(smContext)
+		for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
+			curUPFID, err := curDataPathNode.GetUPFID()
+			if err != nil {
+				smContext.SubPduSessLog.Error(err)
+				continue
+			}
+			if _, exist := deletedPFCPNode[curUPFID]; !exist {
+				deletedPFCPNode[curUPFID] = true
+				smContext.PendingUPF[curDataPathNode.GetNodeIP()] = true
+				smContext.SubPfcpLog.Debugf(
+					"[PFCP] Added to PendingUPF map address[%p] content[%+v] len[%d] UE[%s] AddedUPF[%s]",
+					smContext.PendingUPF,
+					smContext.PendingUPF,
+					len(smContext.PendingUPF),
+					smContext.Supi,
+					curDataPathNode.GetNodeIP(),
+				)
+			}
+		}
+	}
+
+	smContext.SubPfcpLog.Debugf(
+		"[PFCP] PendingUPF fully populated len[%d] UE[%s] content[%+v]",
+		len(smContext.PendingUPF),
+		smContext.Supi,
+		smContext.PendingUPF,
+	)
+
+	// Phase 2: now send deletion requests. Responses may arrive at any point
+	// from here, but PendingUPF is complete so IsEmpty() will only be true
+	// after ALL responses are processed.
+	deletedPFCPNode = make(map[string]bool)
+	for _, dataPath := range smContext.Tunnel.DataPathPool {
+		for curDataPathNode := dataPath.FirstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
+			curUPFID, err := curDataPathNode.GetUPFID()
+			if err != nil {
+				smContext.SubPduSessLog.Error(err)
+				continue
+			}
+			if _, exist := deletedPFCPNode[curUPFID]; !exist {
+				deletedPFCPNode[curUPFID] = true
+				err := pfcp_message.SendPfcpSessionDeletionRequest(
+					curDataPathNode.UPF.NodeID,
+					smContext,
+					curDataPathNode.UPF.Port,
+				)
+				if err != nil {
+					smContext.SubPduSessLog.Errorf(
+						"releaseTunnel, send PFCP session deletion request failed: %v", err,
+					)
+				}
+			}
+		}
+	}
+
 	smContext.Tunnel = nil
 	return true
 }
