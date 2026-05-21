@@ -634,22 +634,24 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 			upfIP := upfNodeID.ResolveNodeIdToIp().String()
 
 			smContext.SubPduSessLog.Debugf(
-				"[PFCP] Before delete pending UPF map address[%p] count[%d] SEID[%d] UE[%s]",
+				"[PFCP] Before delete pending UPF map address[%p] count[%d] SEID[%d] UE[%s] content[%+v]",
 				smContext.PendingUPF,
 				len(smContext.PendingUPF),
 				SEID,
 				smContext.Supi,
+				smContext.PendingUPF,
 			)
 
 			delete(smContext.PendingUPF, upfIP)
 
 			smContext.SubPduSessLog.Debugf(
-				"[PFCP] After delete pending UPF map address[%p] count[%d] Empty[%t] SEID[%d] UE[%s]",
+				"[PFCP] After delete pending UPF map address[%p] count[%d] Empty[%t] SEID[%d] UE[%s] content[%+v]",
 				smContext.PendingUPF,
 				len(smContext.PendingUPF),
 				smContext.PendingUPF.IsEmpty(),
 				SEID,
 				smContext.Supi,
+				smContext.PendingUPF,
 			)
 
 			smContext.SubPfcpLog.Debugf(
@@ -676,11 +678,12 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 				)
 			} else {
 				smContext.SubPfcpLog.Debugf(
-					"[PFCP] Skipping SessionReleaseSuccess SEID[%d] UE[%s] PendingUPFEmpty[%v] LocalPurged[%v] map address[%p]",
+					"[PFCP] Skipping SessionReleaseSuccess SEID[%d] UE[%s] PendingUPFEmpty[%v] LocalPurged[%v] map address[%p] content[%+v]",
 					SEID,
 					smContext.Supi,
 					smContext.PendingUPF.IsEmpty(),
 					smContext.LocalPurged,
+					smContext.PendingUPF,
 					smContext.PendingUPF,
 				)
 
