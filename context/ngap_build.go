@@ -215,7 +215,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		"Building PDUSessionResourceModifyRequestTransfer for SUPI[%s], PDU Session ID[%d]",
 		ctx.Supi, ctx.PDUSessionID,
 	)
-
 	resourceModifyRequestTransfer := ngapType.PDUSessionResourceModifyRequestTransfer{}
 
 	// ----------------------------------------------------
@@ -340,7 +339,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 		gbdownlink, gbuplink, qfi, priority)
 
 	// Add AMBR IE to NGAP message
-	ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
+	/*ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
 		Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate},
 		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
@@ -351,11 +350,12 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 			},
 		},
 	}
-	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)
+	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)*/
 
 	// Default ARP values
 	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
-	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
+	// arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
+	arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentPreEmptable
 
 	// ----------------------------------------------------
 	// Step 5: Handle policy updates (QoS flow add/modify)
@@ -437,7 +437,7 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	)
 
 	// Build QoS AddOrModify IE
-	ie = ngapType.PDUSessionResourceModifyRequestTransferIEs{
+	ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
 		Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDQosFlowAddOrModifyRequestList},
 		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
 		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
@@ -453,9 +453,15 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 							},
 						},
 						AllocationAndRetentionPriority: ngapType.AllocationAndRetentionPriority{
-							PriorityLevelARP:        ngapType.PriorityLevelARP{Value: int64(priority)},
+							PriorityLevelARP:        ngapType.PriorityLevelARP{Value: int64(2)},
 							PreEmptionCapability:    ngapType.PreEmptionCapability{Value: arpPreemptCap},
 							PreEmptionVulnerability: ngapType.PreEmptionVulnerability{Value: arpPreemptVul},
+						},
+						GBRQosInformation: &ngapType.GBRQosInformation{
+							MaximumFlowBitRateDL:    ngapType.BitRate{Value: 128000},
+							MaximumFlowBitRateUL:    ngapType.BitRate{Value: 128000},
+							GuaranteedFlowBitRateDL: ngapType.BitRate{Value: 128000},
+							GuaranteedFlowBitRateUL: ngapType.BitRate{Value: 128000},
 						},
 					},
 				}},
