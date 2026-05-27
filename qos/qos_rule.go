@@ -503,13 +503,13 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	}
 
 	// Remote Addr
-	/*if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
+	if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}*/
+	}
 
 	// Remote Port
-	/*if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
+	if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
@@ -518,10 +518,10 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	if pfc, len := buildPFCompPortRange(false, ipf.sPortRange); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}*/
+	}
 
 	// Remote Port (temporarily use Local Port type for testing)
-	if pfc, len := buildPFCompPort(true, ipf.sPort); pfc != nil {
+	/*if pfc, len := buildPFCompPort(true, ipf.sPort); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
@@ -530,13 +530,13 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	if pfc, len := buildPFCompPortRange(true, ipf.sPortRange); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}
+	}*/
 
 	// Local Addr
-	/*if pfc, len := buildPFCompAddr(true, ipf.dAddrv4); pfc != nil {
+	if pfc, len := buildPFCompAddr(true, ipf.dAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}*/
+	}
 
 	// Local Port
 	if pfc, len := buildPFCompPort(true, ipf.dPort); pfc != nil {
