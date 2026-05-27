@@ -189,7 +189,7 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
 
 			// Build a new QoS rule from the PCC rule and reference QoS data
-			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+			qosRule := BuildAddQoSRuleFromPccRuleims(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 
 			// Append the constructed rule to the list
 			qosRules = append(qosRules, *qosRule)
@@ -255,6 +255,20 @@ func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData
 		DQR:           btou(qosData.DefQosFlowIndication),
 		OperationCode: pccRuleOpCode,
 		Precedence:    uint8(pccRule.Precedence),
+		QFI:           GetQosFlowIdFromQosId(qosData.QosId),
+	}
+
+	qRule.BuildPacketFilterListFromPccRule(pccRule)
+
+	return &qRule
+}
+
+func BuildAddQoSRuleFromPccRuleims(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
+	qRule := QosRule{
+		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
+		DQR:           btou(qosData.DefQosFlowIndication),
+		OperationCode: pccRuleOpCode,
+		Precedence:    1,
 		QFI:           GetQosFlowIdFromQosId(qosData.QosId),
 	}
 
@@ -495,13 +509,25 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	}*/
 
 	// Remote Port
-	if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
+	/*if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
 	// Remote Port range
 	if pfc, len := buildPFCompPortRange(false, ipf.sPortRange); pfc != nil {
+		pfcList = append(pfcList, *pfc)
+		pf.ContentLength += len
+	}*/
+
+	// Remote Port (temporarily use Local Port type for testing)
+	if pfc, len := buildPFCompPort(true, ipf.sPort); pfc != nil {
+		pfcList = append(pfcList, *pfc)
+		pf.ContentLength += len
+	}
+
+	// Remote Port range (temporarily use Local Port Range type for testing)
+	if pfc, len := buildPFCompPortRange(true, ipf.sPortRange); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
