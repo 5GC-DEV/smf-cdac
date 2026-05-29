@@ -189,7 +189,7 @@ func BuildQosRulespdumod(smPolicyUpdates *PolicyUpdate) QoSRules {
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
 
 			// Build a new QoS rule from the PCC rule and reference QoS data
-			qosRule := BuildAddQoSRuleFromPccRuleims(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
+			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 
 			// Append the constructed rule to the list
 			qosRules = append(qosRules, *qosRule)
@@ -503,10 +503,10 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	}
 
 	// Remote Addr
-	if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
+	/*if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}
+	}*/
 
 	// Remote Port
 	/*if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
@@ -533,10 +533,10 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	}
 
 	// Local Addr
-	if pfc, len := buildPFCompAddr(true, ipf.dAddrv4); pfc != nil {
+	/*if pfc, len := buildPFCompAddr(true, ipf.dAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}
+	} */
 
 	// Local Port
 	if pfc, len := buildPFCompPort(true, ipf.dPort); pfc != nil {
