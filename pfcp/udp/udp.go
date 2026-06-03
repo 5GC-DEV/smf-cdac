@@ -17,8 +17,10 @@ import (
 	"github.com/wmnsk/go-pfcp/message"
 )
 
-const PFCP_MAX_UDP_LEN = 2048
-const errPFCPNotInitialized = "PFCP server is not initialized"
+const (
+	PFCP_MAX_UDP_LEN      = 2048
+	errPFCPNotInitialized = "PFCP server is not initialized"
+)
 
 type ConsumerTable struct {
 	m sync.Map // map[string]TxTable

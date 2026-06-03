@@ -27,10 +27,12 @@ import (
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 )
 
-const errServerNoResponse = "server no response"
-const errHandlerWrongStatusCode = "handler returned wrong status code"
-const errHandlerWrongStatusCodeFmt = "handler returned wrong status code %d"
-const errNfInstancesNil = "NfInstances is nil"
+const (
+	errServerNoResponse          = "server no response"
+	errHandlerWrongStatusCode    = "handler returned wrong status code"
+	errHandlerWrongStatusCodeFmt = "handler returned wrong status code %d"
+	errNfInstancesNil            = "NfInstances is nil"
+)
 
 func SendNFRegistration() (*models.NfProfile, error) {
 	var rep models.NfProfile
@@ -195,7 +197,6 @@ func SendNrfForNfInstance(
 	targetNfType, requestNfType models.NfType,
 	param *Nnrf_NFDiscovery.SearchNFInstancesParamOpts,
 ) (models.SearchResult, error) {
-
 	smfSelf := smf_context.SMF_Self()
 	svcMsgType := getSvcMsgType(targetNfType)
 
@@ -207,7 +208,6 @@ func SendNrfForNfInstance(
 		SearchNFInstances(context.TODO(), targetNfType, requestNfType, param)
 
 	err = handleNrfResponse(result, httpResp, err, svcMsgType)
-
 	if err != nil {
 		return result, err
 	}
@@ -223,7 +223,6 @@ func handleNrfResponse(
 	localErr error,
 	svcMsgType svcmsgtypes.SmfMsgType,
 ) error {
-
 	smfID := smf_context.SMF_Self().NfInstanceID
 
 	if localErr == nil {
@@ -285,8 +284,7 @@ func handleNrfSubscriptions(
 
 		subData := buildSubscriptionData(smfSelf, nfProfile.NfInstanceId, requestNfType)
 
-		nrfSubData, problemDetails, err :=
-			SendCreateSubscription(nrfUri, subData, targetNfType)
+		nrfSubData, problemDetails, err := SendCreateSubscription(nrfUri, subData, targetNfType)
 
 		if problemDetails != nil {
 			logger.ConsumerLog.Errorf("SendCreateSubscription to NRF, Problem[%+v]", problemDetails)
@@ -306,7 +304,6 @@ func buildSubscriptionData(
 	nfInstanceID string,
 	requestNfType models.NfType,
 ) models.NrfSubscriptionData {
-
 	return models.NrfSubscriptionData{
 		NfStatusNotificationUri: fmt.Sprintf("%s://%s:%d/nsmf-callback/v1/nf-status-notify",
 			smfSelf.URIScheme,
