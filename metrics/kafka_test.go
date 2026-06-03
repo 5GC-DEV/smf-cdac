@@ -12,6 +12,10 @@ import (
 
 var my_false bool = false
 
+const (
+	errExpectedNilFmt = "expected return value to be nil, got %v"
+)
+
 func TestInitializeKafkaStreamWithKafkaDisabled(t *testing.T) {
 	config := factory.Configuration{
 		KafkaInfo: factory.KafkaInfo{
@@ -22,7 +26,7 @@ func TestInitializeKafkaStreamWithKafkaDisabled(t *testing.T) {
 	result := InitialiseKafkaStream(&config)
 
 	if result != nil {
-		t.Errorf("expected return value to be nil, got %v", result)
+		t.Errorf(errExpectedNilFmt, result)
 	}
 	if StatWriter.kafkaWriter != nil {
 		t.Errorf("expected kafkaWrite to be nil, got %v", StatWriter.kafkaWriter)
@@ -42,7 +46,7 @@ func TestSendMessageWithKafkaDisabled(t *testing.T) {
 
 	err := InitialiseKafkaStream(&configuration)
 	if err != nil {
-		t.Errorf("expected return value to be nil, got %v", err)
+		t.Errorf(errExpectedNilFmt, err)
 	}
 
 	writer := GetWriter()
@@ -51,7 +55,7 @@ func TestSendMessageWithKafkaDisabled(t *testing.T) {
 	result := writer.SendMessage([]byte{0xFF})
 
 	if result != nil {
-		t.Errorf("expected return value to be nil, got %v", result)
+		t.Errorf(errExpectedNilFmt, result)
 	}
 }
 
@@ -68,7 +72,7 @@ func TestPublishPduSessEventWithKafkaDisabled(t *testing.T) {
 
 	err := InitialiseKafkaStream(&configuration)
 	if err != nil {
-		t.Errorf("expected return value to be nil, got %v", err)
+		t.Errorf(errExpectedNilFmt, err)
 	}
 
 	writer := GetWriter()
@@ -77,7 +81,7 @@ func TestPublishPduSessEventWithKafkaDisabled(t *testing.T) {
 	result := writer.PublishPduSessEvent(metricinfo.CoreSubscriber{}, 0)
 
 	if result != nil {
-		t.Errorf("expected return value to be nil, got %v", result)
+		t.Errorf(errExpectedNilFmt, result)
 	}
 }
 
@@ -94,14 +98,14 @@ func TestPublishMsgEventWithKafkaDisabled(t *testing.T) {
 
 	err := InitialiseKafkaStream(&configuration)
 	if err != nil {
-		t.Errorf("expected return value to be nil, got %v", err)
+		t.Errorf(errExpectedNilFmt, err)
 	}
 
 	// If the kafkaWriter is called, this will panic and fail the test
 	result := PublishMsgEvent(0)
 
 	if result != nil {
-		t.Errorf("expected return value to be nil, got %v", result)
+		t.Errorf(errExpectedNilFmt, result)
 	}
 }
 
@@ -118,7 +122,7 @@ func TestPublishNfStatusWithKafkaDisabled(t *testing.T) {
 
 	err := InitialiseKafkaStream(&configuration)
 	if err != nil {
-		t.Errorf("expected return value to be nil, got %v", err)
+		t.Errorf(errExpectedNilFmt, err)
 	}
 
 	writer := GetWriter()
@@ -127,6 +131,6 @@ func TestPublishNfStatusWithKafkaDisabled(t *testing.T) {
 	result := writer.PublishNfStatusEvent(metricinfo.MetricEvent{})
 
 	if result != nil {
-		t.Errorf("expected return value to be nil, got %v", result)
+		t.Errorf(errExpectedNilFmt, result)
 	}
 }

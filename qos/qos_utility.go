@@ -11,6 +11,14 @@ import (
 	"github.com/5GC-DEV/openapi-cdac/models"
 )
 
+const (
+	logNameFmt        = "\n[name:[%v], %v]"
+	logNamePartialFmt = "\n[name:[%v], %v"
+	logToAddFmt       = "\n[to add:[%v]]"
+	logToModFmt       = "\n[to mod:[%v]]"
+	logToDelFmt       = "\n[to del:[%v]]"
+)
+
 func (obj *IPFilterRule) String() string {
 	return fmt.Sprintf("IPFilter content: ProtocolId:[%v], Source:[Ip:[%v], Mask:[%v], Port:[%v] Port-range [%v-%v]],Destination [Ip [%v], Mask [%v], Port [%v], Port-range [%v-%v]]",
 		obj.protoId, obj.sAddrv4.addr, obj.sAddrv4.mask, obj.sPort, obj.sPortRange.lowLimit, obj.sPortRange.highLimit, obj.dAddrv4.addr, obj.sAddrv4.mask, obj.dPort, obj.dPortRange.lowLimit, obj.dPortRange.highLimit)
@@ -125,25 +133,25 @@ func SmPolicyDecisionString(smPolicy *models.SmPolicyDecision) string {
 	// PCC Rules
 	str := "\nPCC Rules: "
 	for name, rule := range smPolicy.PccRules {
-		str = str + fmt.Sprintf("\n[name:[%v], %v]", name, PccRuleString(rule))
+		str = str + fmt.Sprintf(logNameFmt, name, PccRuleString(rule))
 	}
 
 	// Session Rules
 	str = str + "\nSession Rules: "
 	for name, rule := range smPolicy.SessRules {
-		str = str + fmt.Sprintf("\n[name:[%v], %v]", name, SessRuleString(rule))
+		str = str + fmt.Sprintf(logNameFmt, name, SessRuleString(rule))
 	}
 
 	// Qos Data
 	str = str + "\nQosData: "
 	for name, qosData := range smPolicy.QosDecs {
-		str = str + fmt.Sprintf("\n[name:[%v], %v]", name, QosDataString(qosData))
+		str = str + fmt.Sprintf(logNameFmt, name, QosDataString(qosData))
 	}
 
 	// TC Data
 	str = str + "\nTCData: "
 	for name, tcData := range smPolicy.TraffContDecs {
-		str = str + fmt.Sprintf("\n[name:[%v], %v]", name, TCDataString(tcData))
+		str = str + fmt.Sprintf(logNameFmt, name, TCDataString(tcData))
 	}
 	return str
 }
@@ -207,23 +215,23 @@ func (obj PccRulesUpdate) String() string {
 	// To be added
 	strAdd := ""
 	for name, rule := range obj.add {
-		strAdd += fmt.Sprintf("\n[name:[%v], %v", name, PccRuleString(rule))
+		strAdd += fmt.Sprintf(logNamePartialFmt, name, PccRuleString(rule))
 	}
-	str += fmt.Sprintf("\n[to add:[%v]]", strAdd)
+	str += fmt.Sprintf(logToAddFmt, strAdd)
 
 	// To be modified
 	strMod := ""
 	for name, rule := range obj.mod {
-		strMod += fmt.Sprintf("\n[name:[%v], %v", name, PccRuleString(rule))
+		strMod += fmt.Sprintf(logNamePartialFmt, name, PccRuleString(rule))
 	}
-	str += fmt.Sprintf("\n[to mod:[%v]]", strMod)
+	str += fmt.Sprintf(logToModFmt, strMod)
 
 	// To be deleted
 	strDel := ""
 	for name, rule := range obj.del {
-		strDel += fmt.Sprintf("\n[name:[%v], %v", name, PccRuleString(rule))
+		strDel += fmt.Sprintf(logNamePartialFmt, name, PccRuleString(rule))
 	}
-	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
+	str += fmt.Sprintf(logToDelFmt, strDel)
 
 	return str
 }
@@ -234,23 +242,23 @@ func (obj SessRulesUpdate) String() string {
 	// To be added
 	strAdd := ""
 	for name, rule := range obj.add {
-		strAdd += fmt.Sprintf("\n[name:[%v], %v", name, SessRuleString(rule))
+		strAdd += fmt.Sprintf(logNamePartialFmt, name, SessRuleString(rule))
 	}
-	str += fmt.Sprintf("\n[to add:[%v]]", strAdd)
+	str += fmt.Sprintf(logToAddFmt, strAdd)
 
 	// To be modified
 	strMod := ""
 	for name, rule := range obj.mod {
-		strMod += fmt.Sprintf("\n[name:[%v], %v", name, SessRuleString(rule))
+		strMod += fmt.Sprintf(logNamePartialFmt, name, SessRuleString(rule))
 	}
-	str += fmt.Sprintf("\n[to mod:[%v]]", strMod)
+	str += fmt.Sprintf(logToModFmt, strMod)
 
 	// To be deleted
 	strDel := ""
 	for name, rule := range obj.del {
-		strDel += fmt.Sprintf("\n[name:[%v], %v", name, SessRuleString(rule))
+		strDel += fmt.Sprintf(logNamePartialFmt, name, SessRuleString(rule))
 	}
-	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
+	str += fmt.Sprintf(logToDelFmt, strDel)
 
 	return str
 }
@@ -261,23 +269,23 @@ func (obj QosFlowsUpdate) String() string {
 	// To be added
 	strAdd := ""
 	for name, val := range obj.add {
-		strAdd += fmt.Sprintf("\n[name:[%v], %v", name, QosDataString(val))
+		strAdd += fmt.Sprintf(logNamePartialFmt, name, QosDataString(val))
 	}
-	str += fmt.Sprintf("\n[to add:[%v]]", strAdd)
+	str += fmt.Sprintf(logToAddFmt, strAdd)
 
 	// To be modified
 	strMod := ""
 	for name, val := range obj.mod {
-		strMod += fmt.Sprintf("\n[name:[%v], %v", name, QosDataString(val))
+		strMod += fmt.Sprintf(logNamePartialFmt, name, QosDataString(val))
 	}
-	str += fmt.Sprintf("\n[to mod:[%v]]", strMod)
+	str += fmt.Sprintf(logToModFmt, strMod)
 
 	// To be deleted
 	strDel := ""
 	for name, val := range obj.del {
-		strDel += fmt.Sprintf("\n[name:[%v], %v", name, QosDataString(val))
+		strDel += fmt.Sprintf(logNamePartialFmt, name, QosDataString(val))
 	}
-	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
+	str += fmt.Sprintf(logToDelFmt, strDel)
 
 	return str
 }
@@ -288,23 +296,23 @@ func (obj TrafficControlUpdate) String() string {
 	// To be added
 	strAdd := ""
 	for name, val := range obj.add {
-		strAdd += fmt.Sprintf("\n[name:[%v], %v", name, TCDataString(val))
+		strAdd += fmt.Sprintf(logNamePartialFmt, name, TCDataString(val))
 	}
-	str += fmt.Sprintf("\n[to add:[%v]]", strAdd)
+	str += fmt.Sprintf(logToAddFmt, strAdd)
 
 	// To be modified
 	strMod := ""
 	for name, val := range obj.mod {
-		strMod += fmt.Sprintf("\n[name:[%v], %v", name, TCDataString(val))
+		strMod += fmt.Sprintf(logNamePartialFmt, name, TCDataString(val))
 	}
-	str += fmt.Sprintf("\n[to mod:[%v]]", strMod)
+	str += fmt.Sprintf(logToModFmt, strMod)
 
 	// To be deleted
 	strDel := ""
 	for name, val := range obj.del {
-		strDel += fmt.Sprintf("\n[name:[%v], %v", name, TCDataString(val))
+		strDel += fmt.Sprintf(logNamePartialFmt, name, TCDataString(val))
 	}
-	str += fmt.Sprintf("\n[to del:[%v]]", strDel)
+	str += fmt.Sprintf(logToDelFmt, strDel)
 
 	return str
 }

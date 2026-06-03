@@ -39,9 +39,11 @@ type UPTunnel struct {
 type UPFStatus int
 
 const (
-	NotAssociated          UPFStatus = 0
-	AssociatedSettingUp    UPFStatus = 1
-	AssociatedSetUpSuccess UPFStatus = 2
+	NotAssociated                 UPFStatus = 0
+	AssociatedSettingUp           UPFStatus = 1
+	AssociatedSetUpSuccess        UPFStatus = 2
+	errUpfNotAssociatedWithSmf              = "this upf not associate with smf"
+	errUpfNotAssociatedWithSmfAlt           = "this upf do not associate with smf"
 )
 
 func (s UPFStatus) String() string {
@@ -360,7 +362,7 @@ func (upf *UPF) GetUPFID() string {
 
 func (upf *UPF) pdrID() (uint16, error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return 0, err
 	}
 
@@ -376,7 +378,7 @@ func (upf *UPF) pdrID() (uint16, error) {
 
 func (upf *UPF) farID() (uint32, error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return 0, err
 	}
 
@@ -392,7 +394,7 @@ func (upf *UPF) farID() (uint32, error) {
 
 func (upf *UPF) barID() (uint8, error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return 0, err
 	}
 
@@ -408,7 +410,7 @@ func (upf *UPF) barID() (uint8, error) {
 
 func (upf *UPF) qerID() (uint32, error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return 0, err
 	}
 
@@ -485,7 +487,7 @@ func (upf *UPF) BuildCreatePdrFromPccRule(rule *models.PccRule) (*PDR, error) {
 func (upf *UPF) AddPDR() (*PDR, error) {
 	logger.CtxLog.Debugf("[DP][AddPDR][Enter] UPF=%s Status=%d uuid=%s", upf.NodeID.ResolveNodeIdToIp().String(), upf.UPFStatus, upf.uuid.String())
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf do not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmfAlt)
 		logger.CtxLog.Errorf("[DP][AddPDR][Error] %v", err)
 		return nil, err
 	}
@@ -513,7 +515,7 @@ func (upf *UPF) AddPDR() (*PDR, error) {
 
 func (upf *UPF) AddFAR() (*FAR, error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf do not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmfAlt)
 		return nil, err
 	}
 
@@ -532,7 +534,7 @@ func (upf *UPF) AddFAR() (*FAR, error) {
 
 func (upf *UPF) AddBAR() (*BAR, error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf do not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmfAlt)
 		return nil, err
 	}
 
@@ -548,7 +550,7 @@ func (upf *UPF) AddBAR() (*BAR, error) {
 
 func (upf *UPF) AddQER() (*QER, error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err := fmt.Errorf("this upf do not associate with smf")
+		err := fmt.Errorf(errUpfNotAssociatedWithSmfAlt)
 		return nil, err
 	}
 
@@ -565,7 +567,7 @@ func (upf *UPF) AddQER() (*QER, error) {
 // *** add unit test ***//
 func (upf *UPF) RemovePDR(pdr *PDR) (err error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err = fmt.Errorf("this upf not associate with smf")
+		err = fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return err
 	}
 
@@ -577,7 +579,7 @@ func (upf *UPF) RemovePDR(pdr *PDR) (err error) {
 // *** add unit test ***//
 func (upf *UPF) RemoveFAR(far *FAR) (err error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err = fmt.Errorf("this upf not associate with smf")
+		err = fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return err
 	}
 
@@ -589,7 +591,7 @@ func (upf *UPF) RemoveFAR(far *FAR) (err error) {
 // *** add unit test ***//
 func (upf *UPF) RemoveBAR(bar *BAR) (err error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err = fmt.Errorf("this upf not associate with smf")
+		err = fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return err
 	}
 
@@ -601,7 +603,7 @@ func (upf *UPF) RemoveBAR(bar *BAR) (err error) {
 // *** add unit test ***//
 func (upf *UPF) RemoveQER(qer *QER) (err error) {
 	if upf.UPFStatus != AssociatedSetUpSuccess {
-		err = fmt.Errorf("this upf not associate with smf")
+		err = fmt.Errorf(errUpfNotAssociatedWithSmf)
 		return err
 	}
 

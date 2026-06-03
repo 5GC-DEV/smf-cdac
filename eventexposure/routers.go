@@ -37,6 +37,10 @@ type Route struct {
 // Routes is the list of the generated Route.
 type Routes []Route
 
+const (
+	apiSubscriptionPath = "/subscriptions/:subId"
+)
+
 // NewRouter returns a new router.
 func NewRouter() *gin.Engine {
 	router := utilLogger.NewGinWithZap(logger.GinLog)
@@ -86,21 +90,21 @@ var routes = Routes{
 	{
 		"SubscriptionsSubIdDelete",
 		strings.ToUpper("Delete"),
-		"/subscriptions/:subId",
+		apiSubscriptionPath,
 		SubscriptionsSubIdDelete,
 	},
 
 	{
 		"SubscriptionsSubIdGet",
 		strings.ToUpper("Get"),
-		"/subscriptions/:subId",
+		apiSubscriptionPath,
 		SubscriptionsSubIdGet,
 	},
 
 	{
 		"SubscriptionsSubIdPut",
 		strings.ToUpper("Put"),
-		"/subscriptions/:subId",
+		apiSubscriptionPath,
 		SubscriptionsSubIdPut,
 	},
 }

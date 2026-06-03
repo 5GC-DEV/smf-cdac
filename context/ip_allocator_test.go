@@ -11,10 +11,16 @@ import (
 	smf_context "github.com/omec-project/smf/context"
 )
 
+const (
+	errAllocatePoolFmt     = "failed to allocate pool %v"
+	logAllocatedAddressFmt = "allocated address = %v"
+	defaultIPv4Subnet      = "192.168.1.0/24"
+)
+
 func TestIPPoolAlloc(t *testing.T) {
-	allocator, err := smf_context.NewIPAllocator("192.168.1.0/24")
+	allocator, err := smf_context.NewIPAllocator(defaultIPv4Subnet)
 	if err != nil {
-		t.Errorf("failed to allocate pool %v", err)
+		t.Errorf(errAllocatePoolFmt, err)
 	}
 
 	var allocAddresses []string
@@ -22,9 +28,9 @@ func TestIPPoolAlloc(t *testing.T) {
 	for i := 1; i <= 254; i++ {
 		ip, err := allocator.Allocate("")
 		if err != nil {
-			t.Errorf("failed to allocate pool %v", err)
+			t.Errorf(errAllocatePoolFmt, err)
 		}
-		t.Logf("allocated address = %v", ip)
+		t.Logf(logAllocatedAddressFmt, ip)
 		allocAddresses = append(allocAddresses, ip.String())
 	}
 
@@ -40,18 +46,18 @@ func TestIPPoolAlloc(t *testing.T) {
 }
 
 func TestIPPoolAllocRelease(t *testing.T) {
-	allocator, err := smf_context.NewIPAllocator("192.168.1.0/24")
+	allocator, err := smf_context.NewIPAllocator(defaultIPv4Subnet)
 	if err != nil {
-		t.Errorf("failed to allocate pool %v", err)
+		t.Errorf(errAllocatePoolFmt, err)
 	}
 
 	ip1 := net.ParseIP("192.168.1.1")
 	for i := 1; i <= 255; i++ {
 		ip, err := allocator.Allocate("")
 		if err != nil {
-			t.Errorf("failed to allocate pool %v", err)
+			t.Errorf(errAllocatePoolFmt, err)
 		}
-		t.Logf("allocated address = %v", ip)
+		t.Logf(logAllocatedAddressFmt, ip)
 		if i == 1 {
 			if ip.Equal(ip1) == false {
 				t.Errorf("address not allocated in order ? allocated address %v", ip1)
@@ -72,22 +78,22 @@ func TestIPPoolAllocRelease(t *testing.T) {
 }
 
 func TestIPPoolAllocLeastRecentlyUsed(t *testing.T) {
-	allocator, err := smf_context.NewIPAllocator("192.168.1.0/24")
+	allocator, err := smf_context.NewIPAllocator(defaultIPv4Subnet)
 	if err != nil {
-		t.Errorf("failed to allocate pool %v", err)
+		t.Errorf(errAllocatePoolFmt, err)
 	}
 
 	ip1, err := allocator.Allocate("")
 	if err != nil {
-		t.Errorf("failed to allocate pool %v", err)
+		t.Errorf(errAllocatePoolFmt, err)
 	}
-	t.Logf("allocated address = %v", ip1)
+	t.Logf(logAllocatedAddressFmt, ip1)
 	allocator.Release("", ip1)
 	ip2, err := allocator.Allocate("")
 	if err != nil {
-		t.Errorf("failed to allocate pool %v", err)
+		t.Errorf(errAllocatePoolFmt, err)
 	}
-	t.Logf("allocated address = %v", ip2)
+	t.Logf(logAllocatedAddressFmt, ip2)
 
 	// Same address is not allocate again..
 	if ip1.Equal(ip2) {

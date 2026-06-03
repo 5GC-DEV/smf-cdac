@@ -14,7 +14,14 @@ import (
 )
 
 const (
-	GNB = "gnb"
+	GNB                      = "gnb"
+	defaultIPv4Addr          = "1.1.1.1"
+	defaultSubnet            = "10.10.0.0/16"
+	errNetworkSliceIdentical = "Expected NetworkSlice configurations to be different, but they were identical"
+	defaultFQDN              = "u1.abc.def.com"
+	errAddLinksType          = "Expected addLinks to be of type []UPLink, but it was not"
+	errDelLinksType          = "Expected delLinks to be of type []UPLink, but it was not"
+	errGenericSliceFmt       = "Expected GenericSlice to be added, but got %v"
 )
 
 func TestUpdateSliceInfo(t *testing.T) {
@@ -61,10 +68,10 @@ func TestCompareSliceConfigIdentical(t *testing.T) {
 	sNssai1 := models.Snssai{Sst: 1, Sd: "010203"}
 	sNssai2 := models.Snssai{Sst: 1, Sd: "010203"}
 
-	dnnInfo1 := SnssaiDnnInfoItem{Dnn: "DNN1", UESubnet: "10.10.0.0/16", DNS: DNS{IPv4Addr: "1.1.1.1"}}
-	dnnInfo2 := SnssaiDnnInfoItem{Dnn: "DNN2", UESubnet: "10.10.0.0/16", DNS: DNS{IPv4Addr: "1.1.1.1"}}
-	dnnInfo3 := SnssaiDnnInfoItem{Dnn: "DNN1", UESubnet: "10.10.0.0/16", DNS: DNS{IPv4Addr: "1.1.1.1"}}
-	dnnInfo4 := SnssaiDnnInfoItem{Dnn: "DNN2", UESubnet: "10.10.0.0/16", DNS: DNS{IPv4Addr: "1.1.1.1"}}
+	dnnInfo1 := SnssaiDnnInfoItem{Dnn: "DNN1", UESubnet: defaultSubnet, DNS: DNS{IPv4Addr: defaultIPv4Addr}}
+	dnnInfo2 := SnssaiDnnInfoItem{Dnn: "DNN2", UESubnet: defaultSubnet, DNS: DNS{IPv4Addr: defaultIPv4Addr}}
+	dnnInfo3 := SnssaiDnnInfoItem{Dnn: "DNN1", UESubnet: defaultSubnet, DNS: DNS{IPv4Addr: defaultIPv4Addr}}
+	dnnInfo4 := SnssaiDnnInfoItem{Dnn: "DNN2", UESubnet: defaultSubnet, DNS: DNS{IPv4Addr: defaultIPv4Addr}}
 
 	sNssaiInfoItem1 := SnssaiInfoItem{SNssai: &sNssai1, DnnInfos: make([]SnssaiDnnInfoItem, 0)}
 	sNssaiInfoItem1.DnnInfos = append(sNssaiInfoItem1.DnnInfos, dnnInfo1, dnnInfo2)
@@ -77,7 +84,7 @@ func TestCompareSliceConfigIdentical(t *testing.T) {
 	match, add, mod, del := compareNetworkSlices(slice1, slice2)
 
 	if !match {
-		t.Errorf("Expected NetworkSlice configurations to be different, but they were identical")
+		t.Errorf(errNetworkSliceIdentical)
 	}
 
 	if len(add) != 0 {
@@ -97,7 +104,7 @@ func TestCompareSliceConfigDifferent(t *testing.T) {
 	sNssai1 := models.Snssai{Sst: 1, Sd: "010203"}
 	sNssai2 := models.Snssai{Sst: 1, Sd: "010204"}
 
-	dnnInfo1 := SnssaiDnnInfoItem{Dnn: "DNN1", UESubnet: "11.11.0.0/16", DNS: DNS{IPv4Addr: "1.1.1.1"}}
+	dnnInfo1 := SnssaiDnnInfoItem{Dnn: "DNN1", UESubnet: "11.11.0.0/16", DNS: DNS{IPv4Addr: defaultIPv4Addr}}
 	dnnInfo2 := SnssaiDnnInfoItem{Dnn: "DNN2", UESubnet: "12.12.0.0/16", DNS: DNS{IPv4Addr: "2.2.2.2"}}
 	dnnInfo3 := SnssaiDnnInfoItem{Dnn: "DNN3", UESubnet: "13.13.0.0/16", DNS: DNS{IPv4Addr: "3.3.3.3"}}
 	dnnInfo4 := SnssaiDnnInfoItem{Dnn: "DNN4", UESubnet: "14.14.0.0/16", DNS: DNS{IPv4Addr: "4.4.4.4"}}
@@ -113,7 +120,7 @@ func TestCompareSliceConfigDifferent(t *testing.T) {
 	match, add, mod, del := compareNetworkSlices(slice1, slice2)
 
 	if match {
-		t.Errorf("Expected NetworkSlice configurations to be different, but they were identical")
+		t.Errorf(errNetworkSliceIdentical)
 	}
 
 	if len(add) != 1 {
@@ -145,7 +152,7 @@ func TestCompareSliceConfigModified(t *testing.T) {
 	match, add, mod, del := compareNetworkSlices(slice1, slice2)
 
 	if match {
-		t.Errorf("Expected NetworkSlice configurations to be different, but they were identical")
+		t.Errorf(errNetworkSliceIdentical)
 	}
 
 	if len(add) != 0 {
@@ -164,7 +171,7 @@ func TestCompareSliceConfigModified(t *testing.T) {
 func TestCompareUPNodesConfigs(t *testing.T) {
 	u1 := UPNode{
 		Type:                 "UPF",
-		NodeID:               "u1.abc.def.com",
+		NodeID:               defaultFQDN,
 		SNssaiInfos:          make([]models.SnssaiUpfInfoItem, 0), //[]models.SnssaiUpfInfoItem `yaml:"sNssaiUpfInfos,omitempty"`
 		InterfaceUpfInfoList: make([]InterfaceUpfInfoItem, 0),     //[]InterfaceUpfInfoItem,
 	}
@@ -226,13 +233,13 @@ func TestCompareUPNodesConfigs(t *testing.T) {
 func TestCompareUPNodesConfigsIdentical(t *testing.T) {
 	u1 := UPNode{
 		Type:                 "UPF",
-		NodeID:               "u1.abc.def.com",
+		NodeID:               defaultFQDN,
 		SNssaiInfos:          make([]models.SnssaiUpfInfoItem, 0),
 		InterfaceUpfInfoList: make([]InterfaceUpfInfoItem, 0),
 	}
 	u2 := UPNode{
 		Type:                 "UPF",
-		NodeID:               "u1.abc.def.com",
+		NodeID:               defaultFQDN,
 		SNssaiInfos:          make([]models.SnssaiUpfInfoItem, 0),
 		InterfaceUpfInfoList: make([]InterfaceUpfInfoItem, 0),
 	}
@@ -273,13 +280,13 @@ func TestCompareUPNodesConfigsIdentical(t *testing.T) {
 func TestCompareUPNodesConfigsDifferentDNN(t *testing.T) {
 	u1 := UPNode{
 		Type:                 "UPF",
-		NodeID:               "u1.abc.def.com",
+		NodeID:               defaultFQDN,
 		SNssaiInfos:          make([]models.SnssaiUpfInfoItem, 0),
 		InterfaceUpfInfoList: make([]InterfaceUpfInfoItem, 0),
 	}
 	u2 := UPNode{
 		Type:                 "UPF",
-		NodeID:               "u1.abc.def.com",
+		NodeID:               defaultFQDN,
 		SNssaiInfos:          make([]models.SnssaiUpfInfoItem, 0),
 		InterfaceUpfInfoList: make([]InterfaceUpfInfoItem, 0),
 	}
@@ -332,23 +339,23 @@ func TestCompareGenericSlicesDifferent1(t *testing.T) {
 	addLinks, ok := addLinksInterface.([]UPLink)
 
 	if !ok {
-		t.Fatalf("Expected addLinks to be of type []UPLink, but it was not")
+		t.Fatalf(errAddLinksType)
 	}
 
 	if len(addLinks) != 2 {
 		t.Errorf("Expected 2 GenericSlices to be added, but got %d", len(addLinks))
 	}
 	if addLinks[0].A != GNB || addLinks[0].B != "upf3" {
-		t.Errorf("Expected GenericSlice to be added, but got %v", addLinks[0])
+		t.Errorf(errGenericSliceFmt, addLinks[0])
 	}
 	if addLinks[1].A != GNB || addLinks[1].B != "upf4" {
-		t.Errorf("Expected GenericSlice to be added, but got %v", addLinks[1])
+		t.Errorf(errGenericSliceFmt, addLinks[1])
 	}
 
 	delLinks, ok := delLinksInterface.([]UPLink)
 
 	if !ok {
-		t.Fatalf("Expected delLinks to be of type []UPLink, but it was not")
+		t.Fatalf(errDelLinksType)
 	}
 
 	if len(delLinks) != 2 {
@@ -374,20 +381,20 @@ func TestCompareGenericSlicesDifferent2(t *testing.T) {
 	addLinks, ok := addLinksInterface.([]UPLink)
 
 	if !ok {
-		t.Fatalf("Expected addLinks to be of type []UPLink, but it was not")
+		t.Fatalf(errAddLinksType)
 	}
 
 	if len(addLinks) != 1 {
 		t.Errorf("Expected 2 GenericSlices to be added, but got %d", len(addLinks))
 	}
 	if addLinks[0].A != GNB || addLinks[0].B != "upf1" {
-		t.Errorf("Expected GenericSlice to be added, but got %v", addLinks[0])
+		t.Errorf(errGenericSliceFmt, addLinks[0])
 	}
 
 	delLinks, ok := delLinksInterface.([]UPLink)
 
 	if !ok {
-		t.Fatalf("Expected delLinks to be of type []UPLink, but it was not")
+		t.Fatalf(errDelLinksType)
 	}
 
 	if len(delLinks) != 0 {
@@ -410,7 +417,7 @@ func TestCompareGenericSlicesIdentical(t *testing.T) {
 	addLinks, ok := addLinksInterface.([]UPLink)
 
 	if !ok {
-		t.Fatalf("Expected addLinks to be of type []UPLink, but it was not")
+		t.Fatalf(errAddLinksType)
 	}
 
 	if len(addLinks) != 0 {
@@ -420,7 +427,7 @@ func TestCompareGenericSlicesIdentical(t *testing.T) {
 	delLinks, ok := delLinksInterface.([]UPLink)
 
 	if !ok {
-		t.Fatalf("Expected delLinks to be of type []UPLink, but it was not")
+		t.Fatalf(errDelLinksType)
 	}
 
 	if len(delLinks) != 0 {

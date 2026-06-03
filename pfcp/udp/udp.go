@@ -18,6 +18,7 @@ import (
 )
 
 const PFCP_MAX_UDP_LEN = 2048
+const errPFCPNotInitialized = "PFCP server is not initialized"
 
 type ConsumerTable struct {
 	m sync.Map // map[string]TxTable
@@ -104,7 +105,7 @@ func WaitForServer() error {
 
 func SendPfcp(msg message.Message, addr *net.UDPAddr, eventData interface{}) error {
 	if Server == nil {
-		return fmt.Errorf("PFCP server is not initialized")
+		return fmt.Errorf(errPFCPNotInitialized)
 	}
 	if Server.Conn == nil {
 		return fmt.Errorf("PFCP server is not listening")
@@ -130,7 +131,7 @@ func SendPfcp(msg message.Message, addr *net.UDPAddr, eventData interface{}) err
 
 func readPfcpMessage() (*net.UDPAddr, message.Message, interface{}, error) {
 	if Server == nil {
-		return nil, nil, nil, fmt.Errorf("PFCP server is not initialized")
+		return nil, nil, nil, fmt.Errorf(errPFCPNotInitialized)
 	}
 	if Server.Conn == nil {
 		return nil, nil, nil, fmt.Errorf("PFCP server is not listening")
@@ -180,7 +181,7 @@ func findTransaction(msg message.Message, addr *net.UDPAddr) (*Transaction, erro
 	consumerAddr := addr.String()
 
 	if Server == nil {
-		return nil, fmt.Errorf("PFCP server is not initialized")
+		return nil, fmt.Errorf(errPFCPNotInitialized)
 	}
 
 	if IsResponse(msg) {
@@ -248,7 +249,7 @@ func startTxLifeCycle(tx *Transaction) {
 
 func removeTransaction(tx *Transaction) error {
 	if Server == nil {
-		return fmt.Errorf("PFCP server is not initialized")
+		return fmt.Errorf(errPFCPNotInitialized)
 	}
 	consumerAddr := tx.ConsumerAddr
 	txTable, _ := Server.ConsumerTable.Load(consumerAddr)

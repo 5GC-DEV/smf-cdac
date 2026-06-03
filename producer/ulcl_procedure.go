@@ -16,6 +16,13 @@ import (
 	"github.com/omec-project/smf/pfcp/message"
 )
 
+const (
+	errPendingUPFNotExistSuffix = " doesn't exist in pending UPF!"
+	logUPFIPPrefix              = "UPF IP "
+	errFlowDescFmt              = "error occurs when setting flow despcription: %s"
+	errPfcpSessionModFmt        = "send pfcp session modification request failed: %v for UPF[%v, %v]: "
+)
+
 func AddPDUSessionAnchorAndULCL(smContext *context.SMContext, nodeID context.NodeID) {
 	bpMGR := smContext.BPManager
 	pendingUPF := bpMGR.PendingUPF
@@ -50,7 +57,7 @@ func AddPDUSessionAnchorAndULCL(smContext *context.SMContext, nodeID context.Nod
 			delete(pendingUPF, trggierUPFIP)
 		} else {
 			logger.CtxLog.Warnln("In AddPDUSessionAnchorAndULCL case EstablishingNewPSA")
-			logger.CtxLog.Warnln("UPF IP ", trggierUPFIP, " doesn't exist in pending UPF!")
+			logger.CtxLog.Warnln(logUPFIPPrefix, trggierUPFIP, errPendingUPFNotExistSuffix)
 			return
 		}
 
@@ -69,7 +76,7 @@ func AddPDUSessionAnchorAndULCL(smContext *context.SMContext, nodeID context.Nod
 			delete(pendingUPF, trggierUPFIP)
 		} else {
 			logger.CtxLog.Warnln("In AddPDUSessionAnchorAndULCL case EstablishingULCL")
-			logger.CtxLog.Warnln("UPF IP ", trggierUPFIP, " doesn't exist in pending UPF!")
+			logger.CtxLog.Warnln(logUPFIPPrefix, trggierUPFIP, errPendingUPFNotExistSuffix)
 			return
 		}
 
@@ -86,7 +93,7 @@ func AddPDUSessionAnchorAndULCL(smContext *context.SMContext, nodeID context.Nod
 			delete(pendingUPF, trggierUPFIP)
 		} else {
 			logger.CtxLog.Warnln("In AddPDUSessionAnchorAndULCL case EstablishingULCL")
-			logger.CtxLog.Warnln("UPF IP ", trggierUPFIP, " doesn't exist in pending UPF!")
+			logger.CtxLog.Warnln(logUPFIPPrefix, trggierUPFIP, errPendingUPFNotExistSuffix)
 			return
 		}
 
@@ -181,23 +188,23 @@ func EstablishULCL(smContext *context.SMContext) {
 			FlowDespcription := flowdesc.NewIPFilterRule()
 			err := FlowDespcription.SetAction(flowdesc.Permit) // permit
 			if err != nil {
-				logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+				logger.PduSessLog.Errorf(errFlowDescFmt, err)
 			}
 			err = FlowDespcription.SetDirection(flowdesc.Out) // uplink
 			if err != nil {
-				logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+				logger.PduSessLog.Errorf(errFlowDescFmt, err)
 			}
 			err = FlowDespcription.SetDestinationIP(dest.DestinationIP)
 			if err != nil {
-				logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+				logger.PduSessLog.Errorf(errFlowDescFmt, err)
 			}
 			err = FlowDespcription.SetDestinationPorts(dest.DestinationPort)
 			if err != nil {
-				logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+				logger.PduSessLog.Errorf(errFlowDescFmt, err)
 			}
 			err = FlowDespcription.SetSourceIP(smContext.PDUAddress.Ip.To4().String())
 			if err != nil {
-				logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+				logger.PduSessLog.Errorf(errFlowDescFmt, err)
 			}
 
 			FlowDespcriptionStr, err := flowdesc.Encode(FlowDespcription)
@@ -226,7 +233,7 @@ func EstablishULCL(smContext *context.SMContext) {
 			bpMGR.PendingUPF[curDPNodeIP] = true
 			err = message.SendPfcpSessionModificationRequest(ulcl.NodeID, smContext, pdrList, farList, barList, qerList, nil, nil, nil, ulcl.Port)
 			if err != nil {
-				logger.PduSessLog.Errorf("send pfcp session modification request failed: %v for UPF[%v, %v]: ", err, ulcl.NodeID, ulcl.NodeID.ResolveNodeIdToIp())
+				logger.PduSessLog.Errorf(errPfcpSessionModFmt, err, ulcl.NodeID, ulcl.NodeID.ResolveNodeIdToIp())
 			}
 			break
 		}
@@ -267,7 +274,7 @@ func UpdatePSA2DownLink(smContext *context.SMContext) {
 				err := message.SendPfcpSessionModificationRequest(
 					curDataPathNode.UPF.NodeID, smContext, pdrList, farList, barList, qerList, nil, nil, nil, curDataPathNode.UPF.Port)
 				if err != nil {
-					logger.PduSessLog.Errorf("send pfcp session modification request failed: %v for UPF[%v, %v]: ", err, curDataPathNode.UPF.NodeID, curDataPathNode.UPF.NodeID.ResolveNodeIdToIp())
+					logger.PduSessLog.Errorf(errPfcpSessionModFmt, err, curDataPathNode.UPF.NodeID, curDataPathNode.UPF.NodeID.ResolveNodeIdToIp())
 				}
 				logger.PfcpLog.Info("[SMF] Update PSA2 downlink msg has been send")
 				break
@@ -340,23 +347,23 @@ func UpdateRANAndIUPFUpLink(smContext *context.SMContext) {
 				FlowDespcription := flowdesc.NewIPFilterRule()
 				err := FlowDespcription.SetAction(flowdesc.Permit) // permit
 				if err != nil {
-					logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+					logger.PduSessLog.Errorf(errFlowDescFmt, err)
 				}
 				err = FlowDespcription.SetDirection(flowdesc.Out) // uplink
 				if err != nil {
-					logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+					logger.PduSessLog.Errorf(errFlowDescFmt, err)
 				}
 				err = FlowDespcription.SetDestinationIP(dest.DestinationIP)
 				if err != nil {
-					logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+					logger.PduSessLog.Errorf(errFlowDescFmt, err)
 				}
 				err = FlowDespcription.SetDestinationPorts(dest.DestinationPort)
 				if err != nil {
-					logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+					logger.PduSessLog.Errorf(errFlowDescFmt, err)
 				}
 				err = FlowDespcription.SetSourceIP(smContext.PDUAddress.Ip.To4().String())
 				if err != nil {
-					logger.PduSessLog.Errorf("error occurs when setting flow despcription: %s", err)
+					logger.PduSessLog.Errorf(errFlowDescFmt, err)
 				}
 
 				FlowDespcriptionStr, err := flowdesc.Encode(FlowDespcription)
@@ -384,7 +391,7 @@ func UpdateRANAndIUPFUpLink(smContext *context.SMContext) {
 			bpMGR.PendingUPF[curDPNodeIP] = true
 			err := message.SendPfcpSessionModificationRequest(curDPNode.UPF.NodeID, smContext, pdrList, farList, barList, qerList, nil, nil, nil, curDPNode.UPF.Port)
 			if err != nil {
-				logger.PduSessLog.Errorf("send pfcp session modification request failed: %v for UPF[%v, %v]: ", err, curDPNode.UPF.NodeID, curDPNode.UPF.NodeID.ResolveNodeIdToIp())
+				logger.PduSessLog.Errorf(errPfcpSessionModFmt, err, curDPNode.UPF.NodeID, curDPNode.UPF.NodeID.ResolveNodeIdToIp())
 			}
 		}
 	}

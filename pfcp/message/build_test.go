@@ -15,7 +15,13 @@ import (
 	pfcp_message "github.com/wmnsk/go-pfcp/message"
 )
 
-const cpNodeID = "1.2.3.4"
+const (
+	cpNodeID                   = "1.2.3.4"
+	errExpectedRecoveryTimeFmt = "expected RecoveryTimeStamp to be %v, got %v"
+	errExpectedNodeIDFmt       = "expected NodeID to be %v got %v"
+	errExpectedSeqNumFmt       = "expected SequenceNumber to be %v, got %v"
+	errExpectedMsgTypeFmt      = "expected message type to be 'ban', got %v"
+)
 
 func outerHeaderRemovalSet(pdrIEs []*ie.IE) bool {
 	for _, pdrIE := range pdrIEs {
@@ -88,7 +94,7 @@ func TestBuildPfcpHeartbeatRequest(t *testing.T) {
 	}
 
 	if recoveryTimestamp.Truncate(1*time.Second) != serverStartTime.Truncate(1*time.Second) {
-		t.Errorf("expected RecoveryTimeStamp to be %v, got %v", serverStartTime, recoveryTimestamp)
+		t.Errorf(errExpectedRecoveryTimeFmt, serverStartTime, recoveryTimestamp)
 	}
 }
 
@@ -123,7 +129,7 @@ func TestBuildPfcpHeartbeatResponse(t *testing.T) {
 	}
 
 	if recoveryTimestamp.Truncate(1*time.Second) != serverStartTime.Truncate(1*time.Second) {
-		t.Errorf("expected RecoveryTimeStamp to be %v, got %v", serverStartTime, recoveryTimestamp)
+		t.Errorf(errExpectedRecoveryTimeFmt, serverStartTime, recoveryTimestamp)
 	}
 }
 
@@ -157,7 +163,7 @@ func TestBuildPfcpAssociationSetupRequest(t *testing.T) {
 	}
 
 	if recoveryTimestamp.Truncate(1*time.Second) != timestamp.Truncate(1*time.Second) {
-		t.Errorf("expected RecoveryTimeStamp to be %v, got %v", timestamp, recoveryTimestamp)
+		t.Errorf(errExpectedRecoveryTimeFmt, timestamp, recoveryTimestamp)
 	}
 
 	nodeID, err := req.NodeID.NodeID()
@@ -166,7 +172,7 @@ func TestBuildPfcpAssociationSetupRequest(t *testing.T) {
 	}
 
 	if nodeID != cpNodeID {
-		t.Errorf("expected NodeID to be %v got %v", cpNodeID, nodeID)
+		t.Errorf(errExpectedNodeIDFmt, cpNodeID, nodeID)
 	}
 }
 
@@ -195,7 +201,7 @@ func TestBuildPfcpAssociationSetupResponse(t *testing.T) {
 	}
 
 	if causeValue != ie.CauseRequestAccepted {
-		t.Errorf("expected SequenceNumber to be %v, got %v", ie.CauseRequestAccepted, causeValue)
+		t.Errorf(errExpectedSeqNumFmt, ie.CauseRequestAccepted, causeValue)
 	}
 
 	recoveryTimestamp, err := resp.RecoveryTimeStamp.RecoveryTimeStamp()
@@ -204,7 +210,7 @@ func TestBuildPfcpAssociationSetupResponse(t *testing.T) {
 	}
 
 	if recoveryTimestamp.Truncate(1*time.Second) != timestamp.Truncate(1*time.Second) {
-		t.Errorf("expected RecoveryTimeStamp to be %v, got %v", timestamp, recoveryTimestamp)
+		t.Errorf(errExpectedRecoveryTimeFmt, timestamp, recoveryTimestamp)
 	}
 
 	nodeID, err := resp.NodeID.NodeID()
@@ -213,7 +219,7 @@ func TestBuildPfcpAssociationSetupResponse(t *testing.T) {
 	}
 
 	if nodeID != cpNodeID {
-		t.Errorf("expected NodeID to be %v got %v", cpNodeID, nodeID)
+		t.Errorf(errExpectedNodeIDFmt, cpNodeID, nodeID)
 	}
 }
 
@@ -241,7 +247,7 @@ func TestBuildPfcpAssociationReleaseResponse(t *testing.T) {
 	}
 
 	if causeValue != ie.CauseRequestAccepted {
-		t.Errorf("expected SequenceNumber to be %v, got %v", ie.CauseRequestAccepted, causeValue)
+		t.Errorf(errExpectedSeqNumFmt, ie.CauseRequestAccepted, causeValue)
 	}
 
 	nodeID, err := resp.NodeID.NodeID()
@@ -250,7 +256,7 @@ func TestBuildPfcpAssociationReleaseResponse(t *testing.T) {
 	}
 
 	if nodeID != cpNodeID {
-		t.Errorf("expected NodeID to be %v got %v", cpNodeID, nodeID)
+		t.Errorf(errExpectedNodeIDFmt, cpNodeID, nodeID)
 	}
 }
 
@@ -281,7 +287,7 @@ func TestBuildPfcpSessionEstablishmentRequest(t *testing.T) {
 	}
 
 	if msg.MessageTypeName() != "Session Establishment Request" {
-		t.Errorf("expected message type to be 'ban', got %v", msg.MessageTypeName())
+		t.Errorf(errExpectedMsgTypeFmt, msg.MessageTypeName())
 	}
 
 	buf := make([]byte, msg.MarshalLen())
@@ -342,7 +348,7 @@ func TestBuildPfcpSessionModificationRequest(t *testing.T) {
 		{
 			ForwardingParameters: &context.ForwardingParameters{
 				OuterHeaderCreation: &context.OuterHeaderCreation{
-					Ipv4Address:                    net.ParseIP("1.2.3.4"),
+					Ipv4Address:                    net.ParseIP(cpNodeID),
 					Ipv6Address:                    net.ParseIP(""),
 					Teid:                           1,
 					PortNumber:                     1,
@@ -362,7 +368,7 @@ func TestBuildPfcpSessionModificationRequest(t *testing.T) {
 	}
 
 	if msg.MessageTypeName() != "Session Modification Request" {
-		t.Errorf("expected message type to be 'ban', got %v", msg.MessageTypeName())
+		t.Errorf(errExpectedMsgTypeFmt, msg.MessageTypeName())
 	}
 
 	buf := make([]byte, msg.MarshalLen())
@@ -386,7 +392,7 @@ func TestBuildPfcpSessionModificationRequest(t *testing.T) {
 		t.Fatalf("expected UpdateFAR to be non-nil")
 	}
 
-	if !outerHeaderCreationSet(updateFars, "1.2.3.4") {
+	if !outerHeaderCreationSet(updateFars, cpNodeID) {
 		t.Errorf("expected OuterHeaderCreation to be set")
 	}
 }
@@ -426,7 +432,7 @@ func TestBuildPfcpSessionModificationRequestNoOuterHeader(t *testing.T) {
 	}
 
 	if msg.MessageTypeName() != "Session Modification Request" {
-		t.Errorf("expected message type to be 'ban', got %v", msg.MessageTypeName())
+		t.Errorf(errExpectedMsgTypeFmt, msg.MessageTypeName())
 	}
 
 	buf := make([]byte, msg.MarshalLen())
@@ -450,7 +456,7 @@ func TestBuildPfcpSessionModificationRequestNoOuterHeader(t *testing.T) {
 		t.Fatalf("expected UpdateFAR to be non-nil")
 	}
 
-	if outerHeaderCreationSet(updateFars, "1.2.3.4") {
+	if outerHeaderCreationSet(updateFars, cpNodeID) {
 		t.Errorf("expected OuterHeaderCreation to not be set")
 	}
 }
@@ -503,7 +509,7 @@ func TestBuildPfcpSessionReportResponse(t *testing.T) {
 	}
 
 	if causeValue != ie.CauseRequestAccepted {
-		t.Errorf("expected SequenceNumber to be %v, got %v", ie.CauseRequestAccepted, causeValue)
+		t.Errorf(errExpectedSeqNumFmt, ie.CauseRequestAccepted, causeValue)
 	}
 
 	flags, err := resp.PFCPSRRspFlags.PFCPSRRspFlags()

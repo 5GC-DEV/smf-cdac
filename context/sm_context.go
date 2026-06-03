@@ -37,10 +37,11 @@ import (
 )
 
 const (
-	CONNECTED               = "Connected"
-	DISCONNECTED            = "Disconnected"
-	IDLE                    = "Idle"
-	PDU_SESS_REL_CMD string = "PDUSessionReleaseCommand"
+	CONNECTED                              = "Connected"
+	DISCONNECTED                           = "Disconnected"
+	IDLE                                   = "Idle"
+	PDU_SESS_REL_CMD                string = "PDUSessionReleaseCommand"
+	errNoSupportedPDUSessionTypeFmt        = "no SupportedPDUSessionType[%q] in DNN[%s] configuration"
 )
 
 var (
@@ -70,6 +71,8 @@ const (
 	SmStateMax
 )
 
+// init is intentionally left empty.
+// Reserved for future initialization logic.
 func init() {
 }
 
@@ -624,19 +627,19 @@ func (smContext *SMContext) isAllowedPDUSessionType(requestedPDUSessionType uint
 	switch supportedPDUSessionType {
 	case "IPv4":
 		if !allowIPv4 {
-			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf(errNoSupportedPDUSessionTypeFmt, supportedPDUSessionType, smContext.Dnn)
 		}
 	case "IPv6":
 		if !allowIPv6 {
-			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf(errNoSupportedPDUSessionTypeFmt, supportedPDUSessionType, smContext.Dnn)
 		}
 	case "IPv4v6":
 		if !allowIPv4 && !allowIPv6 {
-			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf(errNoSupportedPDUSessionTypeFmt, supportedPDUSessionType, smContext.Dnn)
 		}
 	case "Ethernet":
 		if !allowEthernet {
-			return fmt.Errorf("no SupportedPDUSessionType[%q] in DNN[%s] configuration", supportedPDUSessionType, smContext.Dnn)
+			return fmt.Errorf(errNoSupportedPDUSessionTypeFmt, supportedPDUSessionType, smContext.Dnn)
 		}
 	}
 

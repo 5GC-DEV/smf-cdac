@@ -35,6 +35,16 @@ type pfcpParam struct {
 	removeQER []*smf_context.QER
 }
 
+const (
+	logSMCtxUpdateStateChange    = "PDUSessionSMContextUpdate, SMContextState Change State:"
+	logSMCtxUpdateSendResp       = "PDUSessionSMContextUpdate, send Update SmContext Response"
+	logSMCtxStateShouldActiveFmt = "PDUSessionSMContextUpdate, SMContext state[%v] should be Active"
+	logSMCtxBuildN2ErrFmt        = "PDUSessionSMContextUpdate, build PDUSession Resource Setup Request Transfer Error(%s)"
+	logSMCtxHoStateFmt           = "PDUSessionSMContextUpdate, Ho state %v received"
+	logSMCtxShouldBeActiveFmt    = "PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive"
+	logSMCtxN2TypeFmt            = "PDUSessionSMContextUpdate, N2 SM info type %v received"
+)
+
 func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction, pfcpParam *pfcpParam) error {
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*context.SMContext)
@@ -93,13 +103,13 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 				if smContext.Tunnel != nil {
 					smContext.ChangeState(context.SmStatePfcpModify)
-					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+					smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 					// Send release to UPF
 					// releaseTunnel(smContext)
 					pfcpAction.sendPfcpDelete = true
 				} else {
 					smContext.ChangeState(context.SmStateModify)
-					smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+					smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 				}
 				err := smContext.ReleasePduSessionID()
 				if err != nil {
@@ -115,7 +125,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				response.JsonData.N1SmMsg = &models.RefToBinaryData{ContentId: "PDUSessionReleaseReject"}
 				smContext.ChangeState(context.SmStateModify)
 				// smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-				smContext.SubCtxLog.Infoln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Infoln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 			}
 		case nas.MsgTypePDUSessionReleaseComplete:
 			smContext.SubPduSessLog.Infoln("PDUSessionSMContextUpdate, N1 Msg PDU Session Release Complete received")
@@ -125,9 +135,9 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateInActivePending State", smContext.SMContextState.String())
 			}
 			// Send Release Notify to AMF
-			smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send Update SmContext Response")
+			smContext.SubPduSessLog.Infof(logSMCtxUpdateSendResp)
 			smContext.ChangeState(context.SmStateInit)
-			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+			smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 			response.JsonData.UpCnxState = models.UpCnxState_DEACTIVATED
 			/*problemDetails, err := consumer.SendSMContextStatusNotification(smContext.SmStatusNotifyUri)
 			if problemDetails != nil || err != nil {
@@ -161,7 +171,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				if smContext.SMContextState != context.SmStateActive {
 					// Wait till the state becomes Active again
 					// TODO: implement sleep wait in concurrent architecture
-					smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be Active",
+					smContext.SubPduSessLog.Warnf(logSMCtxStateShouldActiveFmt,
 						smContext.SMContextState.String())
 				}
 
@@ -171,7 +181,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				}
 
 				smContext.ChangeState(context.SmStateModify)
-				smContext.SubCtxLog.Debugf("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Debugf(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 				pdrList := []*context.PDR{}
 				farList := []*context.FAR{}
 
@@ -206,7 +216,7 @@ func HandleUpdateN1Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 				pfcpAction.sendPfcpModify = true
 				smContext.ChangeState(context.SmStatePfcpModify)
-				smContext.SubCtxLog.Debugf("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+				smContext.SubCtxLog.Debugf(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 				if err := SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
 					// PFCP modify failed — revert state and return error
 					smContext.SubCtxLog.Errorf("PFCP session modify error: %v", err)
@@ -262,14 +272,14 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 			smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, SMContext State[%v] should be SmStateActive State", smContext.SMContextState.String())
 		}
 		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "PDUSessionResourceSetupRequestTransfer"}
 		response.JsonData.UpCnxState = models.UpCnxState_ACTIVATING
 		response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_SETUP_REQ
 
 		n2Buf, err := context.BuildPDUSessionResourceSetupRequestTransfer(smContext)
 		if err != nil {
-			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSession Resource Setup Request Transfer Error(%s)", err.Error())
+			smContext.SubPduSessLog.Errorf(logSMCtxBuildN2ErrFmt, err.Error())
 			metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
 		}
 		smContext.UpCnxState = models.UpCnxState_ACTIVATING
@@ -284,7 +294,7 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 		}
 		if smContext.Tunnel != nil {
 			smContext.ChangeState(context.SmStateModify)
-			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+			smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 			response.JsonData.UpCnxState = models.UpCnxState_DEACTIVATED
 			smContext.UpCnxState = body.JsonData.UpCnxState
 			smContext.UeLocation = body.JsonData.UeLocation
@@ -316,7 +326,7 @@ func HandleUpCnxState(txn *transaction.Transaction, response *models.UpdateSmCon
 
 			pfcpAction.sendPfcpModify = true
 			smContext.ChangeState(context.SmStatePfcpModify)
-			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+			smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		}
 	}
 	return nil
@@ -330,16 +340,16 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 
 	switch smContextUpdateData.HoState {
 	case models.HoState_PREPARING:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, Ho state %v received", smContextUpdateData.HoState)
+		smContext.SubPduSessLog.Infof(logSMCtxHoStateFmt, smContextUpdateData.HoState)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, in HoState_PREPARING")
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes SmStateActive again
 			// TODO: implement sleep wait in concurrent architecture
-			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive",
+			smContext.SubPduSessLog.Warnf(logSMCtxShouldBeActiveFmt,
 				smContext.SMContextState.String())
 		}
 		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		smContext.HoState = models.HoState_PREPARING
 		if err := context.HandleHandoverRequiredTransfer(body.BinaryDataN2SmInformation, smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, handle HandoverRequiredTransfer failed: %+v", err)
@@ -347,7 +357,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		response.JsonData.N2SmInfoType = models.N2SmInfoType_PDU_RES_SETUP_REQ
 
 		if n2Buf, err := context.BuildPDUSessionResourceSetupRequestTransfer(smContext); err != nil {
-			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSession Resource Setup Request Transfer Error(%s)", err.Error())
+			smContext.SubPduSessLog.Errorf(logSMCtxBuildN2ErrFmt, err.Error())
 			metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
 		} else {
 			response.BinaryDataN2SmInformation = n2Buf
@@ -358,7 +368,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		}
 		response.JsonData.HoState = models.HoState_PREPARING
 	case models.HoState_PREPARED:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, Ho state %v received", smContextUpdateData.HoState)
+		smContext.SubPduSessLog.Infof(logSMCtxHoStateFmt, smContextUpdateData.HoState)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, in HoState_PREPARED")
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes SmStateActive again
@@ -367,7 +377,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 				smContext.SMContextState.String())
 		}
 		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		smContext.HoState = models.HoState_PREPARED
 		response.JsonData.HoState = models.HoState_PREPARED
 		if err := context.HandleHandoverRequestAcknowledgeTransfer(body.BinaryDataN2SmInformation, smContext); err != nil {
@@ -375,7 +385,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		}
 
 		if n2Buf, err := context.BuildHandoverCommandTransfer(smContext); err != nil {
-			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, build PDUSession Resource Setup Request Transfer Error(%s)", err.Error())
+			smContext.SubPduSessLog.Errorf(logSMCtxBuildN2ErrFmt, err.Error())
 		} else {
 			response.BinaryDataN2SmInformation = n2Buf
 		}
@@ -386,7 +396,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		}
 		response.JsonData.HoState = models.HoState_PREPARING
 	case models.HoState_COMPLETED:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, Ho state %v received", smContextUpdateData.HoState)
+		smContext.SubPduSessLog.Infof(logSMCtxHoStateFmt, smContextUpdateData.HoState)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, in HoState_COMPLETED")
 
 		if smContext.SMContextState != context.SmStateActive {
@@ -453,7 +463,7 @@ func HandleUpdateHoState(txn *transaction.Transaction, response *models.UpdateSm
 		smContext.ChangeState(context.SmStatePfcpModify)
 
 		smContext.SubCtxLog.Infoln(
-			"PDUSessionSMContextUpdate, SMContextState Change State:",
+			logSMCtxUpdateStateChange,
 			smContext.SMContextState.String(),
 		)
 
@@ -475,7 +485,7 @@ func HandleUpdateCause(txn *transaction.Transaction, response *models.UpdateSmCo
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes SmStateActive again
 			// TODO: implement sleep wait in concurrent architecture
-			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive",
+			smContext.SubPduSessLog.Warnf(logSMCtxShouldBeActiveFmt,
 				smContext.SMContextState.String())
 		}
 
@@ -492,7 +502,7 @@ func HandleUpdateCause(txn *transaction.Transaction, response *models.UpdateSmCo
 		smContext.SubCtxLog.Infof("PDUSessionSMContextUpdate, Cause_REL_DUE_TO_DUPLICATE_SESSION_ID")
 
 		smContext.ChangeState(context.SmStatePfcpModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 
 		// releaseTunnel(smContext)
 		pfcpAction.sendPfcpDelete = true
@@ -512,16 +522,16 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 	tunnel := smContext.Tunnel
 	switch smContextUpdateData.N2SmInfoType {
 	case models.N2SmInfoType_PDU_RES_SETUP_RSP:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
+		smContext.SubPduSessLog.Infof(logSMCtxN2TypeFmt,
 			smContextUpdateData.N2SmInfoType)
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes Active again
 			// TODO: implement sleep wait in concurrent architecture
-			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be Active",
+			smContext.SubPduSessLog.Warnf(logSMCtxStateShouldActiveFmt,
 				smContext.SMContextState.String())
 		}
 		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		pdrList := []*context.PDR{}
 		farList := []*context.FAR{}
 
@@ -565,16 +575,16 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 		pfcpAction.sendPfcpModify = true
 		smContext.ChangeState(context.SmStatePfcpModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 	case models.N2SmInfoType_PDU_RES_SETUP_FAIL:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
+		smContext.SubPduSessLog.Infof(logSMCtxN2TypeFmt,
 			smContextUpdateData.N2SmInfoType)
 		if err := context.
 			HandlePDUSessionResourceSetupResponseTransfer(body.BinaryDataN2SmInformation, smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, handle PDUSessionResourceSetupResponseTransfer failed: %+v", err)
 		}
 	case models.N2SmInfoType_PDU_RES_REL_RSP:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
+		smContext.SubPduSessLog.Infof(logSMCtxN2TypeFmt,
 			smContextUpdateData.N2SmInfoType)
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 PDUSession Release Complete ")
 		if smContext.PDUSessionRelease_DUE_TO_DUP_PDU_ID {
@@ -585,8 +595,8 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 					smContext.SMContextState.String())
 			}
 			smContext.ChangeState(context.SmStateInit)
-			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
-			smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send Update SmContext Response")
+			smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
+			smContext.SubPduSessLog.Infof(logSMCtxUpdateSendResp)
 			response.JsonData.UpCnxState = models.UpCnxState_DEACTIVATED
 
 			smContext.PDUSessionRelease_DUE_TO_DUP_PDU_ID = false
@@ -610,22 +620,22 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 				smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be ActivePending",
 					smContext.SMContextState.String())
 			}
-			smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send Update SmContext Response")
+			smContext.SubPduSessLog.Infof(logSMCtxUpdateSendResp)
 			smContext.ChangeState(context.SmStateInActivePending)
-			smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+			smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		}
 	case models.N2SmInfoType_PATH_SWITCH_REQ:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
+		smContext.SubPduSessLog.Infof(logSMCtxN2TypeFmt,
 			smContextUpdateData.N2SmInfoType)
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextUpdate, handle Path Switch Request")
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes Active again
 			// TODO: implement sleep wait in concurrent architecture
-			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be Active",
+			smContext.SubPduSessLog.Warnf(logSMCtxStateShouldActiveFmt,
 				smContext.SMContextState.String())
 		}
 		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 
 		if err := context.HandlePathSwitchRequestTransfer(body.BinaryDataN2SmInformation, smContext); err != nil {
 			smContext.SubPduSessLog.Errorf("PDUSessionSMContextUpdate, handle PathSwitchRequestTransfer: %+v", err)
@@ -668,32 +678,32 @@ func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmCo
 
 		pfcpAction.sendPfcpModify = true
 		smContext.ChangeState(context.SmStatePfcpModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 	case models.N2SmInfoType_PATH_SWITCH_SETUP_FAIL:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
+		smContext.SubPduSessLog.Infof(logSMCtxN2TypeFmt,
 			smContextUpdateData.N2SmInfoType)
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes SmStateActive again
 			// TODO: implement sleep wait in concurrent architecture
-			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive",
+			smContext.SubPduSessLog.Warnf(logSMCtxShouldBeActiveFmt,
 				smContext.SMContextState.String())
 		}
 		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		if err := context.HandlePathSwitchRequestSetupFailedTransfer(body.BinaryDataN2SmInformation, smContext); err != nil {
 			smContext.SubPduSessLog.Error()
 		}
 	case models.N2SmInfoType_HANDOVER_REQUIRED:
-		smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, N2 SM info type %v received",
+		smContext.SubPduSessLog.Infof(logSMCtxN2TypeFmt,
 			smContextUpdateData.N2SmInfoType)
 		if smContext.SMContextState != context.SmStateActive {
 			// Wait till the state becomes SmStateActive again
 			// TODO: implement sleep wait in concurrent architecture
-			smContext.SubPduSessLog.Warnf("PDUSessionSMContextUpdate, SMContext state[%v] should be SmStateActive",
+			smContext.SubPduSessLog.Warnf(logSMCtxShouldBeActiveFmt,
 				smContext.SMContextState.String())
 		}
 		smContext.ChangeState(context.SmStateModify)
-		smContext.SubCtxLog.Debugln("PDUSessionSMContextUpdate, SMContextState Change State:", smContext.SMContextState.String())
+		smContext.SubCtxLog.Debugln(logSMCtxUpdateStateChange, smContext.SMContextState.String())
 		response.JsonData.N2SmInfo = &models.RefToBinaryData{ContentId: "Handover"}
 	}
 

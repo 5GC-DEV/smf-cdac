@@ -20,6 +20,8 @@ type IPAllocator struct {
 	g         *_IDPool
 }
 
+const errSmfCountConvertFmt = "failed to convert SMF_COUNT to int: %v"
+
 func NewIPAllocator(cidr string) (*IPAllocator, error) {
 	allocator := &IPAllocator{}
 
@@ -99,7 +101,7 @@ func (a *IPAllocator) Allocate(imsi string) (net.IP, error) {
 		}
 		smfCount, err := strconv.Atoi(smfCountStr)
 		if err != nil {
-			logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
+			logger.CtxLog.Errorf(errSmfCountConvertFmt, err)
 		}
 		ip := IPAddrWithOffset(a.ipNetwork.IP, int(offset)) // int64((smfCount-1)*5000 + 1)
 		logger.CtxLog.Infof("IPAllocator: Dynamic IP allocation successful for IMSI %s", imsi)
@@ -170,7 +172,7 @@ func newIDPool(minValue int64, maxValue int64) (idPool *_IDPool) {
 	}
 	smfCount, err := strconv.Atoi(smfCountStr)
 	if err != nil {
-		logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
+		logger.CtxLog.Errorf(errSmfCountConvertFmt, err)
 	}
 	idPool.index = int64((smfCount-1)*2500 + 1)
 	return
@@ -187,7 +189,7 @@ func (i *_IDPool) allocate() (id int64, err error) {
 	smfCount, err := strconv.Atoi(smfCountStr)
 	logger.CtxLog.Debugf("IDPool ALLOCATE START >>> smfCount=%d", smfCount)
 	if err != nil {
-		logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
+		logger.CtxLog.Errorf(errSmfCountConvertFmt, err)
 	}
 	for id = i.index; id <= i.maxValue; id++ {
 		logger.CtxLog.Debugf("IDPool LOOP >>> trying id=%d (index=%d max=%d)", id, i.index, i.maxValue)

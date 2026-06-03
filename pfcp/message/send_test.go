@@ -24,6 +24,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	errUDPListenFmt       = "error listening on UDP: %v"
+	errConnectionCloseFmt = "error closing connection: %v"
+	defaultLocalhost      = "127.0.0.1"
+)
+
 func boolPointer(b bool) *bool {
 	return &b
 }
@@ -41,21 +47,21 @@ func TestSendPfcpAssociationSetupRequest(t *testing.T) {
 	}
 	upNodeID := context.NodeID{
 		NodeIdType:  context.NodeIdTypeIpv4Address,
-		NodeIdValue: net.ParseIP("127.0.0.1").To4(),
+		NodeIdValue: net.ParseIP(defaultLocalhost).To4(),
 	}
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8801,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -71,18 +77,18 @@ func TestSendPfcpAssociationSetupRequest(t *testing.T) {
 
 func TestSendPfcpAssociationSetupResponse(t *testing.T) {
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8802,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -92,7 +98,7 @@ func TestSendPfcpAssociationSetupResponse(t *testing.T) {
 
 	upNodeID := context.NodeID{
 		NodeIdType:  context.NodeIdTypeIpv4Address,
-		NodeIdValue: net.ParseIP("127.0.0.1").To4(),
+		NodeIdValue: net.ParseIP(defaultLocalhost).To4(),
 	}
 
 	err = message.SendPfcpAssociationSetupResponse(upNodeID, ie.CauseRequestAccepted, 8802)
@@ -103,7 +109,7 @@ func TestSendPfcpAssociationSetupResponse(t *testing.T) {
 
 // When the User Plane Node exists in the stored context, then the PFCP Session Establishment Request is sent
 func TestSendPfcpSessionEstablishmentRequestUpNodeExists(t *testing.T) {
-	const upNodeIDStr = "127.0.0.1"
+	const upNodeIDStr = defaultLocalhost
 	configuration := &factory.Configuration{
 		EnableUpfAdapter: false,
 	}
@@ -136,18 +142,18 @@ func TestSendPfcpSessionEstablishmentRequestUpNodeExists(t *testing.T) {
 	qerList := []*context.QER{}
 
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8803,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -163,7 +169,7 @@ func TestSendPfcpSessionEstablishmentRequestUpNodeExists(t *testing.T) {
 
 // Given the User Plane Node does not exist in the stored context, then the PFCP Session Establishment Request is not sent
 func TestSendPfcpSessionEstablishmentRequestUpNodeDoesNotExist(t *testing.T) {
-	const upNodeIDStr = "127.0.0.1"
+	const upNodeIDStr = defaultLocalhost
 	configuration := &factory.Configuration{
 		EnableUpfAdapter: false,
 	}
@@ -182,18 +188,18 @@ func TestSendPfcpSessionEstablishmentRequestUpNodeDoesNotExist(t *testing.T) {
 	qerList := []*context.QER{}
 
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8804,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -208,7 +214,7 @@ func TestSendPfcpSessionEstablishmentRequestUpNodeDoesNotExist(t *testing.T) {
 }
 
 func TestSendPfcpSessionModificationRequest(t *testing.T) {
-	const upNodeIDStr = "127.0.0.1"
+	const upNodeIDStr = defaultLocalhost
 	configuration := &factory.Configuration{
 		EnableUpfAdapter: false,
 	}
@@ -241,18 +247,18 @@ func TestSendPfcpSessionModificationRequest(t *testing.T) {
 	qerList := []*context.QER{}
 
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8806,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -267,7 +273,7 @@ func TestSendPfcpSessionModificationRequest(t *testing.T) {
 }
 
 func TestSendPfcpSessionDeletionRequest(t *testing.T) {
-	const upNodeIDStr = "127.0.0.1"
+	const upNodeIDStr = defaultLocalhost
 	configuration := &factory.Configuration{
 		EnableUpfAdapter: false,
 	}
@@ -295,18 +301,18 @@ func TestSendPfcpSessionDeletionRequest(t *testing.T) {
 	}
 
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8807,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -321,25 +327,25 @@ func TestSendPfcpSessionDeletionRequest(t *testing.T) {
 }
 
 func TestSendPfcpSessionReportResponse(t *testing.T) {
-	const upNodeIDStr = "127.0.0.1"
+	const upNodeIDStr = defaultLocalhost
 	remoteAddr := &net.UDPAddr{
 		IP:   net.ParseIP(upNodeIDStr),
 		Port: 8808,
 	}
 
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8808,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -355,7 +361,7 @@ func TestSendPfcpSessionReportResponse(t *testing.T) {
 }
 
 func TestSendHeartbeatRequest(t *testing.T) {
-	const upNodeIDStr = "127.0.0.1"
+	const upNodeIDStr = defaultLocalhost
 	configuration := &factory.Configuration{
 		EnableUpfAdapter: false,
 	}
@@ -368,18 +374,18 @@ func TestSendHeartbeatRequest(t *testing.T) {
 	}
 
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8809,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -394,25 +400,25 @@ func TestSendHeartbeatRequest(t *testing.T) {
 }
 
 func TestSendHeartbeatResponse(t *testing.T) {
-	const upNodeIDStr = "127.0.0.1"
+	const upNodeIDStr = defaultLocalhost
 	remoteAddr := &net.UDPAddr{
 		IP:   net.ParseIP(upNodeIDStr),
 		Port: 7001,
 	}
 
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8810,
 	}
 
 	conn, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Fatalf("error listening on UDP: %v", err)
+		t.Fatalf(errUDPListenFmt, err)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			t.Logf("error closing connection: %v", err)
+			t.Logf(errConnectionCloseFmt, err)
 		}
 	}()
 
@@ -481,7 +487,7 @@ func TestSendPfcpMsgToAdapter(t *testing.T) {
 		ie.NewRecoveryTimeStamp(timestamp),
 		nil,
 	)
-	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 12345}
+	addr := &net.UDPAddr{IP: net.ParseIP(defaultLocalhost), Port: 12345}
 	rsp, err := message.SendPfcpMsgToAdapter(*upNodeID, msg, addr, nil, testServer.URL)
 	if err != nil {
 		t.Fatalf("error sending PFCP message to adapter: %v", err)

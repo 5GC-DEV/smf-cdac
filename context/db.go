@@ -31,6 +31,7 @@ const (
 	// SMPolicyClientCol  = "smf.data.smPolicyClient"
 	RefSeidCol    = "smf.data.refToSeid"
 	SmfCounterCol = "smf.data.smfCount"
+	logFilterFmt  = "filter: %+v"
 )
 
 func SetupSmfCollection() {
@@ -246,7 +247,7 @@ func StoreSmContextInDB(smContext *SMContext) {
 	smContext.SMLock.Unlock()
 	logger.DataRepoLog.Infoln("db - Store SMContext In DB w ref")
 	filter := bson.M{"ref": ref}
-	logger.DataRepoLog.Infof("filter: %+v", filter)
+	logger.DataRepoLog.Infof(logFilterFmt, filter)
 
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
 	if postErr != nil {
@@ -273,7 +274,7 @@ func StoreSeidContextInDB(seidUint uint64, smContext *SMContext) {
 	}
 	itemBsonA := ToBsonMSeidRef(item)
 	filter := bson.M{"seid": seid}
-	logger.DataRepoLog.Infof("filter: %+v", filter)
+	logger.DataRepoLog.Infof(logFilterFmt, filter)
 
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
 	if postErr != nil {
@@ -290,7 +291,7 @@ func StoreRefToSeidInDB(seidUint uint64, smContext *SMContext) {
 	}
 	itemBsonA := ToBsonMSeidRef(item)
 	filter := bson.M{"ref": smContext.Ref}
-	logger.DataRepoLog.Infof("filter: %+v", filter)
+	logger.DataRepoLog.Infof(logFilterFmt, filter)
 
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
 	if postErr != nil {
@@ -365,7 +366,7 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 	seid := SeidConv(seidUint)
 	logger.DataRepoLog.Infoln("db - delete SMContext In DB by seid")
 	filter := bson.M{"seid": seid}
-	logger.DataRepoLog.Infof("filter: %+v", filter)
+	logger.DataRepoLog.Infof(logFilterFmt, filter)
 
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(SeidSmContextCol, filter)
 	if getOneErr != nil {
@@ -388,7 +389,7 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 func DeleteSmContextInDBByRef(ref string) {
 	logger.DataRepoLog.Infoln("db - delete SMContext In DB w ref")
 	filter := bson.M{"ref": ref}
-	logger.DataRepoLog.Infof("filter: %+v", filter)
+	logger.DataRepoLog.Infof(logFilterFmt, filter)
 
 	delOneErr := mongoapi.CommonDBClient.RestfulAPIDeleteOne(SmContextDataColl, filter)
 	if delOneErr != nil {

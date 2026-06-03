@@ -12,10 +12,12 @@ import (
 	"github.com/wmnsk/go-pfcp/message"
 )
 
+const defaultIPv4Addr = "1.1.1.1"
+
 func TestGivenRequestWhenIsRequestThenReturnTrue(t *testing.T) {
 	msg := message.NewAssociationReleaseRequest(
 		1,
-		ie.NewNodeID("1.1.1.1", "", ""),
+		ie.NewNodeID(defaultIPv4Addr, "", ""),
 	)
 
 	if !udp.IsRequest(msg) {
@@ -26,7 +28,7 @@ func TestGivenRequestWhenIsRequestThenReturnTrue(t *testing.T) {
 func TestGivenResponseWhenIsRequestThenReturnFalse(t *testing.T) {
 	msg := message.NewAssociationReleaseResponse(
 		1,
-		ie.NewNodeID("1.1.1.1", "", ""),
+		ie.NewNodeID(defaultIPv4Addr, "", ""),
 		ie.NewCause(ie.CauseRequestAccepted),
 	)
 
@@ -38,7 +40,7 @@ func TestGivenResponseWhenIsRequestThenReturnFalse(t *testing.T) {
 func TestGivenResponseWhenIsResponseThenReturnTrue(t *testing.T) {
 	msg := message.NewAssociationReleaseResponse(
 		1,
-		ie.NewNodeID("1.1.1.1", "", ""),
+		ie.NewNodeID(defaultIPv4Addr, "", ""),
 		ie.NewCause(ie.CauseRequestAccepted),
 	)
 
@@ -50,7 +52,7 @@ func TestGivenResponseWhenIsResponseThenReturnTrue(t *testing.T) {
 func TestGivenRequestWhenIsResponseThenReturnFalse(t *testing.T) {
 	msg := message.NewAssociationReleaseRequest(
 		1,
-		ie.NewNodeID("1.1.1.1", "", ""),
+		ie.NewNodeID(defaultIPv4Addr, "", ""),
 	)
 
 	if udp.IsResponse(msg) {

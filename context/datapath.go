@@ -63,6 +63,11 @@ type Destination struct {
 	Url             string
 }
 
+const (
+	errDeactivatedUpLinkTunnel   = "deactivated UpLinkTunnel"
+	errDownlinkTunnelDeactivated = "deactivated DownLinkTunnel"
+)
+
 func NewDataPathNode() *DataPathNode {
 	node := &DataPathNode{
 		UpLinkTunnel:   &GTPTunnel{PDR: make(map[string]*PDR)},
@@ -228,20 +233,20 @@ func (node *DataPathNode) DeactivateUpLinkTunnel(smContext *SMContext) {
 			// Remove of UPF
 			err := node.UPF.RemovePDR(pdr)
 			if err != nil {
-				logger.CtxLog.Warnln("deactivated UpLinkTunnel", err)
+				logger.CtxLog.Warnln(errDeactivatedUpLinkTunnel, err)
 			}
 
 			if far := pdr.FAR; far != nil {
 				err = node.UPF.RemoveFAR(far)
 				if err != nil {
-					logger.CtxLog.Warnln("deactivated UpLinkTunnel", err)
+					logger.CtxLog.Warnln(errDeactivatedUpLinkTunnel, err)
 				}
 
 				bar := far.BAR
 				if bar != nil {
 					err = node.UPF.RemoveBAR(bar)
 					if err != nil {
-						logger.CtxLog.Warnln("deactivated UpLinkTunnel", err)
+						logger.CtxLog.Warnln(errDeactivatedUpLinkTunnel, err)
 					}
 				}
 			}
@@ -250,7 +255,7 @@ func (node *DataPathNode) DeactivateUpLinkTunnel(smContext *SMContext) {
 					if qer != nil {
 						err = node.UPF.RemoveQER(qer)
 						if err != nil {
-							logger.CtxLog.Warnln("deactivated UpLinkTunnel", err)
+							logger.CtxLog.Warnln(errDeactivatedUpLinkTunnel, err)
 						}
 					}
 				}
@@ -271,20 +276,20 @@ func (node *DataPathNode) DeactivateDownLinkTunnel(smContext *SMContext) {
 			// Remove from UPF
 			err := node.UPF.RemovePDR(pdr)
 			if err != nil {
-				logger.CtxLog.Warnln("deactivated DownLinkTunnel", err)
+				logger.CtxLog.Warnln(errDownlinkTunnelDeactivated, err)
 			}
 
 			if far := pdr.FAR; far != nil {
 				err = node.UPF.RemoveFAR(far)
 				if err != nil {
-					logger.CtxLog.Warnln("deactivated DownLinkTunnel", err)
+					logger.CtxLog.Warnln(errDownlinkTunnelDeactivated, err)
 				}
 
 				bar := far.BAR
 				if bar != nil {
 					err = node.UPF.RemoveBAR(bar)
 					if err != nil {
-						logger.CtxLog.Warnln("deactivated DownLinkTunnel", err)
+						logger.CtxLog.Warnln(errDownlinkTunnelDeactivated, err)
 					}
 				}
 			}
@@ -293,7 +298,7 @@ func (node *DataPathNode) DeactivateDownLinkTunnel(smContext *SMContext) {
 					if qer != nil {
 						err = node.UPF.RemoveQER(qer)
 						if err != nil {
-							logger.CtxLog.Warnln("deactivated UpLinkTunnel", err)
+							logger.CtxLog.Warnln(errDeactivatedUpLinkTunnel, err)
 						}
 					}
 				}

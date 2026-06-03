@@ -20,6 +20,11 @@ import (
 
 type Flag uint8
 
+const (
+	defaultIPv4Addr  = "1.1.1.1"
+	defaultPrivateIP = "192.168.1.1"
+)
+
 // setBit sets the bit at the given position to the specified value (true or false)
 // Positions go from 1 to 8
 func (f *Flag) setBit(position uint8) {
@@ -89,7 +94,7 @@ func TestHandlePfcpAssociationSetupResponse(t *testing.T) {
 	factory.SmfConfig = factory.Config{
 		Configuration: configuration,
 	}
-	upNodeID := context.NewNodeID("1.1.1.1")
+	upNodeID := context.NewNodeID(defaultIPv4Addr)
 	upf := context.NewUPF(upNodeID, nil)
 	SnssaiInfos := make([]context.SnssaiUPFInfo, 0)
 	snssaiInfo := context.SnssaiUPFInfo{
@@ -106,12 +111,12 @@ func TestHandlePfcpAssociationSetupResponse(t *testing.T) {
 	msg := message.NewAssociationSetupResponse(
 		1,
 		ie.NewCause(ie.CauseRequestAccepted),
-		ie.NewNodeID("1.1.1.1", "", ""),
+		ie.NewNodeID(defaultIPv4Addr, "", ""),
 		ie.NewRecoveryTimeStamp(recoveryTimestamp),
 	)
 
 	remoteAddress := &net.UDPAddr{
-		IP:   net.ParseIP("1.1.1.1"),
+		IP:   net.ParseIP(defaultIPv4Addr),
 		Port: 8810,
 	}
 	udpMessage := udp.Message{
@@ -131,7 +136,7 @@ func TestHandlePfcpAssociationSetupResponse(t *testing.T) {
 
 func TestHandlePfcpSessionEstablishmentResponse(t *testing.T) {
 	recoveryTimestamp := time.Now()
-	nodeID := context.NewNodeID("1.1.1.1")
+	nodeID := context.NewNodeID(defaultIPv4Addr)
 	smContext := context.NewSMContext("imsi-123456789012345", 10)
 
 	smContext.Tunnel = &context.UPTunnel{
@@ -150,7 +155,7 @@ func TestHandlePfcpSessionEstablishmentResponse(t *testing.T) {
 			IPAddress net.IP
 			TEID      uint32
 		}{
-			IPAddress: net.ParseIP("192.168.1.1"),
+			IPAddress: net.ParseIP(defaultPrivateIP),
 			TEID:      0,
 		},
 	}
@@ -176,16 +181,16 @@ func TestHandlePfcpSessionEstablishmentResponse(t *testing.T) {
 		1,
 		0,
 		ie.NewCause(ie.CauseRequestAccepted),
-		ie.NewNodeID("1.1.1.1", "", ""),
+		ie.NewNodeID(defaultIPv4Addr, "", ""),
 		ie.NewRecoveryTimeStamp(recoveryTimestamp),
 		ie.NewCreatedPDR(
-			ie.NewFTEID(0, 4321, net.ParseIP("192.168.1.1"), nil, 0),
+			ie.NewFTEID(0, 4321, net.ParseIP(defaultPrivateIP), nil, 0),
 		),
 	)
 
 	udpMessage := udp.Message{
 		RemoteAddr: &net.UDPAddr{
-			IP:   net.ParseIP("1.1.1.1"),
+			IP:   net.ParseIP(defaultIPv4Addr),
 			Port: 8809,
 		},
 		PfcpMessage: rsp,
@@ -197,7 +202,7 @@ func TestHandlePfcpSessionEstablishmentResponse(t *testing.T) {
 		t.Errorf("Expected TEID 4321, got %d", smContext.Tunnel.ANInformation.TEID)
 	}
 
-	expectedIP := net.ParseIP("192.168.1.1")
+	expectedIP := net.ParseIP(defaultPrivateIP)
 	if !smContext.Tunnel.ANInformation.IPAddress.Equal(expectedIP) {
 		t.Errorf("Expected ANInformation IP %v, got %v", expectedIP, smContext.Tunnel.ANInformation.IPAddress)
 	}

@@ -18,6 +18,8 @@ import (
 	"github.com/omec-project/smf/producer"
 )
 
+const contentTypeJSON = "application/json"
+
 func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
 	var nfSubscriptionStatusNotification models.NotificationData
 
@@ -34,7 +36,7 @@ func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
 		return
 	}
 
-	err = openapi.Deserialize(&nfSubscriptionStatusNotification, requestBody, "application/json")
+	err = openapi.Deserialize(&nfSubscriptionStatusNotification, requestBody, contentTypeJSON)
 	if err != nil {
 		problemDetail := "[Request Body] " + err.Error()
 		rsp := models.ProblemDetails{
@@ -51,7 +53,7 @@ func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
 
 	rsp := producer.HandleNfSubscriptionStatusNotify(req)
 
-	responseBody, err := openapi.Serialize(rsp.Body, "application/json")
+	responseBody, err := openapi.Serialize(rsp.Body, contentTypeJSON)
 	if err != nil {
 		logger.PduSessLog.Errorf("Error fetching response for HTTPNfSubscriptionStatusNotify : %+v\n", err)
 		problemDetails := models.ProblemDetails{
@@ -61,7 +63,7 @@ func HTTPNfSubscriptionStatusNotify(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, problemDetails)
 	} else {
-		c.Data(rsp.Status, "application/json", responseBody)
+		c.Data(rsp.Status, contentTypeJSON, responseBody)
 		consumer.SendRemoveSubscriptionProcedure(nfSubscriptionStatusNotification)
 	}
 }

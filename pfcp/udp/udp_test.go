@@ -18,6 +18,8 @@ import (
 
 var heartbeatRequestReceived bool
 
+const defaultLocalhost = "127.0.0.1"
+
 type Server struct {
 	addr *net.UDPAddr
 	Conn *net.UDPConn
@@ -64,16 +66,16 @@ func (s *Server) SendPFCPMessage(msg message.Message, remoteAddress *net.UDPAddr
 func TestRun(t *testing.T) {
 	context.SMF_Self().CPNodeID = context.NodeID{
 		NodeIdType:  context.NodeIdTypeIpv4Address,
-		NodeIdValue: net.ParseIP("127.0.0.1").To4(),
+		NodeIdValue: net.ParseIP(defaultLocalhost).To4(),
 	}
 	context.SMF_Self().PFCPPort = 8811
 
 	localAddr := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 8811,
 	}
 	remoteAddr := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: 1234,
 	}
 	go udp.Run(Dispatch)
@@ -123,11 +125,11 @@ func TestRun(t *testing.T) {
 
 func TestServerSendPfcp(t *testing.T) {
 	localAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: factory.DEFAULT_PFCP_PORT,
 	}
 	remoteAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: factory.DEFAULT_PFCP_PORT,
 	}
 
@@ -157,7 +159,7 @@ func TestServerSendPfcp(t *testing.T) {
 func TestServerNotSetSendPfcp(t *testing.T) {
 	udp.Server = nil
 	remoteAddress := &net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP(defaultLocalhost),
 		Port: factory.DEFAULT_PFCP_PORT,
 	}
 

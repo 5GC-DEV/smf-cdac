@@ -25,6 +25,13 @@ import (
 	"github.com/wmnsk/go-pfcp/message"
 )
 
+const (
+	errUPFNotFoundFmt       = "can not find UPF[%s]"
+	errParseRecoveryTimeFmt = "failed to parse RecoveryTimeStamp: %+v"
+	errParseNodeIDFmt       = "failed to parse NodeID IE: %+v"
+	errParseCauseFmt        = "failed to parse Cause IE: %+v"
+)
+
 func FindUEIPAddress(createdPDRIEs []*ie.IE) net.IP {
 	for _, createdPDRIE := range createdPDRIEs {
 		ueIPAddress, err := createdPDRIE.UEIPAddress()
@@ -80,7 +87,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 
 	upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
+		logger.PfcpLog.Errorf(errUPFNotFoundFmt, nodeID.ResolveNodeIdToIp().String())
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "unknown_upf")
 		return
 	}
@@ -89,7 +96,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 
 	rspRecoveryTimeStamp, err := rsp.RecoveryTimeStamp.RecoveryTimeStamp()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse RecoveryTimeStamp: %+v", err)
+		logger.PfcpLog.Errorf(errParseRecoveryTimeFmt, err)
 		return
 	}
 
@@ -124,7 +131,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 func SetUpfInactive(nodeID smf_context.NodeID, msgTypeName string) {
 	upf := smf_context.RetrieveUPFNodeByNodeID(nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
+		logger.PfcpLog.Errorf(errUPFNotFoundFmt, nodeID.ResolveNodeIdToIp().String())
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, msgTypeName, "In", "Failure", "unknown_upf")
 		return
 	}
@@ -159,7 +166,7 @@ func HandlePfcpAssociationSetupRequest(msg *udp.Message) {
 
 	nodeIDStr, err := req.NodeID.NodeID()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse NodeID IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseNodeIDFmt, err)
 		return
 	}
 
@@ -169,13 +176,13 @@ func HandlePfcpAssociationSetupRequest(msg *udp.Message) {
 
 	recoveryTimestamp, err := req.RecoveryTimeStamp.RecoveryTimeStamp()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse RecoveryTimeStamp: %+v", err)
+		logger.PfcpLog.Errorf(errParseRecoveryTimeFmt, err)
 		return
 	}
 
 	upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeIDStr)
+		logger.PfcpLog.Errorf(errUPFNotFoundFmt, nodeIDStr)
 		return
 	}
 
@@ -211,13 +218,13 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 
 	nodeIDStr, err := rsp.NodeID.NodeID()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse NodeID IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseNodeIDFmt, err)
 		return
 	}
 
 	causeValue, err := rsp.Cause.Cause()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse Cause IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseCauseFmt, err)
 		return
 	}
 	if causeValue == ie.CauseRequestAccepted {
@@ -235,7 +242,7 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 
 		upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 		if upf == nil {
-			logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
+			logger.PfcpLog.Errorf(errUPFNotFoundFmt, nodeID.ResolveNodeIdToIp().String())
 			return
 		}
 
@@ -244,7 +251,7 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 		upf.UPFStatus = smf_context.AssociatedSetUpSuccess
 		recoveryTimestamp, err := rsp.RecoveryTimeStamp.RecoveryTimeStamp()
 		if err != nil {
-			logger.PfcpLog.Errorf("failed to parse RecoveryTimeStamp: %+v", err)
+			logger.PfcpLog.Errorf(errParseRecoveryTimeFmt, err)
 			return
 		}
 		upf.RecoveryTimeStamp = smf_context.RecoveryTimeStamp{
@@ -304,7 +311,7 @@ func HandlePfcpAssociationReleaseRequest(msg *udp.Message) {
 
 	nodeIDStr, err := pfcpMsg.NodeID.NodeID()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse NodeID IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseNodeIDFmt, err)
 		return
 	}
 
@@ -312,7 +319,7 @@ func HandlePfcpAssociationReleaseRequest(msg *udp.Message) {
 
 	upf := smf_context.RetrieveUPFNodeByNodeID(*nodeID)
 	if upf == nil {
-		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeIDStr)
+		logger.PfcpLog.Errorf(errUPFNotFoundFmt, nodeIDStr)
 		return
 	}
 	smf_context.RemoveUPFNodeByNodeID(*nodeID)
@@ -335,7 +342,7 @@ func HandlePfcpAssociationReleaseResponse(msg *udp.Message) {
 	}
 	causeValue, err := pfcpMsg.Cause.Cause()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse Cause IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseCauseFmt, err)
 		return
 	}
 	if causeValue == ie.CauseRequestAccepted {
@@ -346,7 +353,7 @@ func HandlePfcpAssociationReleaseResponse(msg *udp.Message) {
 		}
 		nodeIDStr, err := pfcpMsg.NodeID.NodeID()
 		if err != nil {
-			logger.PfcpLog.Errorf("failed to parse NodeID IE: %+v", err)
+			logger.PfcpLog.Errorf(errParseNodeIDFmt, err)
 			return
 		}
 		nodeID := smf_context.NewNodeID(nodeIDStr)
@@ -470,7 +477,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 	}
 	rspNodeIDStr, err := rsp.NodeID.NodeID()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse NodeID IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseNodeIDFmt, err)
 		return
 	}
 	rspNodeID := smf_context.NewNodeID(rspNodeIDStr)
@@ -488,7 +495,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *udp.Message) {
 		}
 		causeValue, err := rsp.Cause.Cause()
 		if err != nil {
-			logger.PfcpLog.Errorf("failed to parse Cause IE: %+v", err)
+			logger.PfcpLog.Errorf(errParseCauseFmt, err)
 			return
 		}
 		if causeValue == ie.CauseRequestAccepted {
@@ -551,7 +558,7 @@ func HandlePfcpSessionModificationResponse(msg *udp.Message) {
 
 	causeValue, err := rsp.Cause.Cause()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse Cause IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseCauseFmt, err)
 		return
 	}
 
@@ -623,7 +630,7 @@ func HandlePfcpSessionDeletionResponse(msg *udp.Message) {
 
 	causeValue, err := rsp.Cause.Cause()
 	if err != nil {
-		logger.PfcpLog.Errorf("failed to parse Cause IE: %+v", err)
+		logger.PfcpLog.Errorf(errParseCauseFmt, err)
 		return
 	}
 

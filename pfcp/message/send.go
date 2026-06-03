@@ -34,7 +34,11 @@ import (
 
 var seq uint32
 
-const UPFAdapterURL = "http://upf-adapter:8090"
+const (
+	UPFAdapterURL     = "http://upf-adapter:8090"
+	logPfcpRspOKFmt   = "pfcp rsp status ok, %s"
+	errPfcpAdapterFmt = "handle adapter pfcp response failed: %v"
+)
 
 func getSeqNumber() uint32 {
 	smfCount := 1
@@ -99,7 +103,7 @@ func SendHeartbeatRequest(upNodeID smf_context.NodeID, upfPort uint16) error {
 					logger.PfcpLog.Fatalln(err)
 				}
 				pfcpMsgString := string(pfcpMsgBytes)
-				logger.PfcpLog.Debugf("pfcp rsp status ok, %s", pfcpMsgString)
+				logger.PfcpLog.Debugf(logPfcpRspOKFmt, pfcpMsgString)
 
 				pfcpRspMsg, err := message.Parse(pfcpMsgBytes)
 				if err != nil {
@@ -108,7 +112,7 @@ func SendHeartbeatRequest(upNodeID smf_context.NodeID, upfPort uint16) error {
 				}
 				err = adapter.HandleAdapterPfcpRsp(pfcpRspMsg, nil)
 				if err != nil {
-					logger.PfcpLog.Errorf("handle adapter pfcp response failed: %v", err)
+					logger.PfcpLog.Errorf(errPfcpAdapterFmt, err)
 				}
 			}
 		}
@@ -162,7 +166,7 @@ func SendPfcpAssociationSetupRequest(upNodeID smf_context.NodeID, upfPort uint16
 					logger.PfcpLog.Fatalln(err)
 				}
 				pfcpMsgString := string(pfcpMsgBytes)
-				logger.PfcpLog.Debugf("pfcp rsp status ok, %s", pfcpMsgString)
+				logger.PfcpLog.Debugf(logPfcpRspOKFmt, pfcpMsgString)
 				pfcpRspMsg, err := message.Parse(pfcpMsgBytes)
 				if err != nil {
 					logger.PfcpLog.Errorf("parse pfcp association response failed: %v", err)
@@ -170,7 +174,7 @@ func SendPfcpAssociationSetupRequest(upNodeID smf_context.NodeID, upfPort uint16
 				}
 				err = adapter.HandleAdapterPfcpRsp(pfcpRspMsg, nil)
 				if err != nil {
-					logger.PfcpLog.Errorf("handle adapter pfcp response failed: %v", err)
+					logger.PfcpLog.Errorf(errPfcpAdapterFmt, err)
 				}
 			}
 		}
@@ -266,7 +270,7 @@ func SendPfcpSessionEstablishmentRequest(
 					logger.PfcpLog.Fatalln(err)
 				}
 				pfcpMsgString := string(pfcpMsgBytes)
-				logger.PfcpLog.Debugf("pfcp rsp status ok, %s", pfcpMsgString)
+				logger.PfcpLog.Debugf(logPfcpRspOKFmt, pfcpMsgString)
 				pfcpRspMsg, err := message.Parse(pfcpMsgBytes)
 				if err != nil {
 					logger.PfcpLog.Errorf("parse pfcp session establish response failed: %v", err)
@@ -275,7 +279,7 @@ func SendPfcpSessionEstablishmentRequest(
 				eventData := udp.PfcpEventData{LSEID: ctx.PFCPContext[ip.String()].LocalSEID, ErrHandler: HandlePfcpSendError}
 				err = adapter.HandleAdapterPfcpRsp(pfcpRspMsg, &eventData)
 				if err != nil {
-					logger.PfcpLog.Errorf("handle adapter pfcp response failed: %v", err)
+					logger.PfcpLog.Errorf(errPfcpAdapterFmt, err)
 				}
 			} else {
 				// http status !OK
@@ -388,9 +392,7 @@ func SendPfcpSessionModificationRequest(
 				}
 
 				pfcpMsgString := string(pfcpMsgBytes)
-
-				logger.PfcpLog.Debugf("[SendPfcpSessionModificationRequest] Adapter PFCP Response=%s", pfcpMsgString)
-
+				logger.PfcpLog.Debugf(logPfcpRspOKFmt, pfcpMsgString)
 				pfcpRspMsg, err := message.Parse(pfcpMsgBytes)
 				if err != nil {
 					logger.PfcpLog.Errorf("parse pfcp session modify response failed: %v", err)
@@ -407,7 +409,7 @@ func SendPfcpSessionModificationRequest(
 
 				err = adapter.HandleAdapterPfcpRsp(pfcpRspMsg, &eventData)
 				if err != nil {
-					logger.PfcpLog.Errorf("handle adapter pfcp response failed: %v", err)
+					logger.PfcpLog.Errorf(errPfcpAdapterFmt, err)
 				}
 			}
 		}
@@ -462,7 +464,7 @@ func SendPfcpSessionDeletionRequest(upNodeID smf_context.NodeID, ctx *smf_contex
 					logger.PfcpLog.Fatalln(err)
 				}
 				pfcpMsgString := string(pfcpMsgBytes)
-				logger.PfcpLog.Debugf("pfcp rsp status ok, %s", pfcpMsgString)
+				logger.PfcpLog.Debugf(logPfcpRspOKFmt, pfcpMsgString)
 				pfcpRspMsg, err := message.Parse(pfcpMsgBytes)
 				if err != nil {
 					logger.PfcpLog.Errorf("parse pfcp session delete response failed: %v", err)
@@ -471,7 +473,7 @@ func SendPfcpSessionDeletionRequest(upNodeID smf_context.NodeID, ctx *smf_contex
 				eventData := udp.PfcpEventData{LSEID: pfcpContext.LocalSEID, ErrHandler: HandlePfcpSendError}
 				err = adapter.HandleAdapterPfcpRsp(pfcpRspMsg, &eventData)
 				if err != nil {
-					logger.PfcpLog.Errorf("handle adapter pfcp response failed: %v", err)
+					logger.PfcpLog.Errorf(errPfcpAdapterFmt, err)
 				}
 			}
 		}
