@@ -232,3 +232,16 @@ func SetUESessionIP(ueid, ueip string) {
 func DeleteUESessionIP(ueid, ueip string) {
 	smfStats.ue_session_ip_info.DeleteLabelValues(ueid, ueip)
 }
+
+func InitStats(smfID string) {
+	smfStats.n11Msg.WithLabelValues(smfID, "", "In", "", "").Add(0)
+	smfStats.n4Msg.WithLabelValues(smfID, "", "In", "", "").Add(0)
+	smfStats.svcNrfMsg.WithLabelValues(smfID, "", "In", "", "").Add(0)
+	smfStats.svcPcfMsg.WithLabelValues(smfID, "", "In", "", "").Add(0)
+	smfStats.svcUdmMsg.WithLabelValues(smfID, "", "In", "", "").Add(0)
+	smfStats.sessStats.WithLabelValues("", "").Add(0)
+	smfStats.sessRequest.WithLabelValues(smfID, "", "").Add(0)
+	smfStats.sessRelease.WithLabelValues("", "Out", "").Add(0)
+	smfStats.sessFailure.WithLabelValues(smfID, "", "Out", "").Add(0)
+	smfStats.resSetupFailure.WithLabelValues(smfID, "", "", "").Add(0)
+}

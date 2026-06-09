@@ -327,7 +327,7 @@ func (smf *SMF) Start() {
 
 	// Init SMF Context ONCE
 	smfCtxt := context.InitSmfContext(&factory.SmfConfig)
-
+	metrics.InitStats(smfCtxt.NfInstanceID)
 	// Setup SMF Collection
 	if factory.SmfConfig.Configuration.EnableDbStore {
 		logger.InitLog.Infoln("SetupSmfCollection")
