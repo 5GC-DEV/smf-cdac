@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/5GC-DEV/config5g-cdac v0.2.1
 	github.com/5GC-DEV/nas-cdac v0.4.2
-	github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260612063447-2e32180bc630
+	github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260616123254-27b81785b4cd
 	github.com/5GC-DEV/util-cdac v0.0.0-20260615123029-51b992434a2e
 	github.com/antihax/optional v1.0.0
 	github.com/gin-gonic/gin v1.10.1
