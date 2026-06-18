@@ -8,8 +8,8 @@ github.com/5GC-DEV/nas-cdac v0.4.2 h1:yNzmb3+dI+egdU0A3oDD9Gi4BJ6rPmO9A5qGzKRnJj
 github.com/5GC-DEV/nas-cdac v0.4.2/go.mod h1:cofQD/3vgDv6yUKPnt8G8CGSxlPvX/My4cxNzpRyktE=
 github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260616123254-27b81785b4cd h1:BbwPlo4plE5RBPT8HKLwmnbXoR3RiTmlKrZ0OxcNHw0=
 github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260616123254-27b81785b4cd/go.mod h1:KLX5UeLe67E9SQC/vVNArCa4KK4luoDNAS0kRGkdE74=
-github.com/5GC-DEV/util-cdac v0.0.0-20260615123029-51b992434a2e h1:+oYPg9dr81xEQOFY5PKNJVkJ34FJtjFKoo+DjaavhYM=
-github.com/5GC-DEV/util-cdac v0.0.0-20260615123029-51b992434a2e/go.mod h1:IHTEJn2S2C/SDlKxFkgXbepYFhgxSTm7uhbxHOF42xQ=
+github.com/5GC-DEV/util-cdac v0.0.0-20260618131328-27c0fce82aa6 h1:thM0xQtsUfX6fwGkrBoGokWYxDMmoV7l+UlP5nmm5YU=
+github.com/5GC-DEV/util-cdac v0.0.0-20260618131328-27c0fce82aa6/go.mod h1:IHTEJn2S2C/SDlKxFkgXbepYFhgxSTm7uhbxHOF42xQ=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
