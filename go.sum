@@ -6,8 +6,8 @@ github.com/5GC-DEV/config5g-cdac v0.2.1 h1:7Cqwmqh5jqeWtwYTrITflrGotglIRBIb1P3EF
 github.com/5GC-DEV/config5g-cdac v0.2.1/go.mod h1:0OEL6UoNKKlx2tlNSoKpRtzckwxR2SL+pRBDAOCT4BU=
 github.com/5GC-DEV/nas-cdac v0.4.2 h1:yNzmb3+dI+egdU0A3oDD9Gi4BJ6rPmO9A5qGzKRnJjg=
 github.com/5GC-DEV/nas-cdac v0.4.2/go.mod h1:cofQD/3vgDv6yUKPnt8G8CGSxlPvX/My4cxNzpRyktE=
-github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260616123254-27b81785b4cd h1:BbwPlo4plE5RBPT8HKLwmnbXoR3RiTmlKrZ0OxcNHw0=
-github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260616123254-27b81785b4cd/go.mod h1:KLX5UeLe67E9SQC/vVNArCa4KK4luoDNAS0kRGkdE74=
+github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260619045102-ecb870a5c29f h1:yRIza+mRy+gnnFwNVUxQEAZeAv5WzTVCs8ciawGVcrs=
+github.com/5GC-DEV/openapi-cdac v1.0.1-0.20260619045102-ecb870a5c29f/go.mod h1:C9NUfKZO1bMwFxB/ZSKqSS6g0B3gBA+n1B1N2YZoCh0=
 github.com/5GC-DEV/util-cdac v0.0.0-20260618131328-27c0fce82aa6 h1:thM0xQtsUfX6fwGkrBoGokWYxDMmoV7l+UlP5nmm5YU=
 github.com/5GC-DEV/util-cdac v0.0.0-20260618131328-27c0fce82aa6/go.mod h1:IHTEJn2S2C/SDlKxFkgXbepYFhgxSTm7uhbxHOF42xQ=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=
