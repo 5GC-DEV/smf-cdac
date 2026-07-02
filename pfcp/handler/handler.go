@@ -73,6 +73,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 	if nodeID == nil {
 		logger.PfcpLog.Errorf("no pending pfcp heartbeat response for sequence no: %v", seq)
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "invalid_seqno")
+		metrics.IncrementN4MsgStatsTotal()
 		return
 	}
 
@@ -82,6 +83,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 	if upf == nil {
 		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "unknown_upf")
+		metrics.IncrementN4MsgStatsTotal()
 		return
 	}
 	upf.UpfLock.Lock()
@@ -101,6 +103,7 @@ func HandlePfcpHeartbeatResponse(msg *udp.Message) {
 
 		// TODO: Session cleanup required and updated to AMF/PCF
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "RecoveryTimeStamp_mismatch")
+		metrics.IncrementN4MsgStatsTotal()
 	}
 
 	if *factory.SmfConfig.Configuration.KafkaInfo.EnableKafka {
@@ -126,6 +129,7 @@ func SetUpfInactive(nodeID smf_context.NodeID, msgTypeName string) {
 	if upf == nil {
 		logger.PfcpLog.Errorf("can not find UPF[%s]", nodeID.ResolveNodeIdToIp().String())
 		metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, msgTypeName, "In", "Failure", "unknown_upf")
+		metrics.IncrementN4MsgStatsTotal()
 		return
 	}
 
@@ -230,6 +234,7 @@ func HandlePfcpAssociationSetupResponse(msg *udp.Message) {
 		if nodeID == nil {
 			logger.PfcpLog.Errorf("no pending pfcp Assoc req for sequence no: %v", seq)
 			metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID, rsp.MessageTypeName(), "In", "Failure", "invalid_seqno")
+			metrics.IncrementN4MsgStatsTotal()
 			return
 		}
 
@@ -749,6 +754,7 @@ func HandlePfcpSessionReportRequest(msg *udp.Message) {
 			if err != nil {
 				smContext.SubPduSessLog.Errorln("Build PDUSessionResourceSetupRequestTransfer failed:", err)
 				metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
+				metrics.IncrementResSetupFailureStatsTotal()
 			} else {
 				n1n2Request.BinaryDataN2Information = n2SmBuf
 			}

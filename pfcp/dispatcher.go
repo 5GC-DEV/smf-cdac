@@ -65,4 +65,5 @@ func Dispatch(msg *udp.Message) {
 
 	// stats
 	metrics.IncrementN4MsgStats(context.SMF_Self().NfInstanceID, msg.PfcpMessage.MessageTypeName(), "In", "", "")
+	metrics.IncrementN4MsgStatsTotal()
 }

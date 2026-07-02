@@ -121,10 +121,12 @@ func SendPfcp(msg message.Message, addr *net.UDPAddr, eventData interface{}) err
 	if err != nil {
 		logger.PfcpLog.Errorf("Failed to send PFCP message: %v", err)
 		metrics.IncrementN4MsgStats(context.SMF_Self().NfInstanceID, msg.MessageTypeName(), "Out", "Failure", err.Error())
+		metrics.IncrementN4MsgStatsTotal()
 		return err
 	}
 	go startTxLifeCycle(tx)
 	metrics.IncrementN4MsgStats(context.SMF_Self().NfInstanceID, msg.MessageTypeName(), "Out", "Success", "")
+	metrics.IncrementN4MsgStatsTotal()
 	return nil
 }
 

@@ -114,6 +114,7 @@ func SmPolicyControlTerminationRequestNotification(c *gin.Context) {
 func N1N2FailureNotification(c *gin.Context) {
 	logger.PduSessLog.Info("receive N1N2 Failure Notification")
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.N1N2MessageTransferFailureNotification), "In", "", "")
+	stats.IncrementN11MsgStatsTotal()
 
 	var request models.N1N2MsgTxfrFailureNotification
 
@@ -128,5 +129,6 @@ func N1N2FailureNotification(c *gin.Context) {
 	<-txn.Status
 
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.N1N2MessageTransferFailureNotification), "Out", http.StatusText(http.StatusNoContent), "")
+	stats.IncrementN11MsgStatsTotal()
 	c.Status(http.StatusNoContent)
 }

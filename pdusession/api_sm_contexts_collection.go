@@ -36,6 +36,7 @@ func HTTPPostSmContexts(c *gin.Context) {
 	var err error
 	var request models.PostSmContextsRequest
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "In", "", "")
+	stats.IncrementN11MsgStatsTotal()
 	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_req)
 	if err != nil {
 		logger.PduSessLog.Errorf("error: %v", err)
@@ -62,6 +63,7 @@ func HTTPPostSmContexts(c *gin.Context) {
 			Detail: problemDetail,
 		}
 		stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "Out", http.StatusText(http.StatusBadRequest), "Malformed")
+		stats.IncrementN11MsgStatsTotal()
 		logger.PduSessLog.Errorln(problemDetail)
 		c.JSON(http.StatusBadRequest, rsp)
 		return
@@ -85,6 +87,8 @@ func HTTPPostSmContexts(c *gin.Context) {
 		c.Header(key, val[0])
 	}
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "Out", http.StatusText(HTTPResponse.Status), errStr)
+	stats.IncrementN11MsgStatsTotal()
+
 	switch HTTPResponse.Status {
 	case http.StatusCreated,
 		http.StatusBadRequest,

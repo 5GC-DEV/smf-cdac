@@ -19,19 +19,29 @@ import (
 
 // SmfStats captures SMF level stats
 type SmfStats struct {
-	n11Msg             *prometheus.CounterVec
-	n4Msg              *prometheus.CounterVec
-	svcNrfMsg          *prometheus.CounterVec
-	svcPcfMsg          *prometheus.CounterVec
-	svcUdmMsg          *prometheus.CounterVec
-	sessions           *prometheus.GaugeVec
-	sessProfile        *prometheus.GaugeVec
-	sessStats          *prometheus.CounterVec
-	sessRequest        *prometheus.CounterVec
-	sessRelease        *prometheus.CounterVec
-	sessFailure        *prometheus.CounterVec
-	resSetupFailure    *prometheus.CounterVec
-	ue_session_ip_info *prometheus.GaugeVec
+	n11Msg               *prometheus.CounterVec
+	n11MsgTotal          prometheus.Counter
+	n4Msg                *prometheus.CounterVec
+	n4MsgTotal           prometheus.Counter
+	svcNrfMsg            *prometheus.CounterVec
+	svcNrfMsgTotal       prometheus.Counter
+	svcPcfMsg            *prometheus.CounterVec
+	svcPcfMsgTotal       prometheus.Counter
+	svcUdmMsg            *prometheus.CounterVec
+	svcUdmMsgTotal       prometheus.Counter
+	sessions             *prometheus.GaugeVec
+	sessProfile          *prometheus.GaugeVec
+	sessStats            *prometheus.CounterVec
+	sessStatsTotal       prometheus.Counter
+	sessRequest          *prometheus.CounterVec
+	sessRequestTotal     prometheus.Counter
+	sessRelease          *prometheus.CounterVec
+	sessReleaseTotal     prometheus.Counter
+	sessFailure          *prometheus.CounterVec
+	sessFailureTotal     prometheus.Counter
+	resSetupFailure      *prometheus.CounterVec
+	resSetupFailureTotal prometheus.Counter
+	ue_session_ip_info   *prometheus.GaugeVec
 }
 
 var smfStats *SmfStats
@@ -39,27 +49,27 @@ var smfStats *SmfStats
 func initSmfStats() *SmfStats {
 	return &SmfStats{
 		n11Msg: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "n11_messages_total",
+			Name: "n11_messages",
 			Help: "N11 interface counters",
 		}, []string{"smf_id", "msg_type", "direction", "result", "reason"}),
 
 		n4Msg: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "n4_messages_total",
+			Name: "n4_messages",
 			Help: "N4 interface counters",
 		}, []string{"smf_id", "msg_type", "direction", "result", "reason"}),
 
 		svcNrfMsg: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "nrf_messages_total",
+			Name: "nrf_messages",
 			Help: "NRF service counters",
 		}, []string{"smf_id", "msg_type", "direction", "result", "reason"}),
 
 		svcPcfMsg: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "pcf_messages_total",
+			Name: "pcf_messages",
 			Help: "PCF service counters",
 		}, []string{"smf_id", "msg_type", "direction", "result", "reason"}),
 
 		svcUdmMsg: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "udm_messages_total",
+			Name: "udm_messages",
 			Help: "UDM service counters",
 		}, []string{"smf_id", "msg_type", "direction", "result", "reason"}),
 
@@ -75,7 +85,7 @@ func initSmfStats() *SmfStats {
 
 		sessStats: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "smf_pdu_session_stats",
-			Help: "Counter of total session status",
+			Help: "Counter of total session creations",
 		}, []string{"msg_type", "result"}),
 
 		sessRequest: prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -102,6 +112,56 @@ func initSmfStats() *SmfStats {
 			Name: "ue_supi_ip_info",
 			Help: "Mapping of UE SUPI (IMSI) to allocated IP address",
 		}, []string{"ueid", "ueip"}),
+
+		sessRequestTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_pdu_session_requested_total",
+			Help: "Total count of session requests",
+		}),
+
+		sessStatsTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_pdu_session_created_total",
+			Help: "Total count of session creations",
+		}),
+
+		sessFailureTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_pdu_session_failed_total",
+			Help: "Total count of session failures",
+		}),
+
+		sessReleaseTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_pdu_session_released_total",
+			Help: "Total count of session releases",
+		}),
+
+		resSetupFailureTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_resource_setup_failed_total",
+			Help: "Total count of SMF PDU session resource setup failures",
+		}),
+
+		n11MsgTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_n11_messages_total",
+			Help: "Total N11 interface counters",
+		}),
+
+		svcNrfMsgTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_nrf_messages_total",
+			Help: "Total NRF service counters",
+		}),
+
+		svcPcfMsgTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_pcf_messages_total",
+			Help: "Total PCF service counters",
+		}),
+
+		svcUdmMsgTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_udm_messages_total",
+			Help: "Total UDM service counters",
+		}),
+
+		n4MsgTotal: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "smf_n4_messages_total",
+			Help: "Total N4 interface counters",
+		}),
 	}
 }
 
@@ -143,6 +203,36 @@ func (ps *SmfStats) register() error {
 		return err
 	}
 	if err := prometheus.Register(ps.ue_session_ip_info); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessRequestTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessStatsTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessFailureTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.sessReleaseTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.resSetupFailureTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.n11MsgTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.svcNrfMsgTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.svcPcfMsgTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.svcUdmMsgTotal); err != nil {
+		return err
+	}
+	if err := prometheus.Register(ps.n4MsgTotal); err != nil {
 		return err
 	}
 	return nil
@@ -233,6 +323,56 @@ func DeleteUESessionIP(ueid, ueip string) {
 	smfStats.ue_session_ip_info.DeleteLabelValues(ueid, ueip)
 }
 
+// IncrementNoOfSessReqTotal increments total session requets stats
+func IncrementNoOfSessReqTotal() {
+	smfStats.sessRequestTotal.Inc()
+}
+
+// IncrementNoOfSessionsTotal increments total session creation stats
+func IncrementNoOfSessionsTotal() {
+	smfStats.sessStatsTotal.Inc()
+}
+
+// IncrementSessFailureStatsTotal increments total session failure stats
+func IncrementSessFailureStatsTotal() {
+	smfStats.sessFailureTotal.Inc()
+}
+
+// IncrementSessReleaseStatsTotal increments total session release stats
+func IncrementSessReleaseStatsTotal() {
+	smfStats.sessReleaseTotal.Inc()
+}
+
+// IncrementResSetupFailureStatsTotal increments total resource setup failures stats
+func IncrementResSetupFailureStatsTotal() {
+	smfStats.resSetupFailureTotal.Inc()
+}
+
+// IncrementN11MsgStatsTotal increments total N11 interface counters stats
+func IncrementN11MsgStatsTotal() {
+	smfStats.n11MsgTotal.Inc()
+}
+
+// IncrementSvcNrfMsgStatstotal increments total NRF service counters stats
+func IncrementSvcNrfMsgStatsTotal() {
+	smfStats.svcNrfMsgTotal.Inc()
+}
+
+// IncrementSvcPcfMsgStatsTotal increments total PCF service counters stats
+func IncrementSvcPcfMsgStatsTotal() {
+	smfStats.svcPcfMsgTotal.Inc()
+}
+
+// IncrementSvcUdmMsgStatsTotal increments total UDM service counters stats
+func IncrementSvcUdmMsgStatsTotal() {
+	smfStats.svcUdmMsgTotal.Inc()
+}
+
+// IncrementN4MsgStatsTotal increments total N4 interface counters stats
+func IncrementN4MsgStatsTotal() {
+	smfStats.n4MsgTotal.Inc()
+}
+
 func InitStats(smfID string) {
 	smfStats.n11Msg.WithLabelValues(smfID, "", "In", "", "").Add(0)
 	smfStats.n4Msg.WithLabelValues(smfID, "", "In", "", "").Add(0)
@@ -244,4 +384,14 @@ func InitStats(smfID string) {
 	smfStats.sessRelease.WithLabelValues("", "Out", "").Add(0)
 	smfStats.sessFailure.WithLabelValues(smfID, "", "Out", "").Add(0)
 	smfStats.resSetupFailure.WithLabelValues(smfID, "", "", "").Add(0)
+	smfStats.sessRequestTotal.Add(0)
+	smfStats.sessStatsTotal.Add(0)
+	smfStats.sessFailureTotal.Add(0)
+	smfStats.sessReleaseTotal.Add(0)
+	smfStats.resSetupFailureTotal.Add(0)
+	smfStats.n11MsgTotal.Add(0)
+	smfStats.svcNrfMsgTotal.Add(0)
+	smfStats.svcPcfMsgTotal.Add(0)
+	smfStats.svcUdmMsgTotal.Add(0)
+	smfStats.n4MsgTotal.Add(0)
 }

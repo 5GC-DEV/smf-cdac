@@ -221,6 +221,7 @@ func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	smContextActive := incSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	metrics.IncrementNoOfSessions(string(svcmsgtypes.CreateSmContext), "success")
+	metrics.IncrementNoOfSessionsTotal()
 
 	// initialise log tags
 	smContext.initLogTags()
@@ -409,6 +410,7 @@ func RemoveSMContext(ref string) {
 	smContextActive := decSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	metrics.IncrementSessReleaseStats(string(svcmsgtypes.NsmfPDUSessionRelease), "Out", "")
+	metrics.IncrementSessReleaseStatsTotal()
 	if factory.SmfConfig.Configuration.EnableDbStore {
 		DeleteSmContextInDBByRef(smContext.Ref)
 	}
@@ -508,6 +510,7 @@ func (smContext *SMContext) PCFSelection() error {
 			SearchNFInstances(context.TODO(), models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
 		if err != nil {
 			metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", "Failure", err.Error())
+			metrics.IncrementSvcNrfMsgStatsTotal()
 			return err
 		}
 		defer func() {
@@ -519,12 +522,14 @@ func (smContext *SMContext) PCFSelection() error {
 		if res != nil {
 			if status := res.StatusCode; status != http.StatusOK {
 				metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", "Failure", "")
+				metrics.IncrementSvcNrfMsgStatsTotal()
 				logger.CtxLog.Warnf("NFDiscovery PCF return status: %d", status)
 			}
 		}
 
 		// Select PCF from available PCF
 		metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", http.StatusText(res.StatusCode), "")
+		metrics.IncrementSvcNrfMsgStatsTotal()
 	}
 
 	smContext.SelectedPCFProfile = rep.NfInstances[0]

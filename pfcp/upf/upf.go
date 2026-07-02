@@ -39,6 +39,7 @@ func InitPfcpHeartbeatRequest(userplane *context.UserPlaneInformation) {
 				logger.PfcpLog.Errorf("pfcp heartbeat failure for UPF: [%v]", upf.NodeID)
 				heartbeatRequest := pfcp_message.HeartbeatRequest{}
 				metrics.IncrementN4MsgStats(context.SMF_Self().NfInstanceID, heartbeatRequest.MessageTypeName(), "Out", "Failure", "Timeout")
+				metrics.IncrementN4MsgStatsTotal()
 				upf.UPF.UPFStatus = context.NotAssociated
 			}
 

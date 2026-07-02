@@ -513,6 +513,7 @@ func HandlePfcpSendError(msg message.Message, pfcpErr error) {
 		msg.MessageTypeName(), pfcpErr.Error())
 	metrics.IncrementN4MsgStats(smf_context.SMF_Self().NfInstanceID,
 		msg.MessageTypeName(), "Out", "Failure", pfcpErr.Error())
+	metrics.IncrementN4MsgStatsTotal()
 
 	// Refresh SMF DNS Cache incase of any send failure(includes timeout)
 	smf_context.RefreshDnsHostIpCache()

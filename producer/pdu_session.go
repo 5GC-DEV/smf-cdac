@@ -98,6 +98,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		return fmt.Errorf("GsmMsgDecodeError")
 	}
 	metrics.IncrementNoOfSessReq(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "success")
+	metrics.IncrementNoOfSessReqTotal()
 	createData := request.JsonData
 
 	// Create SM context
@@ -118,6 +119,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			createData.SNssai.Sst, createData.SNssai.Sd, createData.Dnn)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("DnnNotSupported")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("SnssaiError")
 	}
 
@@ -126,11 +128,13 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving UDM Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UDMDiscoveryFailure")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("UdmError")
 	} else if problemDetails != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving UDM Problem[%+v]", problemDetails)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UDMDiscoveryFailure")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("UdmError")
 	} else {
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, send NF Discovery Serving UDM Successful")
@@ -141,6 +145,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, failed allocate IP address: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("IpAllocError")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("IpAllocError")
 	} else {
 		logger.CtxLog.Infof("PDUSessionSMContextCreate: Allocated IP for SUPI %s: %s (before assigning to PDUAddress)", smContext.Supi, ip.String())
@@ -165,6 +170,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	SubscriberDataManagementClient := smf_context.SMF_Self().SubscriberDataManagementClient
 	metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "Out", "", "")
+	metrics.IncrementSvcUdmMsgStatsTotal()
 
 	if sessSubData, rsp, err := SubscriberDataManagementClient.
 		SessionManagementSubscriptionDataRetrievalApi.
@@ -181,6 +187,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			statusText,
 			err.Error(),
 		)
+		metrics.IncrementSvcUdmMsgStatsTotal()
 		if smContext == nil {
 			logger.PduSessLog.Errorln("PDUSessionSMContextCreate: smContext is NIL")
 			return fmt.Errorf("smContext nil")
@@ -192,6 +199,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, get SessionManagementSubscriptionData error: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("SubscriptionDataFetchError")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("SubscriptionError")
 	} else {
 		defer func() {
@@ -201,13 +209,16 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		}()
 		if len(sessSubData) > 0 {
 			metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), "")
+			metrics.IncrementSvcUdmMsgStatsTotal()
 			smContext.DnnConfiguration = sessSubData[0].DnnConfigurations[smContext.Dnn]
 			smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, subscription data retrieved from UDM")
 		} else {
 			metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), "NilSubscriptionData")
+			metrics.IncrementSvcUdmMsgStatsTotal()
 			smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SessionManagementSubscriptionData from UDM is nil")
 			txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("SubscriptionDataLenError")
 			metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+			metrics.IncrementSessFailureStatsTotal()
 			return fmt.Errorf("NoSubscriptionError")
 		}
 	}
@@ -222,6 +233,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("%s PDU Session Not Supported", pduTypeStr)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PDUSessionTypeIPv4OnlyAllowed")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("%s PDU Session not supported", pduTypeStr)
 	}
 	// End of modification
@@ -229,6 +241,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving PCF Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFDiscoveryFailure")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("PcfError")
 	}
 	smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, send NF Discovery Serving PCF success")
@@ -236,17 +249,22 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	// PCF Policy Association
 	var smPolicyDecision *models.SmPolicyDecision
 	metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationCreate), "Out", "", "")
+	metrics.IncrementSvcPcfMsgStatsTotal()
 	if smPolicyDecisionRsp, httpStatus, err := consumer.SendSMPolicyAssociationCreate(smContext); err != nil {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationCreate), "In", http.StatusText(httpStatus), err.Error())
+		metrics.IncrementSvcPcfMsgStatsTotal()
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SMPolicyAssociationCreate error: ", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFPolicyCreateFailure")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("PcfAssoError")
 	} else if httpStatus != http.StatusCreated {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationCreate), "In", http.StatusText(httpStatus), "error")
+		metrics.IncrementSvcPcfMsgStatsTotal()
 		smContext.SubPduSessLog.Errorln("PDUSessionSMContextCreate, SMPolicyAssociationCreate http status: ", http.StatusText(httpStatus))
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("PCFPolicyCreateFailure")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("PcfAssoError")
 	} else {
 		smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, Policy association create success")
@@ -297,6 +315,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 				smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, data path error: %v", err.Error())
 				txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UPFDataPathError")
 				metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+				metrics.IncrementSessFailureStatsTotal()
 				return fmt.Errorf("DataPathError")
 			}
 		}
@@ -309,6 +328,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("InsufficientResourceSliceDnn")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("InsufficientResourceSliceDnn")
 	}
 
@@ -317,11 +337,13 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving AMF Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("AMFDiscoveryFailure")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("AmfError")
 	} else if problemDetails != nil {
 		smContext.SubPduSessLog.Warnf("PDUSessionSMContextCreate, send NF Discovery Serving AMF Problem[%+v]", problemDetails)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("AMFDiscoveryFailure")
 		metrics.IncrementSessFailureStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.CreateSmContext), "out", "failure")
+		metrics.IncrementSessFailureStatsTotal()
 		return fmt.Errorf("AmfError")
 	} else {
 		smContext.SubPduSessLog.Debugln("PDUSessionSMContextCreate, Send NF Discovery Serving AMF success")
@@ -573,11 +595,14 @@ func HandlePDUSessionSMContextRelease(eventData interface{}) error {
 	}
 	// Send Policy delete
 	metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationDelete), "Out", "", "")
+	metrics.IncrementSvcPcfMsgStatsTotal()
 	if httpStatus, err := consumer.SendSMPolicyAssociationDelete(smContext, &body); err != nil {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationDelete), "In", http.StatusText(httpStatus), err.Error())
+		metrics.IncrementSvcPcfMsgStatsTotal()
 		smContext.SubCtxLog.Errorf("PDUSessionSMContextRelease, SM policy delete error [%v] ", err.Error())
 	} else {
 		metrics.IncrementSvcPcfMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmPolicyAssociationDelete), "In", http.StatusText(httpStatus), "")
+		metrics.IncrementSvcPcfMsgStatsTotal()
 		smContext.SubCtxLog.Infof("PDUSessionSMContextRelease, SM policy delete success with http status [%v] ", httpStatus)
 	}
 
@@ -775,6 +800,7 @@ func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) err
 				smContext.Supi, smContext.PDUSessionID, err)
 			logger.PduSessLog.Errorf("build PDUSessionResourceSetupRequestTransfer failed: %s", err)
 			metrics.IncrementResSetupFailureStats(smf_context.SMF_Self().NfInstanceID, smContext.Supi, string(smContext.PDUSessionID), smContext.Dnn)
+			metrics.IncrementResSetupFailureStatsTotal()
 		} else {
 			logger.PduSessLog.Debugf("Successfully built PDUSessionResourceSetupRequestTransfer [len=%d] for SUPI: %s, PDU Session ID: %d",
 				len(n2Pdu), smContext.Supi, smContext.PDUSessionID)

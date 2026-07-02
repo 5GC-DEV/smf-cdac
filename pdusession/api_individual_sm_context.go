@@ -40,6 +40,7 @@ func HTTPReleaseSmContext(c *gin.Context) {
 	var err error
 	logger.PduSessLog.Infoln("receive Release SM Context Request")
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.ReleaseSmContext), "In", "", "")
+	stats.IncrementN11MsgStatsTotal()
 	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_release_req)
 	if err != nil {
 		logger.PduSessLog.Errorf("error: %v", err)
@@ -67,6 +68,7 @@ func HTTPReleaseSmContext(c *gin.Context) {
 		logger.PduSessLog.Errorln(problemDetail)
 		c.JSON(http.StatusBadRequest, rsp)
 		stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.ReleaseSmContext), "Out", http.StatusText(http.StatusBadRequest), "Malformed")
+		stats.IncrementN11MsgStatsTotal()
 		return
 	}
 
@@ -83,6 +85,7 @@ func HTTPReleaseSmContext(c *gin.Context) {
 	//	smContextRef, req.Body.(models.ReleaseSmContextRequest))
 
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.ReleaseSmContext), "Out", http.StatusText(http.StatusNoContent), "")
+	stats.IncrementN11MsgStatsTotal()
 	c.Status(http.StatusNoContent)
 }
 
@@ -96,6 +99,7 @@ func HTTPUpdateSmContext(c *gin.Context) {
 	var err error
 	logger.PduSessLog.Infoln("receive Update SM Context Request")
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "In", "", "")
+	stats.IncrementN11MsgStatsTotal()
 	err = stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_req)
 	if err != nil {
 		logger.PduSessLog.Errorf("error: %v", err)
@@ -123,6 +127,7 @@ func HTTPUpdateSmContext(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, rsp)
 
 		stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "Out", http.StatusText(http.StatusBadRequest), "Malformed")
+		stats.IncrementN11MsgStatsTotal()
 		logger.PduSessLog.Errorln(err)
 		return
 	}
@@ -152,6 +157,7 @@ func HTTPUpdateSmContext(c *gin.Context) {
 			http.StatusText(http.StatusNotFound),
 			txn.Err.Error(),
 		)
+		stats.IncrementN11MsgStatsTotal()
 
 		c.JSON(http.StatusNotFound, problem)
 		return
@@ -179,6 +185,8 @@ func HTTPUpdateSmContext(c *gin.Context) {
 		return
 	}
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "Out", http.StatusText(HTTPResponse.Status), "")
+	stats.IncrementN11MsgStatsTotal()
+
 	if HTTPResponse.Status < 300 {
 		c.Render(HTTPResponse.Status, openapi.MultipartRelatedRender{Data: HTTPResponse.Body})
 	} else {
