@@ -5,7 +5,7 @@
 package context
 
 import (
-	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/omec-project/openapi/v2/models"
 )
 
 // TrafficControlData - Traffic control data defines how traffic data flows

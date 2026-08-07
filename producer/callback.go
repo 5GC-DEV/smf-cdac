@@ -10,16 +10,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/5GC-DEV/openapi-cdac/models"
-	nrfCache "github.com/5GC-DEV/openapi-cdac/nrfcache"
-	"github.com/5GC-DEV/util-cdac/httpwrapper"
-	"github.com/5GC-DEV/util-cdac/util_3gpp"
+	"github.com/omec-project/openapi/v2/models"
+	nrfCache "github.com/omec-project/openapi/v2/nrfcache"
 	"github.com/omec-project/smf/consumer"
 	smfContext "github.com/omec-project/smf/context"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
+	"github.com/omec-project/util/httpwrapper"
+	"github.com/omec-project/util/util_3gpp"
 )
 
 var (

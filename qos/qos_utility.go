@@ -8,7 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/omec-project/openapi/v2/models"
 )
 
 func (obj *IPFilterRule) String() string {

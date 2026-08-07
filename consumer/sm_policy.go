@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/5GC-DEV/nas-cdac/nasConvert"
-	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/omec-project/nas/v2/nasConvert"
+	"github.com/omec-project/openapi/v2/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 	"github.com/pkg/errors"

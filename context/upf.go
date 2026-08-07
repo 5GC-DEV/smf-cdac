@@ -17,12 +17,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/5GC-DEV/nas-cdac/nasMessage"
-	"github.com/5GC-DEV/openapi-cdac/models"
-	"github.com/5GC-DEV/util-cdac/idgenerator"
 	"github.com/google/uuid"
+	"github.com/omec-project/nas/v2/nasMessage"
+	"github.com/omec-project/openapi/v2/models"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
+	"github.com/omec-project/util/idgenerator"
 )
 
 var upfPool sync.Map

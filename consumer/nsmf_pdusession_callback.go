@@ -8,9 +8,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/5GC-DEV/openapi-cdac"
-	"github.com/5GC-DEV/openapi-cdac/Nsmf_PDUSession"
-	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/omec-project/openapi/v2"
+	"github.com/omec-project/openapi/v2/Nsmf_PDUSession"
+	"github.com/omec-project/openapi/v2/models"
 	"github.com/omec-project/smf/logger"
 )
 

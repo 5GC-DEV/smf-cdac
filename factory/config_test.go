@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	protos "github.com/5GC-DEV/config5g-cdac/proto/sdcoreConfig"
-	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/omec-project/openapi/v2/models"
 	"github.com/stretchr/testify/assert"
 )
 

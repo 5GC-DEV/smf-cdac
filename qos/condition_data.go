@@ -4,7 +4,7 @@
 
 package qos
 
-import "github.com/5GC-DEV/openapi-cdac/models"
+import "github.com/omec-project/openapi/v2/models"
 
 type CondDataUpdate struct {
 	add, mod, del map[string]*models.ConditionData

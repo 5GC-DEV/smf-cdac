@@ -7,12 +7,12 @@ package fsm
 import (
 	"fmt"
 
-	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 	stats "github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/producer"
 	"github.com/omec-project/smf/transaction"
+	mi "github.com/omec-project/util/metricinfo"
 )
 
 // Define SM Context level Events

@@ -9,7 +9,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/5GC-DEV/openapi-cdac/models"
+	"github.com/omec-project/openapi/v2/models"
 	"github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/factory"
 	"github.com/stretchr/testify/require"

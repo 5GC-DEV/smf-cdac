@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/5GC-DEV/util-cdac/idgenerator"
 	"github.com/omec-project/smf/factory"
 	"github.com/omec-project/smf/logger"
+	"github.com/omec-project/util/idgenerator"
 )
 
 type UEPreConfigPaths struct {

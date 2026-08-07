@@ -11,15 +11,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/5GC-DEV/nas-cdac"
-	"github.com/5GC-DEV/nas-cdac/nasMessage"
-	"github.com/5GC-DEV/openapi-cdac"
-	"github.com/5GC-DEV/openapi-cdac/Namf_Communication"
-	"github.com/5GC-DEV/openapi-cdac/Nsmf_PDUSession"
-	"github.com/5GC-DEV/openapi-cdac/Nudm_SubscriberDataManagement"
-	"github.com/5GC-DEV/openapi-cdac/models"
-	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/antihax/optional"
+	"github.com/omec-project/nas/v2"
+	"github.com/omec-project/nas/v2/nasMessage"
+	"github.com/omec-project/openapi/v2"
+	"github.com/omec-project/openapi/v2/Namf_Communication"
+	"github.com/omec-project/openapi/v2/Nsmf_PDUSession"
+	"github.com/omec-project/openapi/v2/Nudm_SubscriberDataManagement"
+	"github.com/omec-project/openapi/v2/models"
 	"github.com/omec-project/smf/consumer"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
@@ -28,6 +27,7 @@ import (
 	pfcp_message "github.com/omec-project/smf/pfcp/message"
 	"github.com/omec-project/smf/qos"
 	"github.com/omec-project/smf/transaction"
+	"github.com/omec-project/util/httpwrapper"
 )
 
 func formContextCreateErrRsp(httpStatus int, problemBody *models.ProblemDetails, n1SmMsg *models.RefToBinaryData) *httpwrapper.Response {

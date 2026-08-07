@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/5GC-DEV/openapi-cdac/models"
 	"github.com/omec-project/aper"
 	"github.com/omec-project/ngap/ngapConvert"
 	"github.com/omec-project/ngap/ngapType"
+	"github.com/omec-project/openapi/v2/models"
 	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/qos"
 )

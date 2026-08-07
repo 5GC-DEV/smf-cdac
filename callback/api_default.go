@@ -20,16 +20,16 @@ import (
 	"path"
 	"strings"
 
-	"github.com/5GC-DEV/openapi-cdac"
-	"github.com/5GC-DEV/openapi-cdac/models"
-	"github.com/5GC-DEV/util-cdac/httpwrapper"
 	"github.com/gin-gonic/gin"
+	"github.com/omec-project/openapi/v2"
+	"github.com/omec-project/openapi/v2/models"
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/fsm"
 	"github.com/omec-project/smf/logger"
 	stats "github.com/omec-project/smf/metrics"
 	"github.com/omec-project/smf/msgtypes/svcmsgtypes"
 	"github.com/omec-project/smf/transaction"
+	"github.com/omec-project/util/httpwrapper"
 )
 
 // SubscriptionsPost -
