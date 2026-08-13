@@ -6,6 +6,7 @@ package fsm
 
 import (
 	"fmt"
+	"time"
 
 	mi "github.com/5GC-DEV/util-cdac/metricinfo"
 	smf_context "github.com/omec-project/smf/context"
@@ -56,14 +57,31 @@ func init() {
 
 // Override with specific handler
 func InitFsm() {
-	SmfFsmHandler[smf_context.SmStateInit][SmEventPduSessCreate] = HandleStateInitEventPduSessCreate
-	SmfFsmHandler[smf_context.SmStatePfcpCreatePending][SmEventPfcpSessCreate] = HandleStatePfcpCreatePendingEventPfcpSessCreate
-	SmfFsmHandler[smf_context.SmStatePfcpCreatePending][SmEventPfcpSessCreateFailure] = HandleStatePfcpCreatePendingEventPfcpSessCreateFailure
-	SmfFsmHandler[smf_context.SmStateN1N2TransferPending][SmEventPduSessN1N2Transfer] = HandleStateN1N2TransferPendingEventN1N2Transfer
-	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessModify] = HandleStateActiveEventPduSessModify
-	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessRelease] = HandleStateActiveEventPduSessRelease
-	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessN1N2TransferFailureIndication] = HandleStateActiveEventPduSessN1N2TransFailInd
-	SmfFsmHandler[smf_context.SmStateActive][SmEventPolicyUpdateNotify] = HandleStateActiveEventPolicyUpdateNotify
+	SmfFsmHandler[smf_context.SmStateInit][SmEventPduSessCreate] = withTiming("HandleStateInitEventPduSessCreate", HandleStateInitEventPduSessCreate)
+	SmfFsmHandler[smf_context.SmStatePfcpCreatePending][SmEventPfcpSessCreate] = withTiming("HandleStatePfcpCreatePendingEventPfcpSessCreate", HandleStatePfcpCreatePendingEventPfcpSessCreate)
+	SmfFsmHandler[smf_context.SmStatePfcpCreatePending][SmEventPfcpSessCreateFailure] = withTiming("HandleStatePfcpCreatePendingEventPfcpSessCreateFailure", HandleStatePfcpCreatePendingEventPfcpSessCreateFailure)
+	SmfFsmHandler[smf_context.SmStateN1N2TransferPending][SmEventPduSessN1N2Transfer] = withTiming("HandleStateN1N2TransferPendingEventN1N2Transfer", HandleStateN1N2TransferPendingEventN1N2Transfer)
+	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessModify] = withTiming("HandleStateActiveEventPduSessModify", HandleStateActiveEventPduSessModify)
+	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessRelease] = withTiming("HandleStateActiveEventPduSessRelease", HandleStateActiveEventPduSessRelease)
+	SmfFsmHandler[smf_context.SmStateActive][SmEventPduSessN1N2TransferFailureIndication] = withTiming("HandleStateActiveEventPduSessN1N2TransFailInd", HandleStateActiveEventPduSessN1N2TransFailInd)
+	SmfFsmHandler[smf_context.SmStateActive][SmEventPolicyUpdateNotify] = withTiming("HandleStateActiveEventPolicyUpdateNotify", HandleStateActiveEventPolicyUpdateNotify)
+}
+
+// withTiming wraps an FSM handler to log its execution time on every call,
+// regardless of success or failure.
+func withTiming(name string, handler func(SmEvent, *SmEventData) (smf_context.SMContextState, error)) func(SmEvent, *SmEventData) (smf_context.SMContextState, error) {
+	return func(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
+		start := time.Now()
+		state, err := handler(event, eventData)
+		elapsed := time.Since(start)
+
+		if err != nil {
+			logger.FsmLog.Errorf("[FSM] %s failed after %v: %v", name, elapsed, err)
+		} else {
+			logger.FsmLog.Infof("[FSM] %s completed in %v -> state=%v", name, elapsed, state)
+		}
+		return state, err
+	}
 }
 
 func HandleEvent(smContext *smf_context.SMContext, event SmEvent, eventData SmEventData) error {
@@ -92,21 +110,35 @@ func EmptyEventHandler(event SmEvent, eventData *SmEventData) (smf_context.SMCon
 }
 
 func HandleStateInitEventPduSessCreate(event SmEvent, eventData *SmEventData) (smf_context.SMContextState, error) {
-	if err := producer.HandlePDUSessionSMContextCreate(eventData.Txn); err != nil {
-		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
+	startTime := time.Now()
+	defer func() {
+		logger.FsmLog.Infof("HandleStateInitEventPduSessCreate total execution time: %v", time.Since(startTime))
+	}()
+
+	createStart := time.Now()
+	err := producer.HandlePDUSessionSMContextCreate(eventData.Txn)
+	logger.FsmLog.Infof("HandlePDUSessionSMContextCreate execution time: %v", time.Since(createStart))
+
+	if err != nil {
+		publishStart := time.Now()
+		pubErr := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_failure)
+		logger.FsmLog.Infof("PublishMsgEvent(failure) execution time: %v", time.Since(publishStart))
+
 		errorMessage := ""
-		if err != nil {
-			logger.FsmLog.Errorf("error while publishing pdu session create response failure, %v", err.Error())
-			errorMessage = err.Error()
+		if pubErr != nil {
+			logger.FsmLog.Errorf("error while publishing pdu session create response failure, %v", pubErr.Error())
+			errorMessage = pubErr.Error()
 		}
 		txn := eventData.Txn.(*transaction.Transaction)
 		txn.Err = err
 		return smf_context.SmStateInit, fmt.Errorf("pdu session create: %v", errorMessage)
 	}
 
-	err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_success)
-	if err != nil {
-		logger.FsmLog.Errorf("error while publishing pdu session create response success, %v", err.Error())
+	publishStart := time.Now()
+	pubErr := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_create_rsp_success)
+	logger.FsmLog.Infof("PublishMsgEvent(success) execution time: %v", time.Since(publishStart))
+	if pubErr != nil {
+		logger.FsmLog.Errorf("error while publishing pdu session create response success, %v", pubErr.Error())
 	}
 	return smf_context.SmStatePfcpCreatePending, nil
 }
@@ -115,9 +147,16 @@ func HandleStatePfcpCreatePendingEventPfcpSessCreate(event SmEvent, eventData *S
 	txn := eventData.Txn.(*transaction.Transaction)
 	smCtxt := txn.Ctxt.(*smf_context.SMContext)
 
+	sendStart := time.Now()
 	producer.SendPFCPRules(smCtxt)
+	smCtxt.SubFsmLog.Infof("SendPFCPRules execution time: %v", time.Since(sendStart))
+
 	smCtxt.SubFsmLog.Debug("waiting for pfcp session establish response")
-	switch <-smCtxt.SBIPFCPCommunicationChan {
+	waitStart := time.Now()
+	result := <-smCtxt.SBIPFCPCommunicationChan
+	smCtxt.SubFsmLog.Infof("PFCP session establish response wait time: %v", time.Since(waitStart))
+
+	switch result {
 	case smf_context.SessionEstablishSuccess:
 		smCtxt.SubFsmLog.Debug("pfcp session establish response success")
 		return smf_context.SmStateN1N2TransferPending, nil
@@ -133,17 +172,26 @@ func HandleStateN1N2TransferPendingEventN1N2Transfer(event SmEvent, eventData *S
 	txn := eventData.Txn.(*transaction.Transaction)
 	smCtxt := txn.Ctxt.(*smf_context.SMContext)
 
-	if err := producer.SendPduSessN1N2Transfer(smCtxt, true); err != nil {
-		err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_rsp_failure)
-		if err != nil {
-			smCtxt.SubFsmLog.Errorf("error while publishing pdu session modify response failure, %v ", err.Error())
+	transferStart := time.Now()
+	err := producer.SendPduSessN1N2Transfer(smCtxt, true)
+	smCtxt.SubFsmLog.Infof("SendPduSessN1N2Transfer execution time: %v", time.Since(transferStart))
+
+	if err != nil {
+		pubStart := time.Now()
+		pubErr := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_rsp_failure)
+		smCtxt.SubFsmLog.Infof("PublishMsgEvent(failure) execution time: %v", time.Since(pubStart))
+		if pubErr != nil {
+			smCtxt.SubFsmLog.Errorf("error while publishing pdu session modify response failure, %v ", pubErr.Error())
 		}
 		smCtxt.SubFsmLog.Errorf("N1N2 transfer failure error, %v ", err.Error())
 		return smf_context.SmStateN1N2TransferPending, fmt.Errorf("N1N2 Transfer failure error, %v ", err.Error())
 	}
-	err := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_rsp_success)
-	if err != nil {
-		smCtxt.SubFsmLog.Errorf("error while publishing pdu session modify response success, %v ", err.Error())
+
+	pubStart := time.Now()
+	pubErr := stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_modify_rsp_success)
+	smCtxt.SubFsmLog.Infof("PublishMsgEvent(success) execution time: %v", time.Since(pubStart))
+	if pubErr != nil {
+		smCtxt.SubFsmLog.Errorf("error while publishing pdu session modify response success, %v ", pubErr.Error())
 	}
 	return smf_context.SmStateActive, nil
 }
