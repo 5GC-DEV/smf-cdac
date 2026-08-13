@@ -15,6 +15,7 @@ import (
 	"reflect"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/5GC-DEV/util-cdac/idgenerator"
 	"github.com/5GC-DEV/util-cdac/mongoapi"
@@ -248,7 +249,9 @@ func StoreSmContextInDB(smContext *SMContext) {
 	filter := bson.M{"ref": ref}
 	logger.DataRepoLog.Infof("filter: %+v", filter)
 
+	dbStart := time.Now()
 	_, postErr := mongoapi.CommonDBClient.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
+	logger.DataRepoLog.Infof("RestfulAPIPost execution time: %v", time.Since(dbStart))
 	if postErr != nil {
 		logger.DataRepoLog.Warnln(postErr)
 	}
