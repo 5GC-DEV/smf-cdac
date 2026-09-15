@@ -24,15 +24,15 @@ func NewIPAllocator(cidr string) (*IPAllocator, error) {
 	allocator := &IPAllocator{}
 
 	if _, ipnet, err := net.ParseCIDR(cidr); err != nil {
-		logger.CtxLog.Infof("Failed to parse CIDR %q: %v", cidr, err)
+		logger.CtxLog.Debugf("Failed to parse CIDR %q: %v", cidr, err)
 		return nil, err
 	} else {
 		allocator.ipNetwork = ipnet
-		logger.CtxLog.Infof("IPAllocator: initialized ipNetwork=%v, network=%s, mask=%s", allocator.ipNetwork,
+		logger.CtxLog.Debugf("IPAllocator: initialized ipNetwork=%v, network=%s, mask=%s", allocator.ipNetwork,
 			allocator.ipNetwork.IP, allocator.ipNetwork.Mask)
 	}
 	allocator.g = newIDPool(1, 1<<int64(32-maskBits(allocator.ipNetwork.Mask))-2)
-	logger.CtxLog.Infof("IPAllocator: g initialized=%t, ipNetwork=%v", allocator.g != nil, allocator.ipNetwork)
+	logger.CtxLog.Debugf("IPAllocator: g initialized=%t, ipNetwork=%v", allocator.g != nil, allocator.ipNetwork)
 
 	return allocator, nil
 }
@@ -131,13 +131,13 @@ func (a *IPAllocator) ReserveStaticIps(ips *map[string]string) {
 
 func (a *IPAllocator) BlockIp(ip net.IP) {
 	offset := IPAddrOffset(ip, a.ipNetwork.IP)
-	logger.CtxLog.Infof("IPAllocator: blocking IP %s, offset=%d", ip.String(), offset)
+	logger.CtxLog.Debugf("IPAllocator: blocking IP %s, offset=%d", ip.String(), offset)
 	a.g.block(int64(offset))
 }
 
 func (a *IPAllocator) Release(imsi string, ip net.IP) {
 	if a == nil || a.g == nil || a.ipNetwork == nil {
-		logger.CtxLog.Errorf("IPAllocator not initialized properly: a=%t, a.g=%t, a.ipNetwork=%t; cannot release IP %s for IMSI %s",
+		logger.CtxLog.Debugf("IPAllocator not initialized properly: a=%t, a.g=%t, a.ipNetwork=%t; cannot release IP %s for IMSI %s",
 			a != nil, a != nil && a.g != nil, a != nil && a.ipNetwork != nil, ip.String(), imsi)
 	}
 	logger.CtxLog.Debugf("Releasing IP %s for IMSI %s", ip.String(), imsi)
