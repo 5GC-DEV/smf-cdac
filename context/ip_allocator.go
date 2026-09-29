@@ -24,11 +24,15 @@ func NewIPAllocator(cidr string) (*IPAllocator, error) {
 	allocator := &IPAllocator{}
 
 	if _, ipnet, err := net.ParseCIDR(cidr); err != nil {
+		logger.CtxLog.Debugf("Failed to parse CIDR %q: %v", cidr, err)
 		return nil, err
 	} else {
 		allocator.ipNetwork = ipnet
+		logger.CtxLog.Debugf("IPAllocator: initialized ipNetwork=%v, network=%s, mask=%s", allocator.ipNetwork,
+			allocator.ipNetwork.IP, allocator.ipNetwork.Mask)
 	}
 	allocator.g = newIDPool(1, 1<<int64(32-maskBits(allocator.ipNetwork.Mask))-2)
+	logger.CtxLog.Debugf("IPAllocator: g initialized=%t, ipNetwork=%v", allocator.g != nil, allocator.ipNetwork)
 
 	return allocator, nil
 }
@@ -127,12 +131,14 @@ func (a *IPAllocator) ReserveStaticIps(ips *map[string]string) {
 
 func (a *IPAllocator) BlockIp(ip net.IP) {
 	offset := IPAddrOffset(ip, a.ipNetwork.IP)
+	logger.CtxLog.Debugf("IPAllocator: blocking IP %s, offset=%d", ip.String(), offset)
 	a.g.block(int64(offset))
 }
 
 func (a *IPAllocator) Release(imsi string, ip net.IP) {
 	if a == nil || a.g == nil || a.ipNetwork == nil {
-		logger.CtxLog.Errorf("IPAllocator not initialized properly, cannot release IP %s for IMSI %s", ip.String(), imsi)
+		logger.CtxLog.Debugf("IPAllocator not initialized properly: a=%t, a.g=%t, a.ipNetwork=%t; cannot release IP %s for IMSI %s",
+			a != nil, a != nil && a.g != nil, a != nil && a.ipNetwork != nil, ip.String(), imsi)
 	}
 	logger.CtxLog.Debugf("Releasing IP %s for IMSI %s", ip.String(), imsi)
 	// Don't release static IPs
@@ -173,7 +179,7 @@ func newIDPool(minValue int64, maxValue int64) (idPool *_IDPool) {
 		logger.CtxLog.Errorf("failed to convert SMF_COUNT to int: %v", err)
 	}
 	idPool.index = int64((smfCount-1)*2500 + 1)
-	return
+	return idPool
 }
 
 func (i *_IDPool) allocate() (id int64, err error) {
