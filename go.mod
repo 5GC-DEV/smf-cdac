@@ -6,7 +6,7 @@ require (
 	github.com/5GC-DEV/config5g-cdac v0.2.1
 	github.com/5GC-DEV/nas-cdac v0.4.2
 	github.com/5GC-DEV/openapi-cdac v0.4.3
-	github.com/5GC-DEV/util-cdac v0.4.3
+	github.com/5GC-DEV/util-cdac v0.0.0-20261008135402-ceb53bacb980
 	github.com/antihax/optional v1.0.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0

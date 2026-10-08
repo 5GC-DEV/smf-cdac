@@ -8,6 +8,8 @@ github.com/5GC-DEV/nas-cdac v0.4.2 h1:yNzmb3+dI+egdU0A3oDD9Gi4BJ6rPmO9A5qGzKRnJj
 github.com/5GC-DEV/nas-cdac v0.4.2/go.mod h1:cofQD/3vgDv6yUKPnt8G8CGSxlPvX/My4cxNzpRyktE=
 github.com/5GC-DEV/openapi-cdac v0.4.3 h1:aHHJpuwVe+8k3faUxp0LKEia7e6Cv8oYLS5AqtBb6Xg=
 github.com/5GC-DEV/openapi-cdac v0.4.3/go.mod h1:C9NUfKZO1bMwFxB/ZSKqSS6g0B3gBA+n1B1N2YZoCh0=
+github.com/5GC-DEV/util-cdac v0.0.0-20261008135402-ceb53bacb980 h1:mlysy42rKOjWE9NwnCD+CmM0wQcVYmhmmPtMoNrQjaU=
+github.com/5GC-DEV/util-cdac v0.0.0-20261008135402-ceb53bacb980/go.mod h1:IHTEJn2S2C/SDlKxFkgXbepYFhgxSTm7uhbxHOF42xQ=
 github.com/5GC-DEV/util-cdac v0.4.3 h1:y6bV5UI85t8uWaD8x0/Vq9jSy7ltrB4IUbW0CYwwipA=
 github.com/5GC-DEV/util-cdac v0.4.3/go.mod h1:IHTEJn2S2C/SDlKxFkgXbepYFhgxSTm7uhbxHOF42xQ=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=
