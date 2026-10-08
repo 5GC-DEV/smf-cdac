@@ -113,6 +113,11 @@ func RecoverTunnel(tunnelInfo *TunnelInfo) (tunnel *GTPTunnel) {
 func RecoverFirstDPNode(nodeIDInDB NodeIDInDB) (dataPathNode *DataPathNode) {
 	logger.CtxLog.Infoln("in RecoverFirstDPNode")
 	nodeInDB := GetNodeInDBFromDB(nodeIDInDB)
+	// GetNodeInDBFromDB returns nil when nothing is found; avoid nil dereference
+	if nodeInDB == nil {
+		logger.CtxLog.Warnln("RecoverFirstDPNode: node not found in DB")
+		return nil
+	}
 	dataPathNode = &DataPathNode{
 		IsBranchingPoint: nodeInDB.IsBranchingPoint,
 		UPF:              RetrieveUPFNodeByNodeID(GetNodeID(nodeInDB.DataPathNodeUPFNodeID)),
@@ -153,6 +158,12 @@ func ToBsonMNodeInDB(data *DataPathNodeInDB) (ret bson.M) {
 	return
 }
 
+// StoreNodeInDB is currently NOT called (see StoreDataPathNode).
+// Its filter uses the field "nodeIDInDB", which does not exist in the stored
+// documents (they contain "DataPathNodeUPFNodeID"), so it never matched and
+// every call did a full collection scan followed by an insert.
+// If multi-UPF chained paths are needed, rewrite it with a per-session key
+// (ref + path id + node id) and an index on that key before re-enabling.
 func StoreNodeInDB(nodeInDB *DataPathNodeInDB) {
 	itemBsonA := ToBsonMNodeInDB(nodeInDB)
 	filter := bson.M{"nodeIDInDB": nodeInDB.DataPathNodeUPFNodeID}
@@ -171,6 +182,11 @@ func GetNodeInDBFromDB(nodeIDInDB NodeIDInDB) (dataPathNodeInDB *DataPathNodeInD
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(NodeInDBCol, filter)
 	if getOneErr != nil {
 		logger.DataRepoLog.Warnln(getOneErr)
+		return nil
+	}
+	if len(result) == 0 {
+		logger.DataRepoLog.Warnln("GetNodeInDBFromDB: no document found")
+		return nil
 	}
 
 	dataPathNodeInDB = new(DataPathNodeInDB)
@@ -258,7 +274,12 @@ func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNo
 			}
 			dataPathNodeInDB.DLTunnelInfo = dLTunnelInfo
 		}
-		StoreNodeInDB(dataPathNodeInDB)
+		// StoreNodeInDB(dataPathNodeInDB)
+		// CHANGED: removed StoreNodeInDB(dataPathNodeInDB).
+		// The node is already embedded in the smContext document
+		// (tunnel.DataPathPool.<id>.FirstDPNode), which is what UnmarshalJSON
+		// recovers from. The separate write never matched its own filter, so it
+		// inserted a new document on every session save (scan + insert, 1-6 s).
 		return dataPathNodeInDB
 	}
 	return nil

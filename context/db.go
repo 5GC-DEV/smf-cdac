@@ -34,7 +34,7 @@ const (
 	SmfCounterCol = "smf.data.smfCount"
 )
 
-func SetupSmfCollection() {
+/*func SetupSmfCollection() {
 	dbName := "sdcore_smf"
 	dbUrl := "mongodb://mongodb-arbiter-headless"
 
@@ -68,6 +68,48 @@ func SetupSmfCollection() {
 	setEnvErr := os.Setenv("SMF_COUNT", strconv.Itoa(int(smfCount)))
 	if setEnvErr != nil {
 		logger.DataRepoLog.Errorln("setting SMF_COUNT env variable is failed")
+	}
+}*/
+
+func SetupSmfCollection() {
+	dbName := "sdcore_smf"
+	dbUrl := "mongodb://mongodb-arbiter-headless"
+
+	if factory.SmfConfig.Configuration.Mongodb.Url != "" {
+		dbUrl = factory.SmfConfig.Configuration.Mongodb.Url
+	}
+
+	if factory.SmfConfig.Configuration.SmfDbName != "" {
+		dbName = factory.SmfConfig.Configuration.SmfDbName
+	}
+
+	logger.CfgLog.Infof("initialising db name [%v] url [%v]", dbName, dbUrl)
+
+	mongoapi.ConnectMongo(dbUrl, dbName)
+
+	// CHANGED: log the actual error and the collection name
+	// smContext table: lookup by ref
+	if _, err := mongoapi.CommonDBClient.CreateIndex(SmContextDataColl, "ref"); err != nil {
+		logger.DataRepoLog.Errorf("create index failed on %s.ref: %v", SmContextDataColl, err)
+	}
+
+	// CHANGED (new): refToSeid table, lookup by ref
+	if _, err := mongoapi.CommonDBClient.CreateIndex(RefSeidCol, "ref"); err != nil {
+		logger.DataRepoLog.Errorf("create index failed on %s.ref: %v", RefSeidCol, err)
+	}
+
+	// CHANGED: log message previously said "TxnId" instead of seid
+	// seidSmContext table: lookup by seid
+	if _, err := mongoapi.CommonDBClient.CreateIndex(SeidSmContextCol, "seid"); err != nil {
+		logger.DataRepoLog.Errorf("create index failed on %s.seid: %v", SeidSmContextCol, err)
+	}
+
+	smfCount := mongoapi.CommonDBClient.GetUniqueIdentity("smfCount")
+	logger.DataRepoLog.Infof("unique id - init smfCount %d", smfCount)
+
+	// set os env
+	if setEnvErr := os.Setenv("SMF_COUNT", strconv.Itoa(int(smfCount))); setEnvErr != nil {
+		logger.DataRepoLog.Errorf("setting SMF_COUNT env variable failed: %v", setEnvErr)
 	}
 }
 
@@ -308,8 +350,14 @@ func GetSeidByRefInDB(ref string) (seid uint64) {
 	result, getOneErr := mongoapi.CommonDBClient.RestfulAPIGetOne(RefSeidCol, filter)
 	if getOneErr != nil {
 		logger.DataRepoLog.Warnln(getOneErr)
+		return 0
 	}
-	seidStr := result["seid"].(string)
+	// CHANGED: avoid panic when no document is found or the type is unexpected
+	seidStr, ok := result["seid"].(string)
+	if !ok {
+		logger.DataRepoLog.Warnf("GetSeidByRefInDB: seid not found for ref %v", ref)
+		return 0
+	}
 	seid, err := strconv.ParseUint(seidStr, 16, 64)
 	if err != nil {
 		logger.DataRepoLog.Errorf("seid unmarshall error: %v", err)
@@ -354,7 +402,12 @@ func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
 		logger.DataRepoLog.Warnln(getOneErr)
 	}
 	if result != nil {
-		ref := result["ref"].(string)
+		// CHANGED: safe type assertion (avoid panic)
+		ref, ok := result["ref"].(string)
+		if !ok {
+			logger.DataRepoLog.Warnf("ref missing in seid document for seid: %v", seid)
+			return nil
+		}
 		logger.DataRepoLog.Debugln("StoreSeidContextInDB, result string:", ref)
 		return GetSMContext(ref)
 	} else {
@@ -375,7 +428,12 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 		logger.DataRepoLog.Warnln(getOneErr)
 	}
 	if result != nil {
-		ref := result["ref"].(string)
+		// CHANGED: safe type assertion (avoid panic)
+		ref, ok := result["ref"].(string)
+		if !ok {
+			logger.DataRepoLog.Warnf("ref missing in seid document for seid: %v", seid)
+			return
+		}
 
 		delOneErr := mongoapi.CommonDBClient.RestfulAPIDeleteOne(SeidSmContextCol, filter)
 		if delOneErr != nil {
@@ -396,6 +454,13 @@ func DeleteSmContextInDBByRef(ref string) {
 	delOneErr := mongoapi.CommonDBClient.RestfulAPIDeleteOne(SmContextDataColl, filter)
 	if delOneErr != nil {
 		logger.DataRepoLog.Warnln(delOneErr)
+	}
+	// CHANGED (new): also remove the ref->seid mapping, otherwise refToSeid
+	// grows forever (one document per session ever created).
+	// If something in your code reads refToSeid AFTER this delete, remove this block.
+	delRefErr := mongoapi.CommonDBClient.RestfulAPIDeleteOne(RefSeidCol, filter)
+	if delRefErr != nil {
+		logger.DataRepoLog.Warnln(delRefErr)
 	}
 }
 
