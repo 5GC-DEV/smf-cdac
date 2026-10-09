@@ -27,22 +27,27 @@ func InitPfcpHeartbeatRequest(userplane *context.UserPlaneInformation) {
 	for {
 		time.Sleep(maxHeartbeatInterval * time.Second)
 		for _, upf := range userplane.UPFs {
-			upf.UPF.UpfLock.Lock()
-			if (upf.UPF.UPFStatus == context.AssociatedSetUpSuccess) && upf.UPF.NHeartBeat < maxHeartbeatRetry {
+			upf.UPF.UpfLock.RLock()
+			status := upf.UPF.UPFStatus
+			nHB := upf.UPF.NHeartBeat
+			upf.UPF.UpfLock.RUnlock()
+			if (status == context.AssociatedSetUpSuccess) && nHB < maxHeartbeatRetry {
 				err := message.SendHeartbeatRequest(upf.NodeID, upf.Port) // needs lock in sync rsp(adapter mode)
 				if err != nil {
 					logger.PfcpLog.Errorf("send pfcp heartbeat request failed: %v for UPF[%v, %v]: ", err, upf.NodeID, upf.NodeID.ResolveNodeIdToIp())
 				} else {
+					upf.UPF.UpfLock.Lock()
 					upf.UPF.NHeartBeat++
+					upf.UPF.UpfLock.Unlock()
 				}
-			} else if upf.UPF.NHeartBeat == maxHeartbeatRetry {
+			} else if nHB == maxHeartbeatRetry {
 				logger.PfcpLog.Errorf("pfcp heartbeat failure for UPF: [%v]", upf.NodeID)
 				heartbeatRequest := pfcp_message.HeartbeatRequest{}
 				metrics.IncrementN4MsgStats(context.SMF_Self().NfInstanceID, heartbeatRequest.MessageTypeName(), "Out", "Failure", "Timeout")
+				upf.UPF.UpfLock.Lock()
 				upf.UPF.UPFStatus = context.NotAssociated
+				upf.UPF.UpfLock.Unlock()
 			}
-
-			upf.UPF.UpfLock.Unlock()
 		}
 	}
 }
