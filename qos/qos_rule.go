@@ -262,20 +262,6 @@ func BuildAddQoSRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData
 	return &qRule
 }
 
-func BuildAddQoSRuleFromPccRuleims(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
-	qRule := QosRule{
-		Identifier:    GetQosRuleIdFromPccRuleId(pccRule.PccRuleId),
-		DQR:           btou(qosData.DefQosFlowIndication),
-		OperationCode: pccRuleOpCode,
-		Precedence:    1,
-		QFI:           GetQosFlowIdFromQosId(qosData.QosId),
-	}
-
-	qRule.BuildPacketFilterListFromPccRule(pccRule)
-
-	return &qRule
-}
-
 // BuildModifyQosRuleFromPccRule constructs a QoSRule modification based on
 // PCC rule updates and QoS data.
 func BuildModifyQosRuleFromPccRule(pccRule *models.PccRule, qosData *models.QosData, pccRuleOpCode uint8) *QosRule {
