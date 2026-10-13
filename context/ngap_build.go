@@ -338,20 +338,6 @@ func BuildPDUSessionResourceModifyRequestTransfer(ctx *SMContext) ([]byte, error
 	ctx.SubPduSessLog.Infof("Using QoS: DL = %d bps, UL = %d bps, qfi = %d , arp = %d ",
 		gbdownlink, gbuplink, qfi, priority)
 
-	// Add AMBR IE to NGAP message
-	/*ie := ngapType.PDUSessionResourceModifyRequestTransferIEs{
-		Id:          ngapType.ProtocolIEID{Value: ngapType.ProtocolIEIDPDUSessionAggregateMaximumBitRate},
-		Criticality: ngapType.Criticality{Value: ngapType.CriticalityPresentReject},
-		Value: ngapType.PDUSessionResourceModifyRequestTransferIEsValue{
-			Present: ngapType.PDUSessionResourceModifyRequestTransferIEsPresentPDUSessionAggregateMaximumBitRate,
-			PDUSessionAggregateMaximumBitRate: &ngapType.PDUSessionAggregateMaximumBitRate{
-				PDUSessionAggregateMaximumBitRateDL: ngapType.BitRate{Value: gbdownlink},
-				PDUSessionAggregateMaximumBitRateUL: ngapType.BitRate{Value: gbuplink},
-			},
-		},
-	}
-	resourceModifyRequestTransfer.ProtocolIEs.List = append(resourceModifyRequestTransfer.ProtocolIEs.List, ie)*/
-
 	// Default ARP values
 	arpPreemptCap := ngapType.PreEmptionCapabilityPresentMayTriggerPreEmption
 	// arpPreemptVul := ngapType.PreEmptionVulnerabilityPresentNotPreEmptable
