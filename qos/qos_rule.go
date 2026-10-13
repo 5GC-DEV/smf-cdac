@@ -489,10 +489,10 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	}
 
 	// Remote Addr
-	if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
+	/*if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}
+	}*/
 
 	// Remote Port
 	if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
