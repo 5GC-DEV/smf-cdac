@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"net"
 	"strconv"
 	"strings"
 
@@ -489,28 +488,28 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	}
 
 	// Remote Addr
-	if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
+	/*if pfc, len := buildPFCompAddr(false, ipf.sAddrv4); pfc != nil {
+		pfcList = append(pfcList, *pfc)
+		pf.ContentLength += len
+	}*/
+
+	// Remote Port (temporarily use Local Port type for testing)
+	if pfc, len := buildPFCompPort(true, ipf.sPort); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
-	// Remote Port
-	if pfc, len := buildPFCompPort(false, ipf.sPort); pfc != nil {
-		pfcList = append(pfcList, *pfc)
-		pf.ContentLength += len
-	}
-
-	// Remote Port range
-	if pfc, len := buildPFCompPortRange(false, ipf.sPortRange); pfc != nil {
+	// Remote Port range (temporarily use Local Port Range type for testing)
+	if pfc, len := buildPFCompPortRange(true, ipf.sPortRange); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
 	}
 
 	// Local Addr
-	if pfc, len := buildPFCompAddr(true, ipf.dAddrv4); pfc != nil {
+	/*if pfc, len := buildPFCompAddr(true, ipf.dAddrv4); pfc != nil {
 		pfcList = append(pfcList, *pfc)
 		pf.ContentLength += len
-	}
+	} */
 
 	// Local Port
 	if pfc, len := buildPFCompPort(true, ipf.dPort); pfc != nil {
@@ -527,7 +526,7 @@ func (pf *PacketFilter) GetPfContent(flowDesc string) {
 	pf.Content = pfcList
 }
 
-func buildPFCompAddr(local bool, val IPFilterRuleIpAddrV4) (*PacketFilterComponent, uint8) {
+/* func buildPFCompAddr(local bool, val IPFilterRuleIpAddrV4) (*PacketFilterComponent, uint8) {
 	component := PFComponentTypeIPv4RemoteAddress
 
 	if local {
@@ -575,7 +574,7 @@ func buildPFCompAddr(local bool, val IPFilterRuleIpAddrV4) (*PacketFilterCompone
 	}
 
 	return pfc, 9
-}
+} */
 
 func buildPFCompPort(local bool, val string) (*PacketFilterComponent, uint8) {
 	if val == "" {
