@@ -299,6 +299,11 @@ func StoreSmContextInDB(smContext *SMContext) {
 	}
 }
 
+func IsSMContextActive(ref string) bool {
+	_, ok := smContextPool.Load(ref)
+	return ok
+}
+
 type SeidSmContextRef struct {
 	Ref  string `json:"ref" yaml:"ref" bson:"ref"`
 	Seid string `json:"seid" yaml:"seid" bson:"seid"`

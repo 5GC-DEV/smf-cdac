@@ -259,11 +259,21 @@ func (SmfTxnFsm) TxnAbort(txn *transaction.Transaction) (transaction.TxnEvent, e
 	return transaction.TxnEventEnd, nil
 }
 
-func (SmfTxnFsm) TxnSave(txn *transaction.Transaction) (transaction.TxnEvent, error) {
+/*func (SmfTxnFsm) TxnSave(txn *transaction.Transaction) (transaction.TxnEvent, error) {
 	if factory.SmfConfig.Configuration.EnableDbStore {
 		smf_context.StoreSmContextInDB(txn.Ctxt.(*smf_context.SMContext))
 		// clear sm context in memory for test
 		// smf_context.ClearSMContextInMem(txn.Ctxt.(*smf_context.SMContext).Ref)
+	}
+	return transaction.TxnEventEnd, nil
+}*/
+
+func (SmfTxnFsm) TxnSave(txn *transaction.Transaction) (transaction.TxnEvent, error) {
+	if factory.SmfConfig.Configuration.EnableDbStore {
+		sc := txn.Ctxt.(*smf_context.SMContext)
+		if smf_context.IsSMContextActive(sc.Ref) {
+			smf_context.StoreSmContextInDB(sc)
+		}
 	}
 	return transaction.TxnEventEnd, nil
 }
