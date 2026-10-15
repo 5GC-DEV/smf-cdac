@@ -381,10 +381,12 @@ func GetAllSMContexts() []*SMContext {
 
 // *** add unit test ***//
 func RemoveSMContext(ref string) {
-	var smContext *SMContext
-	if value, ok := smContextPool.Load(ref); ok {
-		smContext = value.(*SMContext)
+	value, ok := smContextPool.Load(ref)
+	if !ok {
+		logger.CtxLog.Warnf("RemoveSMContext: ref %s not found in pool", ref)
+		return
 	}
+	smContext := value.(*SMContext)
 
 	smContext.SubCtxLog.Infof("RemoveSMContext, SM context released ")
 	smContext.ChangeState(SmStateRelease)
@@ -392,7 +394,8 @@ func RemoveSMContext(ref string) {
 	for _, pfcpSessionContext := range smContext.PFCPContext {
 		seidSMContextMap.Delete(pfcpSessionContext.LocalSEID)
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			DeleteSmContextInDBBySEID(pfcpSessionContext.LocalSEID)
+			// seid -> ref mapping only; the ref delete happens once, below
+			DeleteSeidMappingInDB(pfcpSessionContext.LocalSEID)
 		}
 	}
 

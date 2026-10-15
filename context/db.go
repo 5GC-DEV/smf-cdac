@@ -450,6 +450,14 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 	}
 }
 
+func DeleteSeidMappingInDB(seidUint uint64) {
+	seid := SeidConv(seidUint)
+	filter := bson.M{"seid": seid}
+	if err := mongoapi.CommonDBClient.RestfulAPIDeleteOne(SeidSmContextCol, filter); err != nil {
+		logger.DataRepoLog.Warnln(err)
+	}
+}
+
 // DeleteSmContextInDBByRef Delete SMContext By ref from DB
 func DeleteSmContextInDBByRef(ref string) {
 	logger.DataRepoLog.Infoln("db - delete SMContext In DB w ref")
